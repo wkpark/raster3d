@@ -1,0 +1,38 @@
+# Raster3D makefile for SGI
+#
+LDFLAGS =
+CFLAGS  = -g
+#
+# Optimization seems to break the Fortran I/O with the Irix compiler
+# If anyone figures out the cure for this I'd love to know - EAM
+#
+FFLAGS  = -g -static -w1 -Olimit 2000
+DEFINES = -DLIBIMAGE_SUPPORT
+#
+# If you build Raster3D to use the Iris imagetools output format
+# (local.sgi), then uncomment the following line.  Source for
+# libimage.a is available in the 4DGifts kit from SGI.
+#
+LIBS =	-limage
+
+RIBOBJS =	ribbon.o ribbon1.o modsubs.o
+PROGS =		setup rods ribbon render
+
+all:	$(PROGS)
+
+clean:
+	rm -f *.o *.u
+
+install: $(PROGS)
+	mv $(PROGS) /usr/local/bin
+
+tar:
+	(cd ..; tar -cvvf raster3d.tar raster3d)
+	compress  ../raster3d.tar
+
+ribbon:	$(RIBOBJS)
+	f77 -O $(RIBOBJS) -o ribbon
+
+render:	render.f local.c
+	f77 $(FFLAGS) render.f $(DEFINES) local.c  $(LIBS) -o render $(LDFLAGS)
+

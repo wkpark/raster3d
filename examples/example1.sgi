@@ -1,0 +1,28 @@
+#
+# This example uses the ribbon utility to render a view of the 
+# E. coli heat-labile enterotoxin (LT) B-pentamer
+# with each chain a different colour.
+#
+# First extract chains D-H (which form the pentamer)
+# Only CA and O atoms are relevant to the ribbon program.
+#
+grep ' [DEFGH] ' LT.pdb > temp.tmp
+#
+# Now select pre-determined view matrix.
+# As it happens, this one came from using MOLSCRIPT to compose the
+# figure and then typing the matrix reported by MOLSCRIPT into a file.
+# Other programs, e.g. FRODO, atoms, etc, will also dump a view matrix
+# on request.
+#
+cp example1.matrix setup.matrix
+#
+# Add color information and draw ribbons;  -d5 means new colour for each chain.
+# Use ipaste utility to view the resulting image file.
+#
+cat chaincolours.pdb temp.tmp | ribbon -d5 | render -sgi example1.rgb
+ipaste example1.rgb
+#
+#
+#
+rm -f temp.tmp setup.matrix
+

@@ -1,0 +1,84 @@
+most recent change:	23-Nov-1993
+
+The file Raster3D_2.0_beta.tar.Z contains a beta-test version of RASTER3D
+in a unified distribution which has been partially tested on the following
+machines:
+	DECstation 5000 / Ultrix 4.3
+	Alpha / OSF 1.3
+	SGI Indigo / Irix 4.0.5F
+
+Version 2.0 [is/will be] very close to the previous DS5000 version (Mar 1993).
+Differences include:
+
+- handle possible divide-by-zero errors if duplicate or 0 size cylinders
+- fixed a number of long-standing bugs in shadowing code
+- fixed y-axis definition of movable light source
+- inclusion of SGI libimage support and combined
+  Ultrix/Irix/OSF distribution kit
+- suite of example scripts
+
+Compared to the previous SGI distribution kit, this one has:
+
+- more consistent use of stdin/stdout so that pipes work between modules
+- forward and backward source compatibility with other Raster3D versions
+- added -h option to setup/ribbon/rods to suppress header records in output
+- added -d# option (# is color scheme) to setup which forces default
+  parameters and no interactive input.
+- new object type PLANE (=6) , same format as TRIANGLE but extends from front
+  plane of view to pseudo-horizon at back clipping limit. Color saturation
+  falls off with depth.
+
+The render program may be run with any one of three output modes
+currently supported in the file local.c:
+1) AVS-compatible output to stdout, intended for piping to ImageMagick
+   or other image file format conversion program. (default behaviour).
+2) SGI libimage output to file specified in command line using the 
+   -sgi flag (e.g. render -sgi outfile.rgb). Support of this option
+   is conditionally compiled into local.c, and is only relevant when
+   Raster3D is to be installed on an SGI machine.
+3) The -original option to render is intended to produce output on stdout 
+   which is compatible with the original (UA/UBC) Raster3D versions, so that
+   image post-processing programs (e.g. idither/hdith/dith2lp) may
+   still be used.
+
+WARNING: None of the 3 output formats is guaranteed (or even likely)
+to be directly transportable across different machines and operating
+systems due to differing byte orders, word lengths, etc.  
+For transportable output, pipe from render directly into a format
+conversion utility which supports a machine-independent file format
+(e.g. MIFF, TIFF).
+
+Unless you specifically need libimage compatibility, I suggest
+that you simply use the default AVS-compatible output, and use John Cristy's
+ImageMagick package to view or process the output.  ImageMagick runs
+nicely on any machine supporting X11R4 windowing, and may be obtained
+via anonymous ftp from a number of sites, including export.lcs.mit.edu.
+
+Using ImageMagick as a viewer, a typical command might look something like:
+
+	cp  selected_view_from_viewing_program setup.matrix
+	cat mycolors.pdb protein.pdb | rods | render | display avs:-
+
+If you are running on an SGI machine and want to use the libimage utilities,
+then the equivalent commands would be something like:
+
+	cat mycolors.pdb protein.pdb | rods | render -sgi picture.rgb
+	ipaste picture.rgb
+
+The setup/rods/ribbon utilities now have a -h flag which suppresses output
+of the Raster3D header records.  Using -h allows one to merge output
+from the various utilities without an editing step.  For example, to draw a
+ribbon backbone of an iron containing protein with spheres for iron
+atoms:
+
+	ribbon -d4 protein.pdb > ribbon.r3d
+	grep FE protein.pdb | cat colors.pdb - | setup -h > irons.r3d
+	cat ribbon.r3d irons.r3d | render | convert avs:- miff:rib+Fe.miff.Z
+
+Finally, to render a figure and save the resulting image as a TIFF file:
+
+	render < mypicture.r3d | convert avs:- tiff:mypicture.tiff
+
+
+					Ethan A Merritt
+					merritt@u.washington.edu

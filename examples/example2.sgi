@@ -1,0 +1,37 @@
+# E A Merritt March 1993
+# Illustration of composed figure using Raster3D
+# (assumes libimage support from 4DGifts distribution kit on SGI)
+#
+# figure consists of E. coli enterotoxin (protein as spheres)
+# binding to GM1 pentasaccharide (sugars represented as rods)
+# protruding from cell membrane (plane)
+# 
+# Attach atom colouring to front of PDB file
+#
+cat chaincolours.pdb LT.pdb > temp.tmp
+#
+# space-filling representation of protein atoms
+#
+setup -h < temp.tmp > balls.r3d
+#
+# draw oligosaccharide as stick model
+#
+cat sugarcolours.pdb sugars.pdb > temp.tmp
+rods  -h < temp.tmp > sugars.r3d
+#
+# combine protein description with sugar description and 
+# add in description of plane surface lying below both.
+# At the front goes a file containing the header records
+# describing the view angle, image size, lighting, etc.
+#
+cat header.r3d plane.r3d sugars.r3d balls.r3d > temp.tmp
+#
+# Feed the composite description through the rendering program
+# and display using the ipaste utility
+#
+render -sgi example2.rgb  < temp.tmp 
+ipaste example2.rgb
+#
+# Clean up before leaving
+#
+rm -f temp.tmp balls.r3d sugars.r3d example.rgb

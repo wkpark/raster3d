@@ -1,0 +1,44 @@
+				RASTER3D
+
+PROGRAM:
+	Raster3D is a set of tools for generating high quality raster 
+	images of proteins or other molecules. The core program renders 
+	spheres, triangles, and cylinders with specular highlighting,
+	Phong shading, and shadowing using an efficient Z-buffer algorithm. 
+	Ancillary programs process atomic coordinates from Brookhaven PDB 
+	files into rendering descriptions for pictures composed of ribbons, 
+	space-filling atoms, bonds, ball+stick, etc.  Raster3D can also be 
+	used to render pictures composed in Per Kraulis' MOLSCRIPT program 
+	in glorious 3D with highlights, shadowing, etc. (NB: you will need 
+	MOLSCRIPT V1.(4?) to get the full benefit of this).  Output is to 
+	pixel image files with 24 bits of color information per pixel.
+
+AVAILABILITY:
+	Raster3d is freely available but unsupported. 
+	Programs for previewing and figure composition are written
+	for IRIS4D workstations (GL graphics), but all other code is
+	intended to be machine-independent. Version 2.0 is currently in 
+	beta-test, please see README.2.0.beta for further information.
+
+REFERENCES:
+	Bacon, David J. and Anderson, Wayne F. (1988).  Journal of
+	Molecular Graphics 6, 219-220 (abstract of paper presented
+	at the Seventh Annual Meeting of the Molecular Graphics
+	Society, San Francisco, 10-12 August 1988).  "A Fast
+	Algorithm for Rendering Space-Filling Molecule Pictures."
+
+	Merritt, Ethan A. and Murphy, Michael (in preparation).
+
+AUTHORS:
+	originally written by David J. Bacon and Wayne F. Anderson;
+	extensions, revisions, modifications, ancillary programs by
+	Mark Israel, Stephen Samuel, Michael Murphy, Albert Berghuis, 
+	and Ethan A Merritt
+
+SOURCE:
+	anonymous ftp site:	stanzi.bchem.washington.edu   (128.95.12.38)
+
+	contact:		Ethan A Merritt
+				Dept of Biological Structure SM-20
+				University of Washington, Seattle WA 98195
+				merritt@u.washington.edu

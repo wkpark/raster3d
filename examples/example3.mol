@@ -1,0 +1,167 @@
+! MOLSCRIPT V1.4 description file for LT/gal
+! galactose binding site, showing 1 complete monomer
+! color version with individually labeled residues
+!
+plot
+
+    area 50. 100. 575. 650. ;
+    background white ;
+    window 35.0 ;
+
+!
+! All non-hydrogen atoms
+!
+    read LT   "LT.pdb" ;
+    transform atom *
+	by centre position require in residue G104 and atom C3
+ 	by rotation z  -90.0
+ 	by rotation y -110.0
+ 	by rotation z  -30.0
+ 	by rotation x    8.0
+	by translation  -4.0 0. 0.
+ 	by rotation y    2.0
+	;
+
+!
+! Increase the number of segments to get smoother shading
+!
+     set segments 12 ;
+
+!
+! B5 pentamer 
+!
+
+     set planecolour  hsb 0.15 1.0 1.0 ;
+     set plane2colour hsb 0.15 1.0 0.6 ;
+     set linecolour   hsb 0.15 1.0 0.3 ;
+
+					turn from F1  to F5  ;
+	helix  from F5  to F9  ;	coil from F9  to F15 ;
+	strand from F15 to F22 ;	coil from F22 to F26 ;
+	strand from F26 to F30 ;	coil from F30 to F37 ;
+	strand from F37 to F41 ;	coil from F41 to F47 ;
+	strand from F47 to F50 ;	coil from F50 to F59 ;
+	helix  from F59 to F77 ;	coil from F77 to F82 ;
+	strand from F82 to F88 ;	coil from F88 to F94 ;
+	strand from F94 to F102;	turn from F102 to F103 ;
+
+     set planecolour  hsb 0.27 0.6 1.0 ;
+     set plane2colour hsb 0.27 0.8 0.6 ;
+     set linecolour   hsb 0.27 1.0 0.3 ;
+
+					turn from G1  to G5  ;
+	helix  from G5  to G9  ;	coil from G9  to G15 ;
+	strand from G15 to G22 ;	coil from G22 to G26 ;
+	strand from G26 to G30 ;	coil from G30 to G37 ;
+	strand from G37 to G41 ;	coil from G41 to G47 ;
+	strand from G47 to G50 ;	coil from G50 to G59 ;
+	helix  from G59 to G77 ;	coil from G77 to G82 ;
+	strand from G82 to G88 ;	coil from G88 to G94 ;
+	strand from G94 to G102;	turn from G102 to G103 ;
+
+     set planecolour  hsb 0.52 0.8 1.0 ;
+     set plane2colour hsb 0.52 0.9 0.6 ;
+     set linecolour   hsb 0.52 1.0 0.3 ;
+
+					turn from H1  to H5  ;
+	helix  from H5  to H9  ;	coil from H9  to H15 ;
+	strand from H15 to H22 ;	coil from H22 to H26 ;
+	strand from H26 to H30 ;	coil from H30 to H37 ;
+	strand from H37 to H41 ;	coil from H41 to H47 ;
+	strand from H47 to H50 ;	coil from H50 to H59 ;
+	helix  from H59 to H77 ;	coil from H77 to H82 ;
+	strand from H82 to H88 ;	coil from H88 to H94 ;
+	strand from H94 to H102;	turn from H102 to H103 ;
+
+
+! Solvents
+
+    set atomcolour atom OH2 hsb 0.75 0.3 0.7 ;
+    set atomradius atom OH2 0.5 ;
+    cpk require atom OH2 and sphere position in residue G88 9.0 ;
+
+ 	set labelcentre on  ;
+ 	set labelclip   off ;
+ 	set labelsize   16. ;
+ 	set depthcue    0.4 ;
+ 	set labeloffset 0.0 0.0 0.0 ;
+
+ 	label require atom OH2 and in residue W270 "1" ;
+ 	label require atom OH2 and in residue W147 "2" ;
+ 	label require atom OH2 and in residue W295 "3" ;
+ 	label require atom OH2 and in residue W292 "4" ;
+ 	label require atom OH2 and in residue W153 "5" ;
+ 	label require atom OH2 and in residue W294 "6" ;
+
+! sugar molecule
+ 	set atomradius atom *  0.6 ;
+ 	set atomradius atom C* 0.01 ;
+	set atomcolour atom C* grey 0.5 ;
+! emphasize oxygens
+ 	set atomradius atom O* 0.6 ;
+	set atomcolour atom O* hsb 0.00 0.5 0.9 ;
+! ditto for nitrogens
+ 	set atomradius atom N* 0.6 ;
+ 	set atomcolour atom N* hsb 0.66 0.5 0.9 ;
+
+	set stickradius 0.1 ;
+	set sticktaper  0.0 ;
+        set planecolour  hsb 0.05 0.8 0.9  ;
+        set plane2colour hsb 0.05 0.8 0.9  ;
+        set linecolour   hsb 0.05 0.8 0.9  ;
+
+	ball-and-stick	in residue G104 ;
+
+! Nearby residues in protein
+	set planecolour  grey 0.8 ;
+        set plane2colour grey 0.8 ;
+        set linecolour   grey 0.0 ;
+	set atomcolour atom C* grey 0.8 ;
+	set stickradius 0.1 ;
+	set sticktaper  0.0 ;
+
+	ball-and-stick
+	    either
+		in from G12 to G14,
+		in residue G51,
+		in from G56 to G57,
+		in residue G61,
+		in from G88 to G91
+	    or  in residue H33
+	    ;
+!
+! Labels
+!
+	set labelcentre off ;
+	set labelclip   on  ;
+	set labelsize   16. ;
+	set depthcue    0.4 ;
+
+	set labeloffset  -3.0  0.5 0.5 ;
+	label require atom CA and in residue G13  "Arg 13" ;
+	set labeloffset  -1.3 -1.2 0.5 ;
+	label require atom CZ2 and in residue G88  "Trp 88" ;
+	set labeloffset  -4.5  0.5 0.5 ;
+	label require atom CA and in residue G14  "Asn 14" ;
+	set labeloffset   0.5  0.0 0.5 ;
+	label require atom OE1 and in residue G56  "Gln 56" ;
+	set labeloffset  -3.2 -0.1 0.5 ;
+	label require atom CA and in residue H33  "Gly 33*" ;
+	set labeloffset  -2.5  5.5 0.5 ;
+	label require atom OD1 and in residue G90  "Asn 90" ;
+	set labeloffset   2.0  0.0 0.5 ;
+	label require atom CB and in residue G51  "Glu 51" ;
+
+	set labeloffset   0.5 -0.5 0.5 ;
+	label require atom N  and in residue G61  "Gln 61" ;
+
+	set labeloffset  -1.6  4.2 0.5 ;
+	label require atom CB and in residue G91  "Lys 91" ;
+
+	set labeloffset  -1.0 -1.5 0.5 ;
+	label require atom CA and in residue G12  "Tyr 12" ;
+
+	set labeloffset   0.5  1.0 0.5 ;
+	label require atom CB and in residue G57  "His 57" ;
+
+end_plot

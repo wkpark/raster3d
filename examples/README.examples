@@ -1,0 +1,40 @@
+This directory contains three example uses of Raster3D, which
+may serve as confirmation of successful installation or as
+models for general use.
+
+example1.script, example2.script, and example3.script assume that 
+John Cristy's ImageMagick is installed on your system as an image
+viewer.  If it is, then executing these shell scripts should produce
+an image on your X-windows screen.
+
+Example 1 uses the ribbon utility to draw a quick picture of a
+pentamer with separate colours for each chain.  I'm sure you
+could do a better job of picking colour schemes if you tried.
+example1.sgi is the same as example1.script, except that it
+assumes that you are using the SGI libimage utilities as a viewer.
+
+Example 2 excercises the utilities setup and rods, and shows off
+the new object types supported by the rendering code.
+example2.sgi is the same as example2.script, except that it
+assumes that you are using the SGI libimage utilities as a viewer.
+
+The 3rd example provided here is a figure of the galactose binding
+site in the E. coli Heat-labile enterotoxin.  The figure was composed
+and generated using the program MOLSCRIPT, by Per Kraulis.
+I have included three files here:
+
+example3.mol	- the MOLSCRIPT input file
+example3.ps	- the output from MOLSCRIPT when run in PostScript mode
+		  (should be displayable using a PostScript viewer)
+example3.r3d	- the output from MOLSCRIPT when run in Raster3D mode
+		  (aspect ratio has been edited in header records)
+
+If you have the lastest version of MOLSCRIPT (v1.4?) installed, you
+should be able to reproduce the Raster3D output using the following
+command:
+
+echo "raster3d" | cat - example3.mol | molscript > example3.r3d
+
+NB: people who are picking this up through the beta-test version
+    will not yet have the newer MOLSCRIPT version... just be
+    partient!

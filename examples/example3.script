@@ -1,0 +1,7 @@
+# E A Merritt March 1993
+# Illustration of simple figure using Raster3D
+# Assumes ImageMagick installed, if you are using the SGI libimage 
+# version instead, then try:
+# render -sgi example3.rgb < example3.r3d;  ipaste example3.rgb
+# 
+render < example3.r3d | display avs:-
