@@ -1,3 +1,4 @@
+#!/bin/csh
 #
 # Demonstrate stereo3d script by making stereo pair of
 # view down pore of LT B-pentamer
@@ -18,6 +19,10 @@ cat header8.r3d balls.r3d ribbon.r3d > example8.r3d
 # Now render it as a stereo pair
 #
 stereo3d example8.r3d
+#
+# Add a gamma correction before displaying
+#
+mogrify -gamma 1.2 stereo.tiff
 display stereo.tiff
 #
 # Clean up

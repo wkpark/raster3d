@@ -109,7 +109,7 @@ C
 	call view_matrix
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'rods V2.4f)'
+	WRITE(OUTPUT,'(A)') 'rods V2.4f'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         anti-aliasing'

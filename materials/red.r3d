@@ -1,4 +1,4 @@
-9  Here is an example of specifying a solid red material
+# red plastic
 8
-  15.  0.6   1.0 1.0 1.0   0.0   1 0 0 1
-SOLID 1.0 0.0 0.0
+  35. -1.0   1.0 1.0 1.0   0.0   0 0 0 1
+SOLID   0.900   0.000   0.000 

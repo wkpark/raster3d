@@ -10,8 +10,10 @@
 	<h2 align=center>Transparent surfaces in Raster3D</h2>
 <hr>
 
-<h4>Transparency! (New in version 2.2)</h4> 
-MATERIAL descriptions (object type 8) now include a parameter related to
+<h4>Transparency</h4> 
+<a href="render.html#objects">
+MATERIAL descriptions</a> 
+(object type 8) now include a parameter related to
 transparency. Material descriptions apply to subsequent objects in the 
 render input file until an termination record (object type 9) is 
 encountered.  This means that an entire surface representation, for 
@@ -25,8 +27,8 @@ hard to leave normal bread-and-butter operation of the rendering program
 unaffected by support for transparency. If you are actually rendering an
 image which contains transparent objects, however, the program may slow
 down by as much as a factor of 3. If your machine seems to do much worse
-than this, you might wish to try to option described at the end of this
-section. <p>
+than this, you can try the fix described at the end of this section. 
+<p>
 
 Here is an example of a MATERIAL description which specifies a transparent
 surface:
@@ -69,17 +71,16 @@ material.
 
 <dt>OPTS   
 	<dd> These four parameters are reserved for future expansion of the
-             MATERIAL specification.  They must be present, but 
-	     but version 2.3 of the program uses only the first one (OPTS[1]). 
-	     The current options supported for this parameter are:
+             MATERIAL specification.  The first one (OPTS[1]) affects the
+	     handling of transparency:
 	     <dl>
 	     <dt>OPTS[1] = 0
 		 <dd> All transparent objects will be rendered, subject to the 
 		 limit that at a depth of three overlapping transparent objects
 		 the third is effectively opaque
 	     <dt>OPTS[1] = 1
-		 <dd> Only the topmost object of a transparent material will be
-		 rendered at all. This will, for example, cause internal 
+		 <dd> Only the topmost surface of any given transparent material 
+		 will be rendered at all. This will, for example, cause internal 
 		 cavities to disappear from a molecular surface covering 
 		 an entire protein. It also allows rendering only the outside
 		 surface of a transparent CPK model.

@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.4e
+ * Raster3D V2.4g
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -229,7 +229,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 	    ofile = "render.tif";
 	  tfile=TIFFOpen(ofile,"w");
 	  TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.4d");
+	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.4g");
 	  TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
 	  TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);

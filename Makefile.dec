@@ -1,15 +1,15 @@
+VERSION = Raster3D_2.4h
 #
 # Raster3D makefile for Alpha OSF / Digital Unix 4.0
 #
 #          f77 compiler seems to be fine
-#	   f90 compiler is broken above optimization level O1
-#	       (you can see this in example6 - objects seen through transparent
-#	        surface are not colored correctly)
+#	   f90 compiler is fine as of DU 4.0D;
+#	       earlier versions were broken for optimization greater than -O1
 #
 LDFLAGS = 
 CFLAGS  = -O $(INCLUDES)
 #FC	= f90
-#FFLAGS	= -O1 -fast -static -d_lines
+#FFLAGS	= -O -fast -static -d_lines
 FC	= f77
 FFLAGS  = -O -fast -static -w1 -d_lines
 #FFLAGS  = -g -static -w1 -d_lines
@@ -20,15 +20,15 @@ FFLAGS  = -O -fast -static -w1 -d_lines
 # The TIFF_INVERT option is a work-around for broken programs
 # (e.g. PhotoShop) that don't properly read the TIFF header.
 #
- LIBS    =	-ltiff
- DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT
-#LIBS    =
-#DEFINES =
+#LIBS    =	-ltiff /usr/local/lib/libjpeg.a
+#DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT
+#INCLUDES = -I/usr/local/include/ -I/usr/local/include/jpeg
 
-INCLUDES = -I/usr/local/include/ -I/usr/local/include/jpeg
+ LIBS    =
+ DEFINES =
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	balls normal3d rastep rods ribbon render setup avs2ps
+PROGS   =	balls normal3d rastep rods ribbon render avs2ps
 
 all:	$(PROGS)
 
@@ -43,8 +43,9 @@ install: $(PROGS)
 	cp doc/*.l /usr/local/man/manl
 
 tar:
-	(cd ..; tar -cvvf raster3d.tar raster3d)
-#	/usr/bin/compress  ../raster3d.tar
+	(cd ..; tar -cvf $(VERSION).tar raster3d)
+	/usr/bin/compress  ../$(VERSION).tar
+	(cd ..; gtar -czvf $(VERSION).tar.gz raster3d)
 
 normal3d: normal3d.o quadric.o
 	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
@@ -67,10 +68,8 @@ render:	render.f local.o quadric.o
 
 render_jpeg: render.o local_jpeg.o quadric.o
 	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
-	-ljpeg -o render_jpeg
+	$(LIBS) -o render_jpeg
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps -lm
 
-setup:	balls
-	ln -s balls setup

@@ -4,24 +4,50 @@
 </head>
 <body>
 <hr>
-<h1 align=center>Raster3D</h1>
-<img src="r3d_icon.gif" alt="" align=left hspace=10>
+<img src="r3d_icon.gif" alt="" align=left>
+<h1 align=center>Raster3D V2.4g</h1>
+<br clear=all>
+
 The Raster3D molecular graphics package consists of a core program 
 <a href="render.html">render</a> 
 and a number of ancillary programs
 which produce input files
 for rendering from Brookhaven PDB files of atomic coordinates. Raster3D can
-also render images composed using version 1.4 of 
+also render images composed using version 1.4 or later of 
 <a href="#refs">Molscript</a>
 <p>
 
+<table noborder>
+
+<tr>
+<td colspan=2>
+<h1></h1>
+</td>
+</tr>
+
+<tr valign=top>
+<td>
     <ul>
-    <li><a href="#general">Synopsis</a>
-    <li><a href="#examples">Brief examples of use</a>
     <li><a href="http://www.bmsc.washington.edu/raster3d/r3d_FAQ.html">FAQ
 	(Frequently Asked Questions)</a>
-    <li><a href="#hints">Suggestions for better pictures</a>
-    <li>Individual programs in the Raster3D package
+    <li><a href="#general">Synopsis</a>
+    <li><a href="#examples">Brief examples of use</a>
+    <li><a href="#source">Distribution site</a>
+    </ul>
+</td>
+<td>
+    <ul>
+    <li><a href="#related">Related programs</a>
+    <li><a href="#authors">Authors</a>
+    <li><a href="#cite">Citing the program</a>
+    <li><a href="#refs">References</a>
+    </ul>
+</td>
+</tr>
+
+<tr valign=top>
+<td>
+    <b>Individual programs in the Raster3D package</b>
 	<ul>
 	<li><a href="avs2ps.html">avs2ps</a>
 	<li><a href="balls.html">balls</a>
@@ -32,12 +58,40 @@ also render images composed using version 1.4 of
 	<li><a href="rods.html">rods</a>
 	<li><a href="stereo3d.html">stereo3d</a>
 	</ul>
-    <li><a href="#source">Distribution site</a>
-    <li><a href="#related">Related programs</a>
-    <li><a href="#authors">Authors</a>
-    <li><a href="#cite">Citing the program</a>
-    <li><a href="#refs">References</a>
+</td>
+<td>
+    <b>Hints for composing pictures</b>
+    <ul>
+    <li><a href="r3d_examples.html">
+	Illustrative examples from the Raster3D distribution</a>
+    <li><a href="r3d_hints.html#shadowing">
+	Shadowing</a>
+    <li><a href="r3d_hints.html#output device">
+	Tailoring your image to the output device</a>
+    <li><a href="r3d_hints.html#stereo1">
+	Side-by-side figures and stereo pairs</a>
+    <li><a href="r3d_hints.html#stereo2">
+	Stereo pairs and Molscript</a>
+    <li><a href="r3d_hints.html#colours">
+	Creating your own colour descriptions</a>
+    <li><a href="r3d_hints.html#composing">
+	Composing figures in other programs</a>
+    <li><a href="r3d_hints.html#matrix">
+	Coordinate systems</a>
+    <li><a href="r3d_hints.html#labels">
+	How can I keep the Molscript labels in my Raster3D picture?</a>
+    <li><a href="r3d_hints.html#black-white">
+	Black &amp White figures</a>
+    <li><a href="r3d_transparent.html">
+	Transparent surfaces</a>
+    <li><a href="r3d_animation.html">
+	Animation</a>
     </ul>
+</td>
+<tr>
+
+</table>
+
 <hr>
 
 <h4><a name="general">SYNOPSIS</a></h4>
@@ -122,9 +176,8 @@ grep ``FE'' protein.pdb | cat colorfile - | balls -h &gt; irons.r3d
 # 
 cat ribbon.r3d irons.r3d | render &gt; picture.x
 </listing>
-One can alternatively use Molscript Version 1.4 to produce a Raster3D 
-input file by using the -r switch. Raster3D is not able, however, to 
-render any labels specified by the Molscript input. Integrated use of
+One can alternatively use Molscript to produce a Raster3D 
+input file by using the -r switch. Integrated use of
 Molscript/Raster3D/ImageMagick allows one to describe, render, and view 3D
 representations of existing Molscript figures. 
 
@@ -153,32 +206,6 @@ PostScript image:
 render &lt; description.r3d | avs2ps &gt; picture.ps
 
 </listing>
-<h4>
-<a name="hints">SUGGESTIONS FOR BETTER PICTURES</a></h4>
-
-Topics covered:
-<ul>
-    <li><a href="r3d_hints.html#shadowing">
-	Shadowing</a>
-    <li><a href="r3d_hints.html#output device">
-	Tailoring your image to the output device</a>
-    <li><a href="r3d_hints.html#stereo1">
-	Side-by-side figures and stereo pairs</a>
-    <li><a href="r3d_hints.html#stereo2">
-	Stereo pairs and Molscript</a>
-    <li><a href="r3d_hints.html#colours">
-	Creating your own colour descriptions</a>
-    <li><a href="r3d_hints.html#composing">
-	Composing figures in other programs</a>
-    <li><a href="r3d_hints.html#matrix">
-	Building up a figure from Molscript and other files</a>
-    <li><a href="r3d_hints.html#labels">
-	How can I keep the Molscript labels in my Raster3D picture?</a>
-    <li><a href="r3d_hints.html#black-white">
-	Black &amp White figures</a>
-    <li><a href="r3d_transparent.html">
-	Transparent surfaces</a>
-</ul>
 
 <h4><a name="source">SOURCE</a></h4>
 <dl>
@@ -228,6 +255,12 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	Molscript web page at 
 	<a href="http://www.avatar.se/molscript">
 	http://www.avatar.se/molscript</a>.
+    <dt>ORTEX
+    <dd>ORTEX V7 (an interactive descendent of Carroll Johnson's ORTEP program) 
+	now supports Raster3D as an output mode. ORTEX runs under DOS/Windows, 
+	which makes this the only WIndows port of Raster3D that I know of. 
+	<a href="http://www.ucg.ie/cryst/software.htm">
+	http://www.ucg.ie/cryst/software.htm</a>
     <dt>TkRaster3D
     <dd> an X11-based front-end (GUI) for the Raster3D programs developed by 
 	Hillary Gilson at NIST, 

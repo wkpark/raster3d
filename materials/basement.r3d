@@ -1,0 +1,10 @@
+# basement.r3d (same as floor.r3d except that y coords are lower)
+#
+# Plane running underneath the center of the scene,
+# in transformation-free coordinates so that it can be mixed with
+# most existing scene descriptions.
+#
+15
+6
+-1.0 -0.1 -1.0   0.0 -4.0 3.0   1.0 -0.1 -1.0   0.0 0.1 1.0
+9

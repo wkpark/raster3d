@@ -1,6 +1,6 @@
-9  Here is an example of specifying a double-sided material
-9  The front is solid red, the back is solid blue matte
+#  Here is an example of specifying a double-sided material
+#  The front is solid red, the back is solid blue matte
 8
-  20. -1.    1.0 1.0 1.0   0.0   1 0 0 2
+  20. -1.    1.0 1.0 1.0   0.0   0 0 0 2
 SOLID    1.0 0.0 0.0
 BACKFACE 0.0 0.5 1.0   0 0

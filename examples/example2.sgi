@@ -1,3 +1,4 @@
+#!/bin/csh
 # E A Merritt March 1993
 # Illustration of composed figure using Raster3D
 # (assumes libimage support from 4DGifts distribution kit on SGI)
@@ -5,8 +6,6 @@
 # figure consists of E. coli enterotoxin (protein as spheres)
 # binding to GM1 pentasaccharide (sugars represented as rods)
 # protruding from cell membrane (plane)
-#
-rm -rf temp.tmp setup.matrix
 # 
 # Attach atom colouring to front of PDB file
 #

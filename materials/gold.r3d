@@ -1,4 +1,4 @@
-9  This material should look metallic (yellow highlights)
+# Gold (reddish base with yellow highlights)
 8
-  15.  0.6   1.0 0.8 0.0   0.0   1 0 0 1
-SOLID 0.9 0.2 0.2
+   5.  0.5   1.0 1.0 0.0   0.0   0 0 0 1
+SOLID 0.7 0.3 0.1

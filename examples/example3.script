@@ -1,3 +1,4 @@
+#!/bin/csh
 # E A Merritt March 1993
 # Illustration of simple figure using Raster3D
 # Assumes ImageMagick installed, if you are using the SGI libimage 

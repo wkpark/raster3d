@@ -11,8 +11,17 @@
 <hr>
 
 The most frequent question I get about Raster3D is "How can I get the labels
-from Molscript into my Raster3D picture?".  It actually <i>is</i> possible to do
-this, but frankly I think it's more effort than the result is worth. 
+from Molscript into my Raster3D picture?".  
+There is now a very easy answer - <i>"Install Molscript Version 2!"</i>
+The newer Molscript version (available via the web from
+<a href="http://www.avatar.se/molscript">http://www.avatar.se/molscript</a>
+draws labels in such a way that they will simply appear in your Raster3D
+image along with everything else.
+<p>
+The rest of this information is therefore now obsolete, at least with regard 
+to Molscript. It may, however, be useful as an example of how to mix 
+PostScript and Raster3D processing.  Generally this requires more effort than
+the result is worth.
 I recommend simply labelling your Raster3D output image using an interactive
 annotation tool on a workstation screen (e.g. the annotate mode of 
 ImageMagick's display program).  However, for anyone bound and determined to
@@ -28,16 +37,7 @@ file for the render program which describes this image size; e.g.
 	My new picture with no anti-aliasing
 	 45 30     NTX,NTY number of tiles in x, y
 	 20 20     NPX,NPY number of pixels per tile
-	     1     anti-aliasing scheme 1 (none)
-	 0 0 0     black background
-	(etc...)
-</pre>
-or
-<pre>
-	My new picture with anti-aliasing
-	 45 30     NTX,NTY number of tiles in x, y
-	 30 30     NPX,NPY number of pixels per tile
-	     3     anti-aliasing scheme 3 (3x3 becomes 2x2)
+	     1     anti-aliasing scheme 1 (none) or 4 (smoothed)
 	 0 0 0     black background
 	(etc...)
 </pre>
@@ -95,7 +95,7 @@ dependent, however. I'll now convert it back to a TIFF file.
 As you see, this is a rather lengthy procedure.  Furthermore, the label
 positioning will be slightly off compared to the pure PostScript version
 because Raster3D and Molscript treat perspective differently. As I say,
-I prefer to just type the labels in interactively so that I can see where
+I prefer to just type in the labels interactively so that I can see where
 they are going.
 
 </ol>

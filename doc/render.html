@@ -21,9 +21,10 @@ object descriptors. The objects are rendered using a fast Z-buffer algorithm to
 produce a high quality pixel image which contains two light sources, specular
 highlighting, Phong shaded surfaces, and shadows. Output is to stdout [or
 optional file] in the form of a pixel image with 24 bits of color information
-per pixel. The default output file format is an AVS image file. Support for
-TIFF or SGI libimage image files may be optionally included during installation
-of the Raster3D package.<p>
+per pixel. The default output file format is an AVS image sent to stdout. 
+Support for TIFF or SGI libimage image files may be optionally included 
+during installation of the Raster3D package.
+<p>
 There are several utility programs that will create all or part of an acceptable
 input file by reading atomic coordinates from a Brookhaven PDB file. These
 include 
@@ -162,7 +163,7 @@ generated background, use scheme 0 (matting and anti-aliasing do not mix well).
 	output pixel 
     <dt> Scheme 3
     <dd> anti-alias by averaging 3x3 computing pixels for each
-	2x2 output pixels
+	2x2 output pixels (obsolete - use scheme 4 instead)
     <dt> Scheme 4
     <dd> anti-alias as in scheme 3, but header specifies <i>final</i> 
 	raster size rather than <i>computing</i> raster size
@@ -306,8 +307,8 @@ F 	  no shadows cast
      highlighting in the header records, allowing some objects to have
      different surface properties from the rest. The specified values will
      apply to all subsequent objects until an object of type 9 is
-     encountered. The parameters are read in free format from the following
-     line:
+     encountered. The parameters are read in free format from the next
+     line of the input stream:
      <dl>
      <dt> MPHONG
 	<dd>override global Phong parameter for specular highlighting
@@ -351,15 +352,15 @@ F 	  no shadows cast
 	side:
 
 <listing>
-9 Here is an example of specifying a double sided material
-9 The MATERIAL record itself specifies an opaque material with PHONG
-9 value to 25 and specular parameters taken from the header records,
-9 and says that there are two following modifer lines.
-9 The SOLID modifier gives an RGB color triple that over-rides colors on
-9 subsequent objects.
-9 The BACKFACE modifier specifies a separate RGB color for the other side 
-9 of this material, and sets the Phong control parameter and specular
-9 component of this surface to zero (i.e. it's a matte blue surface).
+# Here is an example of specifying a double sided material
+# The MATERIAL record itself specifies an opaque material with PHONG
+# value to 25 and specular parameters taken from the header records,
+# and says that there are two following modifer lines.
+# The SOLID modifier gives an RGB color triple that over-rides colors on
+# subsequent objects.
+# The BACKFACE modifier specifies a separate RGB color for the other side 
+# of this material, and sets the Phong control parameter and specular
+# component of this surface to zero (i.e. it's a matte blue surface).
 8
 20. -1.   1. 1. 1.   0.0    0 0 0 2
 SOLID     1.0 0.0 0.0
@@ -462,6 +463,37 @@ limiting radius are not rendered.
      objects until an object of type 9 is encountered.
      <p>
 
+<dt> Object type 16
+<dt><font color=#BB2222>Global properties</font>
+<dd> Object type 16 is always followed by a single record that affects the rendering
+    of the entire scene. The only global property supported at the moment is
+    FOG, which allows depth-cueing using either a linear or an exponential
+    model of fog density. A record simply consisting of the keyword FOG will
+    produce reasonable depth-cueing (linear decrease in intensity front closest
+    object to farthest object). If you need to control the depth-cueing indepently
+    from the specific rendered objects in a scene (i.e. to keep the depth-cueing
+    consistent between frames of an animation) then you should specify explicit
+    values for fogfront, fogback and fogden.
+    <p>
+<pre>FOG fogtype fogfront fogback fogden</pre>
+	<DL>
+	<DT>fogtype</DT>
+	<DD>0 = linear multiplier = fogden * (fogfront - Z) / (fogfront - fogback)</DD>
+	<DD>1 = exponential multiplier = 1. - exp( -fogden * (fogfront - Z) / (fogfront - fogback) )</DD>
+	
+	<DT>fogfront</DT>
+	<DD>0 = Z coord of front object, else fraction of front clipping plane</DD>
+	<DT>fogback</DT>
+	<DD>0 = Z coord of back object, else fraction of rear clipping plane</DD>
+	
+	<DT>fogden</DT>
+	<DD>(see equations for linear and exponential models controlled by fogtype);
+	    fogden=0.0 will default to some reasonable value</DD>
+	
+	</DL>
+    <p>
+
+
 <dt> Object type 17	
 <dt><font color=#BB2222>explicit coloring at vertices of preceding triangle</font>
 <dd> R1 G1 B1   R2 G2 B2   R3 G3 B3
@@ -501,6 +533,15 @@ bounding planes or standard definitions of material properties. When
 input from this level of file indirection is terminated by encountering
 an object descriptor of type 0, control returns to the previous input
 stream. Multiple levels of file indirection are possible.
+<p>
+The requested file is first searched for relative to the current directory.
+If this search fails, the file is searched for relative to the directory
+specified by the environmental variable R3D_LIB.
+Typically this would be set via a command such as
+<pre>
+	setenv R3D_LIB /usr/local/src/raster3d/materials
+</pre>
+
 
 <h4>
 <a name="sample_data">
@@ -527,7 +568,7 @@ material1.r3d
 <dl>
 <dt><b><i>Possible shadowing error NSXMAX = xxx </i></b>
     <dd>
-    This is most usually caused by an object which projects far out of
+    This is usually caused by an object which extends far out of
     the field of view, for example a plane surface. In most cases the
     shadowing "error" refers to a shadow which lies outside of the image
     entirely.  However, if your image does in fact contain missing or

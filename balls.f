@@ -173,16 +173,17 @@ c
      &       '0 0 1 0'/
      &       4F10.3)
 	WRITE(OUTPUT,'(A)') '3         mixed object types'
-	WRITE(OUTPUT,'(A)') '(9F8.3,2x,3f5.2)'
-	WRITE(OUTPUT,'(A)') '(11F8.3)'
-	WRITE(OUTPUT,'(A)') '(11F8.3)'
+	WRITE(OUTPUT,'(A)') '*'
+	WRITE(OUTPUT,'(A)') '*'
+	WRITE(OUTPUT,'(A)') '*'
       end if
 c
       DO 150 IATM=1,NATM
 	SPAM(1,IATM) = SPAM(1,IATM) + postrn(1)
 	SPAM(2,IATM) = SPAM(2,IATM) + postrn(2)
 	SPAM(3,IATM) = SPAM(3,IATM) + postrn(3)
-        WRITE(OUTPUT,'(1H2,/,7F8.3)') (SPAM(I,IATM),I=1,7)
+        WRITE(OUTPUT,140) (SPAM(I,IATM),I=1,7)
+140   FORMAT(1H2,/,7(1X,F8.3))
 150   CONTINUE
 	write (noise,'(/)')
 	write (noise,156) 'X  min max:', XMIN, XMAX

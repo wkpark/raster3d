@@ -32,7 +32,7 @@ FFLAGS   = -O
 INCLUDES =	-I/usr/include
 
 RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
-PROGS    =	balls rastep rods ribbon render setup avs2ps normal3d
+PROGS    =	balls rastep rods ribbon render avs2ps normal3d
 
 all:	$(PROGS)
 
@@ -73,17 +73,20 @@ render_jpeg: render.o local_jpeg.o quadric.o
 	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
 	-ljpeg -o render_jpeg
 
-normal3d: normal3d.f quadric.o
+normal3d: normal3d.f.bak normal3d.f quadric.o
+	$(FC) $(FFLAGS) normal3d.f quadric.o -o normal3d
+
+normal3d.f.bak:
 	mv normal3d.f normal3d.f.bak
 	grep -v CARRIAGECONTROL normal3d.f.bak > normal3d.f
-	$(FC) $(FFLAGS) normal3d.f quadric.o -o normal3d
 
 avs2ps:	avs2ps.c
 	$(CC) $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm
 
-setup:	balls
-	ln -s balls setup
 
-rastep: rastep.f quadric.o
+rastep: rastep.f.bak rastep.f quadric.o
 	$(FC) $(FFLAGS) rastep.f quadric.o -o rastep
 
+rastep.f.bak:
+	mv rastep.f rastep.f.bak
+	grep -v CARRIAGECONTROL rastep.f.bak > rastep.f

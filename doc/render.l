@@ -109,9 +109,14 @@ computation.
    in output image
  1 no anti-alaising, no matte channel
  2 anti-alias by averaging 2x2 block of computed pixels for 
-   each output pixel
+   each output pixel. Resulting image dimensions are 1/2 of
+   the nominal requested size.
  3 anti-alias by averaging 3x3 block of computed pixels for 
-   each 2x2 block of output pixels
+   each 2x2 block of output pixels. Resulting image 
+   dimensions are 2/3 of the nominal requested size.
+   (obsolete - use scheme 4 instead)
+ 4 anti-alias as in scheme 3, but output image dimensions
+   are exactly as requested.
 
 I.e. schemes 0, 1, and 4 produce a NTX*NPX by NTY*NPY pixel image;
 scheme 3 produces a (2/3)NTX*NPX by (2/3)NTY*NPY image.
@@ -191,6 +196,7 @@ The Raster3D programs always use mode INMODE 3.
  type 1 = triangle
  type 2 = sphere
  type 3 = round-ended cylinder
+ type 4   (not used)
  type 5 = flat-ended cylinder
  type 6 = plane (triangle with infinite extent)
  type 7 = explicit normals at vertices of previous triangle
@@ -199,7 +205,9 @@ The Raster3D programs always use mode INMODE 3.
 	  otherwise ignored, so remainder of line may act as a comment
  type 10/11/12 = reserved for label processing
  type 13 = glow light source
+ type 14 = quadric surface
  type 15 = do not apply TMAT transformation to subsequent objects (new in V2.4)
+ type 16 = global rendering properties
  type 17 = explicit colors for vertices of preceding triangle (new in V2.4)
  type 0 = end of input file
 .TP 5 
@@ -223,25 +231,20 @@ Parameters are read in the order
       x1, y1, z1, R1, x2, y2, z2, R2, red, green, blue.
       (R1 is the cylinder radius, R2 is currently ignored).
 
-.TP 5
-.B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.1
-.PP
-Version 2.1 of Raster3D added support for a few new object types.
-These are intended to provide additional flexibility in adapting other
-molecular graphics tools to compose figures for Raster3D to render.
-
   Object type 7
-    Explicit vertex normals for preceeding triangle object. This object 
-    must directly follow the triangle object, and uses the same format.
-    The intended use of this object type is to allow rendering of
-    arbitrary molecular surfaces.
+    Explicit vertex normals for preceeding triangle object. This 
+    object must directly follow the triangle object, and uses the 
+    same format.  The intended use of this object type is to allow 
+    rendering of arbitrary molecular surfaces.
+
   Object type 8
     Material properties. These values override the specification of
     lighting and specular highlighting in the header records, allowing
     some objects to have different surface properties from the rest.
     The specified values will apply to all subsequent objects until
     an object of type 9 is encountered.  The parameters are read as
-    free format floating point numbers from the following line:
+    free format floating point numbers from the next line of the
+    input stream:
         MPHONG - override global Phong power for specular highlighting
         MSPEC  - override global specular scattering contribution
         SR,SG,SB - RGB triple specifying color of reflected light
@@ -254,15 +257,13 @@ molecular graphics tools to compose figures for Raster3D to render.
         OPTS(4) - four additional fields are reserved for future 
                 expansion of the material properties list; as of now
                 these must be present, but are ignored.
+
   Object type 9
     Terminates previous set of special material properties.
     The rest of this record is ignored, so object type 9 may also
     be used as a comment record. It is preferable, however, to use
     the initial character '#' on comment lines.
 
-.TP 5
-.B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.3
-.PP
 Version 2.3 of Raster3D introduces preliminary support for labels in a
 render input file. The current version recognizes object types 10/11/12
 as labels, but otherwise ignores them.
@@ -274,6 +275,8 @@ as labels, but otherwise ignores them.
     Label text
   Object type 12
     reserved (single line of text)
+
+
   Object type 13
     Glow light source.
     This is a colored, non-shadowing, light source with finite [x y z]
@@ -295,25 +298,24 @@ as labels, but otherwise ignores them.
        GLOWCOL(3) 
            RGB triple specifying color of glow light source  
 
-.TP 5
-.B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.4
-.PP
 
   Object type 14
     quadric surface
     x, y, z, limiting_radius, red, green, blue, A, B, C, D, E, F, G, H, I, J 
-    Quadric surfaces include spheres, cones, ellipsoids, paraboloids, and
-    hyperboloids. The motivation for this code was to allow rendering
-    thermal ellipsoids for atoms, so the other shapes have not been
-    extensively tested. A quadric surface is described by 10 parameters 
-    (A...J). Although these parameters are sufficient to describe a quadric
-    surface located anywhere, for efficiency during rendering it is also
-    useful to know the center and a bounding sphere. So by convention we
-    require that (A...J) describe a surface centered at the origin, and add
-    additional parameters x, y, z to add a translation component. Therefore
+    Quadric surfaces include spheres, cones, ellipsoids, paraboloids, 
+    and hyperboloids. The motivation for this code was to allow 
+    rendering thermal ellipsoids for atoms, so the other shapes have 
+    not been extensively tested. A quadric surface is described by 
+    10 parameters (A...J). Although these parameters are sufficient 
+    to describe a quadric surface located anywhere, for efficiency 
+    during rendering it is also useful to know the center and a 
+    bounding sphere. So by convention we require that (A...J) describe 
+    a surface centered at the origin, and add additional parameters 
+    x, y, z to add a translation component. Therefore
     a QUADRIC descriptor to render has the 17 parameters listed above.
 
-    The surface itself is the set of points for which Q(x,y,z) = 0 where
+    The surface itself is the set of points for which Q(x,y,z) = 0 
+    where
     Q(x,y,z) = Ax2 + By2 + Cz2 + 2Dxy + 2Eyz + 2Fzx + 2Gx + 2Hy + 2Iz + J 
     Points further from the origin (prior to translation!) than the
     limiting radius are not rendered. 
@@ -325,18 +327,27 @@ as labels, but otherwise ignores them.
     extent in X, Y, and Z. The rotation and translation described by the 
     TMAT matrix is not applied. This isolation from TMAT applies to 
     subsequent objects until an object of type 9 is encountered. 
-    
+
+  Object type 16
+    Object type 16 is always followed by a single record that affects
+    the rendering of the entire scene. The only global property 
+    supported at the moment is FOG, which allows depth-cueing using 
+    either a linear or an exponential model. A record simply containing
+    the keyword FOG will select a default simple linear depth-cueing 
+    model. For additional parameters, see the HTML or PostScript manual.
+
   Object type 17
-    Explicit colors for vertices of preceding triangle (R1G1B1 R2G2B2 R3G3B3).
-    Normally a triangle is colored uniformly in the color specified by the
-    RGB triple in the TRIANGLE record itself. Using this additional object,
-    however, you can specify a separate color for each vertex of the
-    triangle. Points in the interior of the triangle are colored by
-    interpolation using the vertex colors.  This is commonly used in
-    conjunction with explicit vertex normals (object type 7) to describe a
-    smooth surface in terms of a triangular mesh. In this case the 
-    component triangles of the surface are described by three successive 
-    objects of types 1, 7, and 17. 
+    Explicit colors for vertices of preceding triangle 
+    (R1G1B1 R2G2B2 R3G3B3).
+    Normally a triangle is colored uniformly in the color specified 
+    by the RGB triple in the TRIANGLE record itself. Using this 
+    additional object, however, you can specify a separate color for 
+    each vertex of the triangle. Points in the interior of the 
+    triangle are colored by interpolation using the vertex colors.  
+    This is commonly used in conjunction with explicit vertex normals 
+    (object type 7) to describe a smooth surface in terms of a 
+    triangular mesh. In this case the component triangles of the surface
+    are described by three successive objects of types 1, 7, and 17. 
     (The ordering 1, 17, 7 is also acceptable).
 
 .TP 5
@@ -375,8 +386,11 @@ it possible to re-use standard objects in multiple rendered scenes, e.g.
 a set of bounding planes or standard definitions of material properties.
 When input from this level of file indirection is terminated by
 encountering an object descriptor of type 0, control returns to the
-previous input stream. Multiple levels of file indirection are possible,
-but probably not very useful.
+previous input stream. Multiple levels of file indirection are possible.
+
+Files are first searched for in the current directory. If this search
+fails, they are sought relative to the library directory specified by
+the environmental variable R3D_LIB.
 
 .SH ERROR MESSAGES
 .PP

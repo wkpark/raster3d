@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.4b
+ * Raster3D V2.4g
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -21,6 +21,9 @@
 
 #include	<jpeglib.h>
 #include	<jerror.h>
+#ifdef BROKEN_LIBJPEG
+#undef jpeg_create_compress
+#endif
 
 /* Define bits in returned status */
 #define		ANTIALIAS	007
@@ -37,7 +40,7 @@ int or(i,j)  int *i,*j; {return (*i | *j);}
 #endif
 
 int		alpha_channel = 0;
-char *version = "Raster3D V2.4b\n" ;
+char *version = "Raster3D V2.4g\n" ;
 
 /* JPEG data structures */
   struct jpeg_compress_struct	cinfo;

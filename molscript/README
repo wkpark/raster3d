@@ -1,3 +1,14 @@
+NB: 
+    These patches are specifically for Molscript version 1.4
+    They are not at all necessary for Molscript version 2.0,
+    and you are almost certainly better off just getting the
+    newer Molscript version than trying to patch an older one.
+
+			Ethan A Merritt 
+			October 1998
+
+=========================================================================
+
 To use Molscript as an input driver for Raster3D you first need to
 obtain a copy of Molscript version 1.4 from Per Kraulis.  
 Earlier versions of Molscript supported only a very limited interface to
@@ -65,10 +76,6 @@ Step by step instructions:
 
 =============================================================================
 
-NB: These patches are specifically for Molscript version 1.4, if you have 
-an earlier version you will need to update it to 1.4 before doing
-anything else. Hopefully this code will make its way into some subsequent 
-version of Molscript so that patching is not necessary.
 
 				Ethan A Merritt
 				August 1996

@@ -1,26 +1,47 @@
 #
-# Raster3D makefile for SGI under Irix 6.x (native 64-bit mode)
+# Raster3D makefile for SGI under Irix 6.x
 #
-LDFLAGS =
-CFLAGS  = -g
-FC	= f77
+
 #
-# If you want to build backward compatible 32-bit images (will run under
-# Irix 5.x), uncomment the following line.
-#FFLAGS  = -n32 -g -static -w1
+# The Irix compiler commands are a mess.
+# The different architectures and Irix versions all want 
+# different compiler invocations. 
+# You must check that 
+# 	CC, FC, FFLAGS, FOPTS, LIBS, and INCLUDES 
+# are correctly defined for your machine.
+
+
+# 64-bit architectures
+# CC	= cc  -n64 -g -w
+# FC	= f77 -n64
+
+# 32-bit architectures
+CC	= cc  -n32 -g -w
+FC	= f77 -n32 -L/usr/lib32
+
 #
 # You may be able to raise the optimization level (try -O instead of -g)
-# but under Irix 6.1 this produces improper code for ribbon and rastep
+# but under Irix 6.1 this produces improper code for ribbon and rastep.
+# But you probably needn't bother -
+# FFLAGS is not used for building render, which is the only
+# part of the package that really benefits from optimization.
 # 
-FFLAGS   = -g
+F77	= $(FC)
+FFLAGS	= -g
+
 # 
 # These are otimizations recommended for render by the compiler on my
-# test machine. Yours might vary.  Render really benefits from optimization, 
-# so try to get this right.
-# The following line was correct for Irix 6.1
-# FOPTS = -O -OPT:fprop_limit=999:const_copy_limit=12121
-# The following line is correct for Irix 6.4
-FOPTS = -O -OPT:Olimit=3000
+# test machines. Yours might vary.  
+# Render really benefits from optimization, so try to get this right.
+
+# The following line worked for me under Irix 6.1
+# FOPTS = -O -OPT:fprop_limit=1096:const_copy_limit=13000
+
+# The following line worked for me under Irix 6.2
+FOPTS = -O -OPT:Olimit=3200
+
+# The following line worked for me under Irix 6.4
+# FOPTS = -O -OPT:Olimit=3200
 
 #
 # If you build Raster3D to use the Iris imagetools output format
@@ -34,15 +55,26 @@ FOPTS = -O -OPT:Olimit=3000
 # The TIFF_INVERT option is a work-around for broken programs
 # (e.g. PhotoShop) that don't properly read the TIFF header.
 #
-#DEFINES = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT
+# At least some distributions of Irix have incompatible versions of
+# libjpeg.h and libjpeg.so
+# If you get error messages while linking render_jpeg complaining about
+# missing objects jpeg_CreateCompress, then add the BROKEN_LIBJPEG
+# definition as in the line below.
+#
+#DEFINES = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT -DBROKEN_LIBJPEG
 #LIBS    = -limage -ltiff
+#INCLUDES = -I/usr/local/include/
 #
 DEFINES  = -DLIBIMAGE_SUPPORT
-LIBS     = -limage
-#INCLUDES = -I/usr/local/include/
+LIBS     =  -limage
+
+#
+# You shouldn't have to change anything below this line
+#
+LDFLAGS = 
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS =		balls normal3d rastep rods ribbon render setup avs2ps
+PROGS =		balls normal3d rastep rods ribbon render avs2ps
 
 all:	$(PROGS)
 
@@ -52,6 +84,7 @@ clean:
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
+	cp stereo3d /usr/local/bin
 
 tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
@@ -67,7 +100,7 @@ ribbon:	$(RIBOBJS)
 	$(FC) $(RIBOBJS) -o ribbon
 
 local.o: local.c
-	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+	$(CC) $(INCLUDES) $(DEFINES) -c local.c
 
 render.o: render.f
 	$(FC) $(FOPTS) -c render.f
@@ -77,7 +110,7 @@ render:	render.o local.o quadric.o
 	$(LIBS) -o render $(LDFLAGS)
 
 local_jpeg.o: local_jpeg.c
-	cc -g $(INCLUDES) $(DEFINES) -c local_jpeg.c
+	$(CC) $(INCLUDES) $(DEFINES) -c local_jpeg.c
 
 render_jpeg: render.o local_jpeg.o quadric.o
 	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
@@ -86,5 +119,3 @@ render_jpeg: render.o local_jpeg.o quadric.o
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps
 
-setup:	balls
-	ln -s balls setup

@@ -3,7 +3,7 @@
 *
 * Usage: 
 *    rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob xx] [-radius r] [-fancy[0-9]]
-*           [-tabulate histogram.file]
+*           [-tabulate histogram.file] [-by_atomtype]
 *
 *
 *	-h		suppresses header records in output
@@ -26,11 +26,15 @@
 *			Optionally write a histogram of anisotropy to speficied 
 *			output file; otherwise output is to stderr 
 *
+* The following options are under development
+*	-com [file]	find <anisotropy> in shells from center of mass
+*
 ********************************************************************************
 *
 * EAM Jul 97	- initial version
 * EAM Dec 97	- version 2.4b release
 * EAM Jan 98	- add tabulation option
+* EAM May 98	- integrate with PARVATI script
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
@@ -41,8 +45,9 @@
       real center(3)
       CHARACTER*24 MASK(MAXCOL),TEST
       CHARACTER*80 ATOM(MAXATM),CARD
+      character*3  resname
       LOGICAL MATCH
-      logical		hflag, ellipses, bcflag, tflag
+      logical		hflag, ellipses, bcflag, tflag, atflag, comflag
       integer           fancy
       character*80	flags
 c
@@ -63,10 +68,19 @@ c
       real MARGIN
       parameter (MARGIN = 1.15)
 c
-      real	Uprin(3), Utemp, Usigma, anisotropy, ellipticity
+      real	Uprin(3), Umean, Usigma, anisotropy, ellipticity
       integer	histogram(20), hislun
-      real	anisi(MAXATM), sum_a, sum_d2, anis_mean, anis_sigma
+      real	anisi(MAXATM), sum_a, sum_a2, anis_mean, anis_sigma
+      real	sum_b, sum_b2, sum_ab
       integer	nanis, niso
+c
+      character*2 atomtype
+      integer     natype
+c
+      real*8	wsum, xsum, ysum, zsum
+      real*8	xcom, ycom, zcom
+      real	adist(110)
+      integer	hdist(100), comlun, dshells
 c
 c     Default to CPK colors and VDW radii
       character*60 defcol(7)
@@ -103,6 +117,8 @@ c
 	hflag    = .false.
 	bcflag   = .false.
 	tflag    = .false.
+	atflag   = .false.
+	comflag  = .false.
 	ellipses = .true.
 	fancy    = 0
 	prob     = 0.50
@@ -111,6 +127,7 @@ c
 	i = 1
     5	continue
 	    call getarg( i, flags )
+	    if (flags(1:5) .eq. '-help') goto 701
 	    if (flags(1:6) .eq. '-debug') verbose = .true.
 	    if (flags(1:2) .eq. '-h') hflag = .true.
 	    if (flags(1:4) .eq. '-iso') ellipses = .false.
@@ -161,28 +178,45 @@ c
 	    	hflag  = .true.
 		bcflag = .false.
 		fancy  = 0
-C
-C EAM - Needs error checks all over the place!!!!
-C
+		do j=1,MAXATM
+		    anisi(j) = 0.0
+		end do
 		hislun = NOISE
 		if (i.ge.narg) goto 799
 		call getarg(i+1,flags)
-		if (flags(1:1) .eq. '-') goto 799
-		hislun = 1
-		open(unit=hislun,file=flags,status='UNKNOWN'
-     &               ,carriagecontrol='LIST'
+		if (flags(1:1) .ne. '-') then
+		    hislun = 1
+		    open(unit=hislun,file=flags,status='UNKNOWN'
+     &			, CARRIAGECONTROL='LIST'
      &              )
-		do i=1,MAXATM
-		    anisi(i) = 0.0
-		end do
-		goto 799
+		endif
 	    endif
+	    if (flags(1:4) .eq. '-com') then
+		comflag = .true.
+		if (i.ge.narg) goto 799
+		call getarg(i+1,flags)
+		comlun = NOISE
+		call getarg(i+1,flags)
+		if (flags(1:1) .ne. '-') then
+		    comlun = 2
+		    open(unit=comlun,file=flags,status='UNKNOWN'
+     &			, CARRIAGECONTROL='LIST'
+     &              )
+		endif
+	    endif
+	    if (flags(1:8) .eq. '-by_atom') then
+		atflag = .true. 
+	    endif
+c
 	i = i + 1
 	if (i.le.narg) goto 5
 	goto 799
-  701	write (noise,'(A,A)')
-     &	'syntax: rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob Plevel]',
-     &  ' [-fancy[0-3]]'
+  701	write (noise,'(A)')
+     &	'syntax: rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob Plevel]'
+	write (noise,'(A)')
+     &  ' [-fancy[0-3]] [-radius R]'
+	write (noise,'(A,A)')
+     &  ' [-tabulate [tabfile]] [-by_atomtype]'
 	call exit(-1)
   799	continue
 
@@ -196,8 +230,8 @@ c Table 6.1 of the ORTEP manual
 c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
-     &                  'V2.4f'
-	write (noise,*) 'E A Merritt - May 1998'
+     &                  'V2.4i'
+	write (noise,*) 'E A Merritt - 15 Oct 1998'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -223,7 +257,7 @@ c
 c
       if (.not. hflag) then
 	WRITE(OUTPUT,'(A,I5,A)') 
-     &     'Raster3D thermal ellipsoid program V2.4f',
+     &     'Raster3D thermal ellipsoid program V2.4i',
      &     INT(prob*100.+0.5), '% probability bounds'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
@@ -298,6 +332,23 @@ c
         CARD = ATOM(IATM)
 	IF (CARD(1:4).NE.'ATOM' .AND. CARD(1:4).NE.'HETA') 
      &     GOTO 100
+c
+c	Do a little pre-processing to make later bookkeeping easier
+c	At least screen out non-conformant PDB files that contain
+c	something obviously not an element type in columns 77:78
+     	if (atflag) then
+	    resname = card(18:20)
+c	    if (resname.eq.'MET' .and. card(14:15).eq.'SD') then
+c	    	atom(iatm)(77:78) = 'SD'
+c	    end if
+	    if ( resname.eq.'HOH' .or. resname.eq.'H2O'
+     &	    .or. resname.eq.'WAT') then
+     		atom(iatm)(77:78) = 'OW'
+	    end if
+	    if (atom(iatm)(78:78).ge.'0' .and. atom(iatm)(78:78).le.'9')
+     &		atom(iatm)(77:78) = '  '
+	end if
+c
         TEST = CARD(7:30)
         DO 80 ICOL=1,NCOL
           IF (MATCH(TEST,MASK(ICOL))) THEN
@@ -315,6 +366,15 @@ c
             YMIN = MIN(YMIN,Y-RAD)
             ZMAX = MAX(ZMAX,Z+RAD)
             ZMIN = MIN(ZMIN,Z-RAD)
+c	    atomtype = CARD(77:78)
+c	    if (atomtype.ne.'  ') then
+c		weight = amass(atomtype)
+c	    else
+		weight = 13.4
+	    wsum = wsum + weight
+	    xsum = xsum + weight * X
+	    ysum = ysum + weight * Y
+	    zsum = zsum + weight * Z
             GO TO 100
           ENDIF
 80      CONTINUE
@@ -328,6 +388,9 @@ c
       TX = -XMID
       TY = -YMID
       TZ = -ZMID
+      xcom = xsum / wsum
+      ycom = ysum / wsum
+      zcom = zsum / wsum
       IF (ASPECT.GE.1.) THEN
 *       The X direction is wider than the Y
         XROOM = ASPECT
@@ -344,7 +407,14 @@ c
       SCALE = MAX(XSPAN/XROOM,YSPAN/YROOM,ZSPAN/ZROOM)
 *     Leave a little extra room as a border:
       SCALE = SCALE / 0.90
-c
+*     
+*     These are for the center-of-mass table
+      DMAX  = MAX( ABS(XMAX-XCOM), ABS(XMIN-XCOM) )**2
+     &      + MAX( ABS(YMAX-YCOM), ABS(YMIN-YCOM) )**2
+     &      + MAX( ABS(ZMAX-ZCOM), ABS(ZMIN-ZCOM) )**2
+      DMAX  = SQRT(DMAX)
+      dshells = 100
+*
       if (.not. hflag) then
 	WRITE(OUTPUT,120) TX,TY,TZ,SCALE
 120	FORMAT('1 0 0 0   input co-ordinate + radius transformation'/
@@ -357,7 +427,8 @@ c
 	WRITE(OUTPUT,'(A)') '*'
       end if
       if (.not. tflag) then
-	WRITE(OUTPUT,'(A)') '# Thermal ellipsoids from Rastep Version 2.4f'
+	WRITE(OUTPUT,'(A)') 
+     &	      '# Thermal ellipsoids from Rastep Version 2.4i'
 	WRITE(OUTPUT,'(A,F5.2)') '# Probability level',float(iprob)/50.
       end if
 c
@@ -386,13 +457,14 @@ c
 	    BLUE  = RGB(3,ICOL)
 	endif
 	IF (ellipses .and.(ATOM(IATM+1)(1:6).EQ.'ANISOU')) THEN
-	    read (atom(iatm+1)(31:80),*) (anisou(i),i=1,6)
+	    read (atom(iatm+1)(29:70),*) (anisou(i),i=1,6)
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
-	    if (anitoquad(anisou, pradius, quadric, eigens, evecs).lt.0) then
-	        write (noise,*) '*** Non-positive definite ellipsoid - ',
-     &				atom(iatm+1)(13:26)
+	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
+	        write(noise,*) '*** Non-positive definite ellipsoid - ',
+     &				atom(iatm+1)(13:27)
+		goto 138
 	    endif
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
 	    radlim = radlim * MARGIN
@@ -416,32 +488,33 @@ c	Tabulate principal axes of ellipsoid for each atom
 	    	Uprin(i) = eigens(i)**2
 	    enddo
 	    if (Uprin(2).gt.Uprin(1)) then
-	    	Utemp    = Uprin(1)
+	    	Umean    = Uprin(1)
 		Uprin(1) = Uprin(2)
-		Uprin(2) = Utemp
+		Uprin(2) = Umean
 	    endif
 	    if (Uprin(3).gt.Uprin(1)) then
-	    	Utemp    = Uprin(1)
+	    	Umean    = Uprin(1)
 		Uprin(1) = Uprin(3)
-		Uprin(3) = Utemp
+		Uprin(3) = Umean
 	    endif
 	    if (Uprin(3).gt.Uprin(2)) then
-	    	Utemp    = Uprin(2)
+	    	Umean    = Uprin(2)
 		Uprin(2) = Uprin(3)
-		Uprin(3) = Utemp
+		Uprin(3) = Umean
 	    endif
 c
 c	  Anisotropy we define as Umin / Umax
 c	  as in shelxpro output
 	    anisotropy  = min(Uprin(1),Uprin(2),Uprin(3))
      &                  / max(Uprin(1),Uprin(2),Uprin(3))
-	    anisi(iatm) = anisotropy
 c
 c	  But don't count atoms which are perfectly isotropic
 	    if (anisotropy .eq. 1.0) then
 	    	niso  = niso + 1
 	    else
-	    	sum_a = sum_a + anisotropy
+	    	anisi(iatm) = anisotropy
+	    	sum_A = sum_A + anisotropy
+		sum_B = sum_B + SPAM(4,iatm)
 	    	nanis = nanis + 1
 	    end if
 c
@@ -454,30 +527,61 @@ c	  Ellipticity we define as 1 / anisotropy
 c
 c	  Longhi et al (1997) JMB 268, 779-799.
 c	  proposed another measure A = sigU / meanU
-	    Utemp  = (Uprin(1) + Uprin(2) + Uprin(3)) / 3.0
-	    Usigma = (Uprin(1)-Utemp)**2 
-     &		   + (Uprin(2)-Utemp)**2 + (Uprin(3)-Utemp)**2
-	    alonghi = Usigma / Utemp
+	    Umean  = (Uprin(1) + Uprin(2) + Uprin(3)) / 3.0
+	    Usigma = (Uprin(1)-Umean)**2 
+     &		   + (Uprin(2)-Umean)**2 + (Uprin(3)-Umean)**2
+	    Usigma = sqrt( Usigma ) / 3.0
+	    alonghi = Usigma / Umean
 c
 c	  Might want to check correlation with Uiso
 	    Uiso = SPAM(4,iatm)
 c
-c	  Cosmetic change to atom identifier for the sake of sorting
-	    do i = 15,18
+c	  Cosmetic changes to atom identifier for the sake of sorting
+c	  We will force there to be exactly three entities printed.
+c	  PDB format is just a mess:
+c	  cols 13:16	atom
+c	  col     17	alternate conf
+c	  cols 18:20	residue
+c	  col     22	chain
+c	  cols 23:27	resnum
+c
+	    do i = 16, 13, -1
+		if (ATOM(iatm)(i:i) .ne. ' ') j = i
+	    enddo
+	    do i = 13, 17
+		if (ATOM(iatm)(i:i) .ne. ' ') k = i
+	    enddo
+	    do i = j, k
 		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
 	    enddo
+c	    if (ATOM(iatm)(17:17) .ne. ' ') then
+c	      do i = 18,19
+c		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
+c	      enddo
+c	    endif
 	    if (ATOM(iatm)(22:22) .ne. ' ') then
 	      do i = 23,25
 		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
 	      enddo
 	    endif
-	    write (output,905) ATOM(iatm)(14:26),
+	    write (output,905) ATOM(iatm)(13:17),ATOM(iatm)(18:27),
      &            Uprin(1),Uprin(2),Uprin(3),anisotropy,alonghi,Uiso
-905	  format(A14,3F9.4,2X,F9.4,F9.4,F9.4)
+905	  format(A5,1X,A10,3F9.4,2X,F9.4,F9.4,F9.4)
 c
 c	  Also make a histogram of anisotropies
 	    i = anisotropy * 20. + 1
 	    histogram(i) = histogram(i) + 1
+c
+c	  And a table of <anis> by distance from center of mass
+	    if (comflag .and. anisotropy.lt.1.0) then
+	      dist = sqrt( (SPAM(1,iatm)-XCOM)**2 
+     &                   + (SPAM(2,iatm)-YCOM)**2 
+     &	                 + (SPAM(3,iatm)-ZCOM)**2 )
+     	      i = (dist/dmax) * float(dshells) + 1
+	      adist(i) = adist(i) + anisotropy
+	      hdist(i) = hdist(i) + 1
+	    endif
+c
 	  endif
 c
 c	Draw principal axes inside bounding ellipsoid
@@ -542,6 +646,7 @@ c	through the center of our ellipsoid
 	endif
       endif
       ENDIF
+  138 continue
       IATM = IATM + 1
       IF (IATM.LE.NATM) GOTO 130
 c
@@ -555,7 +660,7 @@ c     Set transparency for enclosing ellipoids
 c
   139 CONTINUE
 c
-c If we're just tabulating ellipticity, then we are all done now
+c If we're just tabulating ellipticity, start making tables
 c
       if (tflag) then
 	total = 0
@@ -564,9 +669,13 @@ c
 	end do
 	if (total.eq.0) then
 	    write (noise,*)  'No ANISOU records found'
-	    call exit(0)
+	    call exit(-1)
 	end if
-	write (hislun,'(A)') '# Anisotropy  Fraction  Number'
+	if (nanis.eq.0) then
+	   write (noise,*)   'No anisotropic atoms found'
+	   call exit(-1)
+	end if
+	write (hislun,'(A)') '# Anisotropy  Fraction   Number'
 	write (hislun,'(A)') '#   range     of atoms of atoms'
 	do i = 1,20
 	    write (hislun,'(2F5.2,3X,F8.3,I10)') 
@@ -574,31 +683,123 @@ c
      &		float(histogram(i))/total, histogram(i)
 	end do
 c       Calculate mean and sigma of distribution
-	sum_d2 = 0.0
-	anis_mean = sum_A / float(nanis)
-	biso_mean = 0.0
-	do i = 1,MAXATM
+	sum_a2 = 0.0
+	sum_b2 = 0.0
+	sum_ab = 0.0
+	anis_mean  = sum_A / float(nanis)
+	anis_sigma = 0.0
+	biso_mean  = sum_B / float(nanis)
+	ccoef      = 0.0
+	do i = 1,NATM
 	    if (anisi(i).ne.0) then
-		sum_d2 = sum_d2 + (anisi(i) - anis_mean)**2
-		biso_mean = biso_mean + SPAM(4,i)
+		sum_a2 = sum_a2 + (anisi(i) - anis_mean)**2
+		sum_b2 = sum_b2 + (SPAM(4,i) - biso_mean)**2
+		sum_ab = sum_ab 
+     &		       + (anisi(i)-anis_mean) * (SPAM(4,i)-biso_mean)
 	    end if
 	end do
-	anis_sigma = sqrt( sum_d2 / float(nanis - 1) )
-	biso_mean  = biso_mean / float(nanis)
 	biso_mean  = biso_mean * (3.14159*3.14159*8.0) / PRADIUS
+	if (nanis.gt.1) then
+	    anis_sigma = sqrt( sum_a2 / float(nanis-1) )
+	    ccoef = sum_ab / sqrt(sum_a2 * sum_b2)
+	end if
+
 	write (hislun,'(A)')         '#'
 	write (hislun,'(A,I10)')     '# number of ANISOU records:',nanis+niso
 	write (hislun,'(A,I10)')     '#      non-isotropic atoms:',nanis
 	write (hislun,'(A,I10)')     '#          isotropic atoms:',niso
-	write (hislun,'(A,2F10.3)')  '# mean, sigma   Anisotropy:',
-     &                               anis_mean, anis_sigma
-	write (hislun,'(A,2F10.3)')  '# mean          Biso:      ',biso_mean
-        call exit(0)
+	write (hislun,'(A)') '#'
+	write (hislun,'(A,F7.3)')
+     &       '# correlation between anisotropy and B_iso:', ccoef
+	write (hislun,'(A)') '#'
+	write (hislun,'(A)') '#              Anisotropy  B_iso'
+	write (hislun,'(A)') '#  AtomType   mean  sigma   mean  number'
+	write (hislun,'(A)') '# ---------   ----------- ------  ------'
+	write (hislun,'(A,F7.3,F7.3,F7.2,I8)')    
+     &       '#|    Total',anis_mean,anis_sigma,biso_mean,nanis
+
+c
+c     If we're tabulating ellipticity, but not by atom_type, then we're done
+c
+	if (.not. atflag) goto 145
+  140	continue
+c
+C     Find an atom type we haven't done yet, exit if none left
+c     This only works if the PDB file contains the atom type in
+c     columns 77:78 (standard since sometime in 1997, but many
+c     files do not conform to this standard)
+c
+	do i = 1, NATM
+	    if (anisi(i).ne.0.0 .and. atom(i)(77:78).ne.'  ') then
+	    	atomtype = atom(i)(77:78)
+		goto 141
+	    end if
+	end do
+	goto 145
+  141	continue
+	if (atomtype .eq. ' H') 
+     &	    write(noise,*) 'You seem to have anisotropic hydrogens',
+     &                     ' - is this some kind of joke?'
+
+	sum_A     = 0.0
+	sum_a2    = 0.0
+	biso_mean = 0.0
+	natype    = 0
+c
+c     Loop over atoms looking for the right ones
+c
+	do i = 1, NATM
+	    if (anisi(i).ne.0.0 .and. atomtype.eq.atom(i)(77:78)) then
+		natype = natype + 1
+		sum_A = sum_A + anisi(i)
+	    end if
+	end do
+	anis_mean  = sum_A / float(natype)
+	anis_sigma = 0.0
+	do i = 1, NATM
+	    if (anisi(i).ne.0.0 .and. atomtype.eq.atom(i)(77:78)) then
+		sum_a2 = sum_a2 + (anisi(i)-anis_mean)**2
+		biso_mean = biso_mean + SPAM(4,i)
+		atom(i)(77:78) = '  '
+	    end if
+	end do
+	if (natype.gt.1) anis_sigma = sqrt( sum_a2 / float(natype-1) )
+	biso_mean  = biso_mean / float(natype)
+	biso_mean  = biso_mean * (3.14159*3.14159*8.0) / PRADIUS
+
+	write (hislun,'(A,4X,A,F7.3,F7.3,F7.2,I8)')    
+     &       '#|   ',atomtype,anis_mean,anis_sigma,biso_mean,natype
+	goto 140
       end if
+      IATM = 1
+      goto 150
+c
+c Write out plot of mean anisotropy as a function of distance from c.o.m.
+c The hisclean routine is not strictly necessary; it collapses shells at
+c the extreme ranges of distance that contain only a few atoms.
+c
+  145 continue
+      if (comflag) then
+      	write (comlun,'(A/A,A/A/A)') '#',
+     &	    '# Mean anisotropy as a function of distance',
+     &      ' from center of mass',
+     &	    '#',
+     &	    '#  Distance   <anis>   #atoms'
+	call hisclean( adist, hdist, dshells, nanis )
+	do i = 1, dshells
+	    if (hdist(i).gt.0) then
+		adist(i) = adist(i) / float(hdist(i))
+		dmid = (dmax/float(dshells))*(float(i)-0.5)
+	    	write (comlun,146) dmid, adist(i), hdist(i)
+	    endif
+	enddo
+  146	format(F10.3,F10.3,I10)
+      endif
+      call exit(0)
+
 c
 c Second pass write a single sphere or ellipsoid for each atom
 c
-      IATM = 1
   150 CONTINUE
       IF (ATOM(IATM)(1:4).EQ.'ATOM' .OR.
      &    ATOM(IATM)(1:4).EQ.'HETA') THEN
@@ -623,8 +824,8 @@ c
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
-	    if (anitoquad(anisou, pradius, quadric, eigens, evecs).lt.0) then
-	        write (noise,*) '*** Non-positive definite ellipsoid - ',
+	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
+	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:26)
 	    endif
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
@@ -669,7 +870,7 @@ c
 	  IF(RGB(1,ICOL) .EQ. RGB(1,JCOL) .AND.
      1       RGB(2,ICOL) .EQ. RGB(2,JCOL) .AND.
      2       RGB(3,ICOL) .EQ. RGB(3,JCOL)) THEN
-	    WRITE(OUTPUT,140)
+	    WRITE(OUTPUT,211)
      1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),radius,
      2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),radius,
      3         RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL)
@@ -677,11 +878,11 @@ c
 	    DO K=1,3
 		center(K) = (SPAM(K,IATM)+SPAM(K,JATM))/2
 	    ENDDO
-	    WRITE(OUTPUT,140)
+	    WRITE(OUTPUT,211)
      1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),radius,
      2         center(1),center(2),center(3),radius,
      3         RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL)
-	    WRITE(OUTPUT,140)
+	    WRITE(OUTPUT,211)
      1         center(1),center(2),center(3),radius,
      2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),radius,
      3         RGB(1,JCOL),RGB(2,JCOL),RGB(3,JCOL)
@@ -691,15 +892,15 @@ c
   202 CONTINUE
   210 CONTINUE
 
-140   FORMAT(1H3,/,11f8.3)
+211   FORMAT(1H3,/,11f8.3)
 c
 c
 	write (noise,'(/)')
-	write (noise,156) 'X  min max:', XMIN, XMAX
-	write (noise,156) 'Y  min max:', YMIN, YMAX
-	write (noise,156) 'Z  min max:', ZMIN, ZMAX
+	write (noise,156) 'X  min max center-of-mass:', XMIN, XMAX, xcom
+	write (noise,156) 'Y  min max center-of-mass:', YMIN, YMAX, ycom
+	write (noise,156) 'Z  min max center-of-mass:', ZMIN, ZMAX, zcom
 	write (noise,156) '     scale:', SCALE
-  156	format(1x,a,3f8.2)
+  156	format(1x,a,2f8.2,f10.3)
       END
       LOGICAL FUNCTION MATCH (SUBJ, MASK)
       CHARACTER*24 SUBJ,MASK
@@ -795,3 +996,83 @@ c
 	endif
 	return 
 	end
+
+CCC	This subroutine is not strictly necessary.
+CC	It smooths the histogram/curve of Anisotropy by 
+C	distance from center of mass
+
+	subroutine hisclean( value, number, shells, nanis )
+c
+	integer shells
+	real    value(shells)
+	integer number(shells)
+	integer nanis
+c
+	integer minshell, maxshell, min10, max10
+	integer nsum
+	real    vsum
+c
+	if (nanis .lt. 1200) then
+	    shells = shells / 2
+	    do i = 1, shells
+		number(i) = number(2*i-1) + number(2*i)
+		value(i)  = value(2*i-1) + value(2*i)
+	    enddo
+	endif
+c
+	do i = shells, 1, -1
+	    if (number(i).gt.0) minshell = i
+	enddo
+	do i = 1, shells
+	    if (number(i).gt.0) maxshell = i
+	enddo
+	nsum = 0
+	min10 = minshell
+	do i = minshell, shells
+	    if (nsum + number(i) .gt. 10) then
+		goto 101
+	    else
+	    	nsum  = nsum + number(i)
+		min10 = i
+	    endif
+	enddo
+101	continue
+	nsum = 0
+	max10 = maxshell
+	do i = maxshell, 1, -1
+	    if (nsum + number(i) .gt. 10) then
+		goto 102
+	    else
+	    	nsum  = nsum + number(i)
+		max10 = i
+	    endif
+	enddo
+102	continue
+c
+	nsum = 0
+	vsum = 0.0
+	do i = minshell, min10
+	    nsum = nsum + number(i)
+	    vsum = vsum + value(i)
+	    number(i) = 0
+	    value(i)  = 0.0
+	enddo
+	i = (minshell + min10) / 2
+	number(i) = nsum
+	value(i)  = vsum
+c
+	nsum = 0
+	vsum = 0.0
+	do i = maxshell, max10, -1
+	    nsum = nsum + number(i)
+	    vsum = vsum + value(i)
+	    number(i) = 0
+	    value(i)  = 0.0
+	enddo
+	i = (maxshell + max10) / 2
+	number(i) = nsum
+	value(i)  = vsum
+c
+	return
+	end
+

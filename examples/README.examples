@@ -6,28 +6,40 @@ Most of the example scripts assume that ImageMagick is installed
 on your system as an image viewer.  If it is, then executing these 
 shell scripts should produce an image on your X-windows screen.
 
+
 Example 1
 =========
 
-Example 1 uses the ribbon utility to draw a quick picture of a
-pentamer with separate colours for each chain.  I'm sure you
-could do a better job of picking colour schemes if you tried.
-example1.sgi is the same as example1.script, except that it
-assumes that you are using the SGI libimage utilities as a viewer.
+Example 1 illustrates the use of object types 8 + 9 to change the 
+material properties for individual objects in the figure.  
+It also illustrates using file indirection and the library of 
+special materials included in the Raster3D distribution kit.
+The library is made known to the system by setting the environmental
+variable R3D_LIB.
+
+You can run example1.script or else type something
+like:
+	setenv R3D_LIB ../materials
+	render < example5.r3d | display avs:-          		(ImageMagick)
+    or
+	render -sgi test.rgb < example5.r3d ; ipaste test.rgb  	(SGI)
+    or
+	render -tiff test.tiff < example5.r3d			(TIFF file)
+
 
 Example 2
 =========
 
-Example 2 excercises the utilities balls and rods, and shows off
-the new object types supported by the rendering code.
+Example 2 excercises the utilities balls and rods.
 example2.sgi is the same as example2.script, except that it
 assumes that you are using the SGI libimage utilities as a viewer.
 
-Examples 3 and 4
-================
 
-The 3rd and 4th examples provided here correspond to a figure of the 
-galactose binding site in the E. coli Heat-labile enterotoxin.  
+Examples 3, 4, and 5
+====================
+
+The 3rd, 4th, and 5th examples provided here correspond to a figure of
+the galactose binding site in the E. coli Heat-labile enterotoxin.  
 The figure was composed and generated using the program MOLSCRIPT, 
 by Per Kraulis.  I have included three files here:
 
@@ -38,35 +50,14 @@ example3.r3d	- the output from MOLSCRIPT when run in Raster3D mode
 
 The example3.script will just render and display the example.r3d file.
 
-The example4.script requires that Molscript version 1.4 is installed and
+The example4.script requires that Molscript is installed and
 that you have built TIFF support into the Raster3D package. It should
 start with the Molscript input file and produce a TIFF file containing 
 the same image produced by example3.  If you have Molscript V2.0 you
 should see labels in the Raster3D image; earlier versions of Molscript
 did not pass labels through to Raster3D.
 
-Example 5
-=========
-
-Example 5 illustrates the use of object types 8 + 9 to change the 
-material properties for individual objects in the figure.  
-You can run example5.script or else type something
-like:
-	render < example5.r3d | display avs:-          		(ImageMagick)
-	render -sgi test.rgb < example5.r3d ; ipaste test.rgb  	(SGI)
-    or
-	render -tiff test.tiff < example5.r3d			(TIFF file)
-
-You should get two columns of balls which are identical except for their 
-surface properties.  Balls in the left column are rendered according to
-the values in the header records.  Balls in the right column are identical
-to those on the left except that they are rendered using explicit material 
-surface properties which override the header values.
-
-Example 6
-=========
-
-Example 6 adds a transparent molecular surface around the galactose
+Example 5 adds a transparent molecular surface around the galactose
 molecule in example 3. This is a fairly complicated example which
 illustrates merging Raster3D input files created by two different
 programs, in this case Molscript and GRASP.  It also illustrates the use
@@ -78,8 +69,7 @@ the format of such files is both version and machine dependent. A copy
 of the "ungrasp" utility program I used for conversion is included in
 the directory ../grasp, but you may have to modify this source depending
 on your local installation.  Finally, the molecular surface in this
-example illustrates the support for rendering transparent
-objects in Raster3D V2.2.
+example illustrates the support for rendering transparent objects in Raster3D.
 
 Note:  It would be a more informative figure if the accessible surface
 of the protein were shown, rather than that of the bound sugar.  However
@@ -88,16 +78,20 @@ description file so I judged it impractical.  A JPEG figure illustrating
 Raster3D rendering of a protein surface should be available on the
 Raster3D distribution site.
 
+
 Example 7
 =========
 
-This example shows the use of multiple MATERIAL definitions, mostly
-transparent ones, and file indirection.
+Example 7 uses the ribbon utility to draw a quick picture of a
+pentamer with separate colours for each chain.  I'm sure you
+could do a better job of picking colour schemes if you tried.
+
 
 Example 8
 =========
 
 Demonstrates the creation of a stereo pair.
+
 
 Example 9
 =========

@@ -1,0 +1,4 @@
+# Default values for FOG give simplest form of depth-cueing.
+# Current default is linear fadeout from front object to back object.
+16
+FOG

@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH RASTEP 1 "29 September 1997" "Raster3D"
+.TH RASTEP 1 "14 August 1998" "Raster3D"
 
 .SH NAME
 
@@ -9,6 +9,7 @@ rastep - (Raster3D Thermal Ellipsoid Program)
 .PP
 .B "rastep" [\fI-h\fP] [\fI-iso\fP] [\fI-Bcolor Bmin Bmax\fP] 
 .B [\fI-prob Plevel\fP] [\fI-fancy[0-3]\fP] [\fI-radius R\fP]
+.B [\fI-tabulate [tabfile]\fP] [\fI-by_atomtype\fP]
 .PP
 \fIRastep\fP reads a Brookhaven PDB coordinate file and 
 creates an input file for the Raster3D render program.
@@ -81,6 +82,23 @@ the rendered ellipsoids.
 	-fancy2 = colored equatorial planes of the ellipsoid
 	-fancy3 = colored equatorial planes with a transparent bounding surface
 
+.B "-tabulate [tabfile]"
+.PP
+The -tabulate option requests that the program accumulate and print
+statistics on the distribution of anisotropy among atoms in the input
+file rather than producing an input file for render. The principle axes
+and anisotropy of each atom are written to stdout. An overall
+statistical summary is written to tabfile if specified, otherwise to
+stdout.
+
+.B "-by_atomtype"
+.PP
+The -by_atomtype option is a modifier to -tabulate. It causes a further
+subdivision of atoms by atom type in the preparation of statistical
+summaries. Atom types are taken from columns 77:78 of the PDB ATOM
+records.
+
+
 .SH NOTES
 .PP 
 There is little, if any, consistency in format among the various programs 
@@ -98,6 +116,7 @@ from a shelx coordinate file.
 .TP 5
 	anonymous ftp site:	
                 ftp.bmsc.washington.edu
+.TP 0
 	web URL:
 		http://www.bmsc.washington.edu/raster3d/raster3d.html
 .TP 5

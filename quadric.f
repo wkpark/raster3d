@@ -2,6 +2,8 @@
 *              Support routines for quadric surfaces                   *
 ************************************************************************
 * EAM June 1997	- initial version, supports version 2.4(alpha) of render 
+* EAM  May 1998	- additional error checking to go with Parvati/rastep
+************************************************************************
 *
 * Quadric surfaces include spheres, cones, ellipsoids, paraboloids, and
 * hyperboloids.  The motivation for this code was to allow rendering 
@@ -134,8 +136,8 @@ C
       INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
       INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
-      COMMON /NICETIES/ TRULIM
-      REAL              TRULIM(3,2)
+      COMMON /NICETIES/ TRULIM,      ZLIM
+      REAL              TRULIM(3,2), ZLIM(2)
 *
 * Update limits (have to trust the center coords)
 *
@@ -182,6 +184,10 @@ c	    pfac = 1./(1.-zq/eyepos)
 	yc = yq * scale + ycent
 	zc = zq * scale
 	rc = radlim * scale
+*	save transformed Z limits
+	zlim(1) = min( zlim(1), zc )
+	zlim(2) = max( zlim(2), zc )
+*
 	detail(1) = xc
 	detail(2) = yc
 	detail(3) = zc
@@ -322,9 +328,11 @@ CD	write (noise,191) 'QP  ',((QP(i,j),j=1,4),i=1,4)
 CCC
 CC
 C
-	function qtest( center, coeffs, xp, yp, zp, qnorm, shadowspace )
+	function qtest( center, coeffs, xp, yp, zp, qnorm, shadowspace,
+     &                  backside )
 	IMPLICIT NONE
 	logical  qtest, shadowspace
+	logical  backside
 	real    center(3), coeffs(10), xp, yp, zp, qnorm(3)
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
@@ -370,10 +378,18 @@ C
 	if (AA .eq. 0.) then
 CDEBUG	    Can this happen????
 	    z = 9999.
-	else if (AA .gt. 0.) then
-	    z = (-BB + EE) / (2*AA)
+	else if (backside) then
+	    if (AA .le. 0.) then
+	    	z = (-BB + EE) / (2*AA)
+	    else
+	    	z = (-BB - EE) / (2*AA)
+	    endif
 	else
-	    z = (-BB - EE) / (2*AA)
+	    if (AA .gt. 0.) then
+	    	z = (-BB + EE) / (2*AA)
+	    else
+	    	z = (-BB - EE) / (2*AA)
+	    endif
 	endif
 	zp = z * scale
 	zp = zp + center(3)
@@ -390,9 +406,11 @@ CDEBUG	    Can this happen????
 
 CCC	Convert ANISOU description of anisotropic displacement parameters
 CC	into quadric surface enclosing a given probability volume
+C	Returns -1 if the Uij are non-positive definite, 1 otherwise
 C
-	subroutine anitoquad( ANISOU, PROB, QUADRIC, EIGENS, EVECS)
+	function anitoquad( ANISOU, PROB, QUADRIC, EIGENS, EVECS)
 	implicit NONE
+	integer  anitoquad
 	real     ANISOU(6), PROB, QUADRIC(10)
 	real     EIGENS(3), EVECS(4,4)
 c
@@ -404,6 +422,16 @@ c
 	integer i
 c
 	real     tinv4, det
+c
+c	Save FPU traps later by checking that ANISOU is non-zero
+	do i = 1,3
+	    EIGENS(i) = 0.0
+	end do
+	if (ANISOU(1).eq.0.and.ANISOU(2).eq.0.and.ANISOU(3).eq.0 .and.
+     &      ANISOU(4).eq.0.and.ANISOU(5).eq.0.and.ANISOU(6).eq.0) then
+     		anitoquad = -2
+		return
+	end if
 c
 c	Build matrix from Uij coefficients and invert it
 	UU(1,1) = ANISOU(1)
@@ -440,11 +468,14 @@ c	Find eigenvalues of the ellipsoid
 	call jacobi( UU,   3, 4, EIGENS, EVECS )
 c
 c	Units of this matrix are A**2; we want values in A
+	anitoquad = 1
 	do i = 1,3
 	    if (EIGENS(i).gt.0.) then
 		EIGENS(i) = sqrt(EIGENS(i))
 	    else
-		write (noise,*) 'Non-positive definite ellipsoid!'
+C		write (noise,*) 'Non-positive definite ellipsoid!'
+		EIGENS(i) = 0.
+		anitoquad = -1
 	    endif
 	enddo
 c
@@ -740,9 +771,10 @@ C
 	FUNCTION PERSP( Z )
 	REAL PERSP, Z
 	COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
-     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
-	REAL   XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT
-	REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
+     &                  TMAT, TINV, TINVT, SROT, SRINV, SRINVT
+	REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
+	REAL   EYEPOS
+	REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
 	REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
 	IF (Z/EYEPOS .GT. 0.999) THEN
 	    PERSP = 1000.

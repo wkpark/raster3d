@@ -10,18 +10,26 @@ In the latter case you may have to rename them so that the suffix is
 "1" (number) rather than "l" (lower case L).
 
 Files
-	avs2ps.html        rastep.html      render.html     rods.html
-	raster3d.html      ribbon.html      balls.html      normal3d.html
-	pdb_anisou.html    r3d_hints.html   r3d_labels.html r3d_transparent.html
-	stereo3d.html      r3d_icon.gif     index_button.gif
-	rastep_options.gif
+	avs2ps.html            r3d_examples.html      raster3d.html
+	balls.html             r3d_hints.html         render.html
+	normal3d.html          r3d_labels.html        ribbon.html
+	pdb_anisou.html        r3d_transparent.html   rods.html
+	r3d_animation.html     rastep.html            stereo3d.html
 
 These are hypertext versions of the PostScript documentation.  I do not 
 know of any truly general conventions for where to install them, but
 /usr/local/man/html seems a likely bet.
 
+Files
+	example1.jpeg        example7.jpeg        index_button.gif
+	example2.jpeg        example8.jpeg        r3d_icon.gif
+	example5.jpeg        example9.jpeg        rastep_options.gif
+
+These are images refered to by the hypertext documenation.
+They need to go into the same directory as the html files.
+
 File
 	manual.ps
 
-This file contains a PostScript version of the complete Raster3D
-documentation. It is formatted for printing to double-sided pages.
+This is a PostScript version of the complete Raster3D documentation. 
+It is formatted for printing to double-sided pages.

@@ -24,7 +24,7 @@ Topics covered:
     <li><a href="#composing">
 	Composing figures in other programs</a>
     <li><a href="#matrix">
-	Building up a figure from Molscript and other files</a>
+	Coordinate systems</a>
     <li><a href="#labels">
 	How can I keep the Molscript labels in my Raster3D picture?</a>
     <li><a href="#black-white">
@@ -48,7 +48,7 @@ satisfactory. In this case you may wish to try rendering the image both with
 and without shadows, or you might experiment with the location of the primary
 light source (the SOURCE parameter in the 12th header record input to
 <b><i>render</i></b>). Finally, you can de-emphasize the shadows by increasing
-the secondary (straight-on) light source contribution parameter.<p>
+the secondary (straight-on) light source contribution parameter STRAIT.<p>
 
 <a name="output device">
 <b><i>Tailoring your image to the output device:</i></b></a>
@@ -71,7 +71,7 @@ image files afterwards. This is a standard image processing procedure, and may
 be a selectable print option for your output device. If you will be using a
 particular output device regularly, it is worth an initial round of
 experimentation to determine the best gamma value for future runs. The
-appropriate gamma correction can then be applied to the each rendered picture
+appropriate gamma correction can then be applied to each rendered picture
 before sending it for printing.<p>
 
 <a name="stereo1">
@@ -79,14 +79,17 @@ before sending it for printing.<p>
 The EYEPOS parameter input to the render
 program specifies a viewing distance for the resulting image. You may think of
 this as equivalent to the distance between a camera and the object being
-photographed. Generally the sense of depth conveyed by the rendered image is
-slightly increased by positioning the virtual camera reasonably close to the
-object; the default recommended value for EYEPOS is 4, which means that
+photographed. 
+EYEPOS = 4 means that the
 distance from the camera to the center of the object is four times the width of
-the field of view. However, if you are composing a figure containing two or
+the field of view. 
+Generally the sense of depth conveyed by the rendered image is
+slightly increased by positioning the virtual camera reasonably close to the
+object. 
+However, if you are composing a figure containing two or
 more similar objects which are next to each other, e.g. a comparison of two
-variants of the same protein structure, the resulting parallax may be more of a
-hindrance than a help. Since the virtual camera is centered it will ``see'' the
+variants of the same protein structure, then the resulting parallax may be more of a
+hindrance than a help. Since the virtual camera is centered, it will ``see'' the
 right hand object slightly from the left, and the left hand object slightly
 from the right. This results in different effective viewpoints for paired
 objects which would otherwise be identical. To overcome this effect you may
@@ -95,9 +98,7 @@ The same considerations apply for the production of stereo pairs.<p>
 
 <a name="stereo2">
 <b><i>Stereo pairs and Molscript:</i></b></a>
-Unfortunately Molscript does not pass any
-information about area, page layout, or even aspect ratio, on to the Raster3D
-input file. This means that all objects emitted by a Molscript run are simply
+All Raster3D objects emitted by a Molscript run are 
 placed into a single scene description. That is, the pairs of ``plot'' and
 ``end plot'' statements in a Molscript input file have no effect in Raster3D
 mode. Therefore a Molscript file which describes a
@@ -173,14 +174,23 @@ The
 file o2mol.out will now contain instructions for reproducing the O viewpoint in
 Molscript. Also, the 3x3 matrix which o2mol gives as ``for coordinate
 transforms'' is in the correct form to use directly as a Raster3D matrix if you
-aren't processing with Molscript first.<p>
+aren't processing with Molscript first.
+<p>
 
+Duncan McRee's XtalView program 
+(<a href="http://www.scripps.edu/pub/dem-web/index.html">
+          http://www.scripps.edu/pub/dem-web/index.html</a>) 
+can create Raster3D input files or 
+images directly from the current screen view, including atoms, bonds, view objects, 
+electron density, etc. Many Raster3D rendering options can be varied using 
+control widgets in the Xfit pop-up plotting menus. 
+Xfit can also be used simply to create a set of 
+Raster3D header records describing the current view. 
+<p>
 
 Another interactive tool you might be interested in is the
 <b><i>VMD</i></b> program from the Theoretical Biophysics group at the
-University of Illinois.  This is a new package for the graphical display
-and visualization of biomolecular systems, available to the structural
-biology research community free of charge. <b><i>VMD</i></b> provides a
+University of Illinois.  <b><i>VMD</i></b> provides a
 wide variety of methods for interactively rendering and coloring a
 molecule, and can generate a Raster3D input file which will very nearly
 duplicate the view composed on your workstation screen.
@@ -193,7 +203,7 @@ The software itself is available via anonymous ftp from
 <p>
 
 <a name="matrix">
-<b><i>Building up a figure from Molscript and other files</i></b>:
+<b><i>Coordinate systems</i></b>:
 When Molscript runs it normalizes the coordinates of objects in the figure
 so that they are described by an identity transformation matrix.
 The 3x3 matrix printed out by Molscript to the terminal is the transpose of
@@ -233,8 +243,9 @@ in Molscript. The column values above it are <i>always</i> zero.<p>
 
 <a name="labels">
 <b><i>How can I keep the Molscript labels in my Raster3D picture?</i></b></a>
-Yes, it <i>is</i> possible to keep the labels from a Molscript picture when
-you convert it to Raster3D.  I don't recommend this procedure, but here is a 
+This used to be a pain to do. Now there is an easy answer: get Molscript version 2.
+The old, laborious, procedure may still be informative as an example of
+mixing PostScript and Raster3D, however. Here is a 
 <a href="r3d_labels.html"> summary of how to do it</a> if you really want to.
 <p>
 

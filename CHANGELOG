@@ -1,3 +1,14 @@
+ 8-Dec-98	V2.4h minor bug fix in render.f for overlapping cylinders
+15-Oct-98	V2.4g	
+		Improved rendering of transparent cylinders
+		GLOBAL property object type 16 (FOG for example)
+		Forgive blank lines at end of indirect files
+		Environmental variable R3D_LIB used as search path 
+			during file indirection
+		Preliminary groundwork in code for Z-clipping
+		Modifed Makefiles to reduce number of compiler warnings
+		PARVATI's rastep version included with Raster3D 
+16-Aug-98	fixed format bug in normal3d MATERIAL handling 
  7-May-98	V2.4f new ungrasp.f, fix crash if shadows + VERTEXRGB
 29-Apr-98	V2.4e Bug fix to TIFF output (blue channel was shifted by 1 pixel)
 18-Mar-98	V2.4d limit maximum distortion due to perspective, 

@@ -1,27 +1,9 @@
+#!/bin/csh
+# E A Merritt October 1998
+# Illustration of 
+#	material properties 
+#	file indirection
+#	R3D_LIB environmental variable
 #
-# This example uses the ribbon utility to render a view of the 
-# E. coli heat-labile enterotoxin (LT) B-pentamer
-# with each chain a different colour.
-#
-# First extract chains D-H (which form the pentamer)
-# Only CA and O atoms are relevant to the ribbon program.
-#
-grep ' [DEFGH] ' LT.pdb > temp.tmp
-#
-# Now select pre-determined view matrix.
-# As it happens, this one came from using MOLSCRIPT to compose the
-# figure and then typing the matrix reported by MOLSCRIPT into a file.
-# Other programs, e.g. FRODO, atoms, etc, will also dump a view matrix
-# on request.
-#
-cp example1.matrix setup.matrix
-#
-# Add color information and draw ribbons;  -d5 means new colour for each chain.
-# Pipe output to render and then display.
-#
-cat chaincolours.pdb temp.tmp | ribbon -d5 | render | display avs:-
-#
-#
-#
-rm -f temp.tmp setup.matrix
-
+setenv R3D_LIB ../materials
+render < example1.r3d | display avs:-

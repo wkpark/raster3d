@@ -41,7 +41,23 @@
    them to live (usually /usr/local/bin/), and copy the manual pages to
    /usr/local/man/manl/.
 
-5) Go to the examples subdirectory and try running the example scripts
+5) [Optional] add R3D_LIB to your system-wide initialization of environmental
+   variables, or instruct users to insert one of the following into their
+   login shell initialization. Of course if you are installing Raster3D
+   somewhere other than /usr/local/src then you need to modify the examples
+   below accordingly:
+
+	csh/tcsh:	setenv R3D_LIB /usr/local/src/raster3d/materials
+
+	sh/ksh:		R3D_LIB=/usr/local/src/raster3d/materials
+			export R3D_LIB
+
+   Then if a render input file contains a line such as "@transparent.r3d"
+   the program will first look in the current directory (./transparent.r3d)
+   and if that fails then look for $(R3D_LIB)/transparent.r3d 
+
+
+6) Go to the examples subdirectory and try running the example scripts
    to verify installation.
 
 A sample installation on a DEC Alpha might go:
@@ -63,20 +79,24 @@ apparently ships without a real man page viewer.
 
 Digital Unix
 ============
-DEC's f90 compiler produces broken code for render.f when the optimization
-level is set higher than -O1.   Use the f77 compiler or f90 -O1.
-Under Digital Unix 4.0, compiling with "f77 -g" crashes the compiler.
-Optimization levels -O1 to -O5 work fine.  Go figure.
+Everything is fine under DU 4.0D and above.  
+Under DU 4.0A/B the f90 compiler produced broken code for render.f 
+when the optimization level was set higher than -O1. f77 was OK.
 
 Irix
 ====
-Irix 6.4 same as Digital Unix 4.0; "f77 -g" crashes the compiler.
-f77 -O2 works fine.
+Makefile.sgi worked for me on test machines running Irix versions
+4.0.5, 5.3, and 6.2.  This Makefile uses the old f77 compiler (-mips 2).
 
-AIX
-===
-The AIX compiler doesn't like the Q formats, but that doesn't seem
-to hurt anything.
+Makefile.irix6 uses the new f77 compiler (-mips 3), which produces 
+code for render that runs about 30% faster.  Tested under Irix 6.1 6.2 6.4,
+but you may have to fiddle with the library search paths to bring in
+compatible versions of the libimage, libtiff, and libjpeg libraries.
+
+Some versions of Irix 6 include self-incompatible versions of 
+libjpeg.h and libjpeg.so.  To work around this there is a conditional
+flag in local_jpeg.c triggered by adding the definition -DBROKEN_LIBJPEG
+in the Makefile.
 
 linux
 =====
@@ -96,6 +116,8 @@ There are some gotchas, however:
 	  by the byte order in AVS files.  To work around this problem I
 	  added a conditional compilation flag -DNETWORKBYTEORDER in
 	  the Makefile.
+I haven't tried the g77 compiler, but I am told that it doesn't like the
+Q formats in ribbon1.f
 
 Sun, HP
 =======
@@ -119,4 +141,33 @@ I compiled against the libtiff-library (version 4.2). I used the one that
 was included in the NETPBM-Port of Peter Meerwald (pmeerw@cosy.sbg.ac.at)
 and is available from
 ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip. 
+
+
+=== Windows ===
+
+Many thanks to Suhaib Siddiqi, who offers the following recipe for 
+building Raster3D under Windows:
+
+I have successfully compiled Raster#d 2.4g on Windows NT/95/98.  It is a
+direct port of your source code without any modifications or deletions.
+
+1) Go to http://sourceware.cygnus.com/cygwin
+2) Download G77 and ObjectC in addition to Cygwin-B20
+3) Unmount C drive (umount -a /) and remonut as binary (mount -b c: /).  It
+is very important.
+4) Install Cygwin-b20 in C:\usr, instead of default directories.
+5) Download Cygwin-B20
+6) Download Jpeg, PNG and TIFF libraries from ftp.uu.net
+7) Compile Jpeg,PNG and TIFF with Cygwin-B20 and install
+8) Install all the jpeg and tiff libraries in /usr/local
+9) download Raster3D source code and etxract using tar utility supplied with
+   Cygwin-b20. Download Raster3D_xxx.gz (rather than .Z) as
+   Cygwin-B20 only handles gzip compression.
+(Note: Don't use WinZip or any other Windows programs to extract archive of 
+Raster3D and JPEG etc libraries otherwise you will get parse errors during 
+compilation). 
+
+To use Raster3D from /usr/H-i586-cygwin32/bin copy cygwin1.dll to Raster3D
+directory and include Raster3D to your Windows enviroment.  That is it.
+
 
