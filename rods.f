@@ -92,7 +92,7 @@ c
 	call exit(-1)
   799	continue
 c
-      write (noise,*) 'Raster3D rods program V2.4(alpha)'
+      write (noise,*) 'Raster3D rods program V2.4f'
       if (bcflag) then
         write (noise,*) 'Atom colors will be assigned based on Biso'
         write (noise,*) '    from dark blue = Bmin =', Bmin
@@ -109,7 +109,7 @@ C
 	call view_matrix
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'rods V2.4b)'
+	WRITE(OUTPUT,'(A)') 'rods V2.4f)'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         anti-aliasing'

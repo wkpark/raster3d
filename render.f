@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.4b (18 Dec 1997)
+*     Version 2.4d (16 Mar 1998)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -50,6 +50,8 @@
 * EAM Nov 1997	- add VERTEXRGB object type to extend triangle descriptions,
 *		  allow # as comment delimiter in input stream
 * EAM Dec 1997	- Release V2.4b
+* EAM Feb 1998	- fixed bug in check against limiting radius of quadrics
+* EAM May 1998	- V2.4f fixed crash if shadowing + VERTEXRGB objects
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -542,7 +544,7 @@
       REAL 	GLOWSRC(3), GLOWCOL(3), GDIST(3), GLOWRAD, GLOW, GLOWMAX
       INTEGER	GOPT, GPHONG
       PARAMETER (MAXGLOWS = 10)
-      INTEGER	GLOWLIST(MAXGLOWS), NGLOW
+      INTEGER	GLOWLIST(MAXGLOWS), NGLOWS
 *
 * Z-clipping has never been user-controlled, but maybe in the future...
       REAL  	BACKCLIP
@@ -608,7 +610,7 @@
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
-      WRITE (NOISE,*) 'Raster3D V2.4b 18 Dec 1997'
+      WRITE (NOISE,*) 'Raster3D V2.4f  7 May 1998'
 *
 *     Initialize to level 0 of file indirection
       INPUT = INPUT0
@@ -1107,9 +1109,9 @@ C     20-Feb-1997 Save both object type and material type
 	ENDIF
 *       perspective factor for each corner
 	IF (EYEPOS.GT.0) THEN
-          PFAC1 = 1./(1.-Z1A/EYEPOS)
-          PFAC2 = 1./(1.-Z2A/EYEPOS)
-          PFAC3 = 1./(1.-Z3A/EYEPOS)
+          PFAC1 = PERSP( Z1A )
+          PFAC2 = PERSP( Z2A )
+          PFAC3 = PERSP( Z3A )
 	END IF
 *       apply perspective
         X1B = X1A * PFAC1
@@ -1302,7 +1304,7 @@ C     20-Feb-1997 Save both object type and material type
           RA = RA / TMAT(4,4)
 	ENDIF
 *       perspective
-	IF (EYEPOS.GT.0) PFAC = 1./(1.-ZA/EYEPOS)
+	IF (EYEPOS.GT.0) PFAC = PERSP(ZA)
         XB = XA * PFAC
         YB = YA * PFAC
         ZB = ZA * PFAC
@@ -1443,8 +1445,8 @@ C     20-Feb-1997 Save both object type and material type
 	ENDIF
 *       perspective factor for each corner
 	IF (EYEPOS.GT.0) THEN
-          PFAC1 = 1./(1.-Z1A/EYEPOS)
-          PFAC2 = 1./(1.-Z2A/EYEPOS)
+          PFAC1 = PERSP( Z1A )
+          PFAC2 = PERSP( Z2A )
 	END IF
 *       apply perspective
         X1B = X1A * PFAC1
@@ -1760,7 +1762,7 @@ C
 	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
 	  GLOWRAD = GLOWRAD / TMAT(4,4)
 	ENDIF
-	IF (EYEPOS.GT.0) PFAC = 1.0 / (1.0 - GLOWSRC(3)/EYEPOS)
+	IF (EYEPOS.GT.0) PFAC = PERSP( GLOWSRC(3) )
 *	save for rendering
 	DETAIL(NDET+1)  = GLOWSRC(1) * PFAC * SCALE + XCENT
 	DETAIL(NDET+2)  = GLOWSRC(2) * PFAC * SCALE + YCENT
@@ -2080,6 +2082,7 @@ C
 *	    no shadows for plane surface
 	  ELSEIF (TYPE(I).EQ.NORMS) THEN
 *	    and certainly not for normals
+	  ELSEIF (TYPE(I).EQ.VERTEXRGB) THEN
 	  ELSEIF (TYPE(I).EQ.MATERIAL) THEN
 *	    or surface properties
 	  ELSEIF (TYPE(I).EQ.GLOWLIGHT) THEN
@@ -2156,6 +2159,8 @@ C
 *           no shadows for plane surface
 	    GOTO 181
           ELSEIF (TYPE(IND).EQ.NORMS) THEN
+	    GOTO 181
+          ELSEIF (TYPE(IND).EQ.VERTEXRGB) THEN
 	    GOTO 181
           ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
 	    GOTO 181
@@ -2427,10 +2432,10 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 		Z = DETAIL(K+3)
 		R = DETAIL(K+4)
 		IF (Z+R.LE.ZHIGH) GO TO 250
-		DX = XP-X
-		DY = YP-Y
+		DX2 = (XP-X)**2
+		DY2 = (YP-Y)**2
 		R2 = R**2
-		IF (DX**2 + DY**2 .GE. R2) GO TO 240
+		IF (DX2 + DY2 .GE. R2) GO TO 240
 *	      Now find Z coord (ZP) in pixel space of point on quadric surface
 *	      with these X and Y coords
 		ISQUAD = QTEST( DETAIL(K+1), DETAIL(K+8), 
@@ -2438,9 +2443,8 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 		IF (.NOT.ISQUAD) GO TO 240
 		IF (ZP.LE.ZHIGH) GO TO 240
 *	      Check against limiting sphere in 3D also
-		DZ = ZP-Z
-		DZ2 = DZ**2
-  		IF (DX2+DY2+DZ2 .GT. R2) GO TO 240
+		DZ2 = (ZP-Z)**2
+		IF (DX2+DY2+DZ2 .GT. R2) GO TO 240
 		NORMAL(1) = QNORM(1)
 		NORMAL(2) = QNORM(2)
 		NORMAL(3) = QNORM(3)
@@ -3501,3 +3505,4 @@ C
         CALL ASSERT (BLU.LE.1., MESSAGE)
 	RETURN
 	END
+

@@ -44,7 +44,7 @@ install: $(PROGS)
 
 tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
-	compress  ../raster3d.tar
+#	/usr/bin/compress  ../raster3d.tar
 
 normal3d: normal3d.o quadric.o
 	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d

@@ -14,6 +14,9 @@ C 24 Jan 1995	EAM - option to output grid rather than surface		*
 C 16 Feb 1996	EAM - fixed scale conversion of potential to color info *
 C		      coordinated with Raster3d Version 2.2             *
 C		      Recognize GRASP Version 1.2 files (format2) also	*
+C 18 Mar 1998	EAM - updated code to use explicit vertex colors in	*
+C		      Raster3D V2.4d					*
+C  7 May 1998	EAM - ditto for calculated potentials			*
 C									*
 C************************************************************************
 C
@@ -31,7 +34,7 @@ C
 	integer*2	triangl2(3,MAXPTS)
 	integer*4	triangle(3,MAXPTS)
 C
-	integer		i,j,k
+	integer		i,j,k,ic
 	real*4		xlo,xhi,ylo,yhi,zlo,zhi
 	logical		clip
 	logical		grid
@@ -45,12 +48,13 @@ C
 C
 	integer		indexc(256)
 	real*4		coltab(256,3)
+	real*4		rgb(3,3)
 C
 	
 	type 1,'Input file: '
 1	format($,a)
 	accept '(a)', infile
-	open (unit=1, file=infile, form='unformatted')
+	open (unit=1, file=infile, status='old', form='unformatted')
 	
 c
 c	Can we read this file?
@@ -257,7 +261,7 @@ C
 C Write out a Raster3D format file consisting of triangles 
 C and surface normals (obviously needs a new version of render!)
 C
-	type 1,'Output file:'
+	type 1,'Output file: '
 	accept '(a)', outfile
 	open (unit=2, file=outfile, form='FORMATTED',
      *	      carriagecontrol='LIST', status='UNKNOWN')
@@ -265,9 +269,9 @@ C
 C Assume constant colour for surface, unless discrete vertex colors are
 C in the GRASP file.
 C
-	red   = 0.92
-	green = 0.92
-	blue  = 0.92
+	red   = 0.855
+	green = 0.855
+	blue  = 0.855
 	radius = 0.018
 	
 	do i=1,ntriangles
@@ -282,16 +286,9 @@ C
 	    end if
 
 	    if (potcol) then
-		pot   = (potent(i1) + potent(i2) + potent(i3)) / 3.
-		if (pot.lt.0) then
-		    red   = 0.95 + 0.05*(pot/potmin)
-		    green = 0.95 - 0.85*(pot/potmin)
-		    blue  = 0.95 - 0.85*(pot/potmin)
-		else
-		    blue  = 0.95 + 0.05*(pot/potmin)
-		    green = 0.95 - 0.85*(pot/potmax)
-		    red   = 0.95 - 0.85*(pot/potmax)
-		endif
+		call potrgb( potent(i1), potmin, potmax, rgb(1,1) )
+		call potrgb( potent(i2), potmin, potmax, rgb(1,2) )
+		call potrgb( potent(i3), potmin, potmax, rgb(1,3) )
 	    endif
 
 	    if (vercol) then
@@ -302,13 +299,6 @@ C
 		green = (coltab(j1,2) + coltab(j2,2) + coltab(j3,2)) / 3.
 		blue  = (coltab(j1,3) + coltab(j2,3) + coltab(j3,3)) / 3.
 	    endif
-
-c	    Modify code to account for render's desire to take sqrt(color)
-c	    (color mapping above changed also)
-c	    Albert Berghuis July 1997
-	    red   = red*red
-	    green = green*green
-	    blue  = blue*blue
 
 C	    /* Grid of lines along triangle edges */
 	    if (grid) then
@@ -334,10 +324,40 @@ C	    /* Surface made up of triangles with explicit normals */
      *				(invert * normal(k,i2),k=1,3),
      *	 	    		(invert * normal(l,i3),l=1,3)
    16	    	format('7',/, 3f8.3, 3f8.3, 3f8.3, 1x, 3f6.2)
+		if (vercol) then
+		write (2,17) (coltab(j1,ic),ic=1,3),
+     *                       (coltab(j2,ic),ic=1,3),
+     *                       (coltab(j3,ic),ic=1,3)
+		else if (potcol) then
+		write (2,17) (rgb(k,1),k=1,3),
+     *			     (rgb(k,2),k=1,3),
+     *			     (rgb(k,3),k=1,3)
+		endif
+   17		format('17',/, 3f8.3, 3f8.3, 3f8.3, 1x, 3f6.2)
+
 	    end if
 
   200	continue
 	enddo
 
 C
+	end
+
+	subroutine potrgb( potential, potmin, potmax, rgb )
+	real*4	potential, potmin, potmax
+	real*4	rgb(3)
+c
+	if (potential.lt.0) then
+	    rgb(1) = 0.8 + 0.1*(potential/potmin)
+	    rgb(2) = 0.8 - 0.8*(potential/potmin)
+	    rgb(3) = 0.8 - 0.8*(potential/potmin)
+	else
+	    rgb(3) = 0.8 + 0.1*(potential/potmin)
+	    rgb(2) = 0.8 - 0.8*(potential/potmax)
+	    rgb(1) = 0.8 - 0.8*(potential/potmax)
+	endif
+	rgb(1) = rgb(1)*rgb(1)
+	rgb(2) = rgb(2)*rgb(2)
+	rgb(3) = rgb(3)*rgb(3)
+	return
 	end

@@ -3,6 +3,7 @@
 *
 * Usage: 
 *    rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob xx] [-radius r] [-fancy[0-9]]
+*           [-tabulate histogram.file]
 *
 *
 *	-h		suppresses header records in output
@@ -19,10 +20,18 @@
 *			fancy1  principle axes + transparent bounding ellipsoid
 *			fancy2	equatorial planes only
 *			fancy3  equatorial planes + transparent ellipsoid
+*			fancy4  longest principle axis only
+*	-tabulate [file]instead of creating a Raster3D input file, 
+*			list all atoms with principle axes and anisotropy.
+*			Optionally write a histogram of anisotropy to speficied 
+*			output file; otherwise output is to stderr 
+*
+********************************************************************************
 *
 * EAM Jul 97	- initial version
 * EAM Dec 97	- version 2.4b release
-********************************************************************************
+* EAM Jan 98	- add tabulation option
+* 
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
@@ -33,7 +42,7 @@
       CHARACTER*24 MASK(MAXCOL),TEST
       CHARACTER*80 ATOM(MAXATM),CARD
       LOGICAL MATCH
-      logical		hflag, ellipses, bcflag
+      logical		hflag, ellipses, bcflag, tflag
       integer           fancy
       character*80	flags
 c
@@ -45,11 +54,19 @@ c
       real      eigens(4), evecs(4,4), evecinv(4,4), evecit(4,4)
       real      qq(4,4), qp(4,4), temp(4,4)
 c
+      external	anitoquad
+      integer	anitoquad
+c
       real	problevel(50)
 c
       real start(3),end(3)
       real MARGIN
-      parameter (MARGIN = 1.05)
+      parameter (MARGIN = 1.15)
+c
+      real	Uprin(3), Utemp, Usigma, anisotropy, ellipticity
+      integer	histogram(20), hislun
+      real	anisi(MAXATM), sum_a, sum_d2, anis_mean, anis_sigma
+      integer	nanis, niso
 c
 c     Default to CPK colors and VDW radii
       character*60 defcol(7)
@@ -85,6 +102,7 @@ c
 	verbose  = .false.
 	hflag    = .false.
 	bcflag   = .false.
+	tflag    = .false.
 	ellipses = .true.
 	fancy    = 0
 	prob     = 0.50
@@ -132,9 +150,32 @@ c
 		    fancy = 2
 		else if (flags(7:7).eq.'3') then
 		    fancy = 3
+		else if (flags(7:7).eq.'4') then
+		    fancy = 4
 		else
 		    fancy = 1
 		endif
+	    endif
+	    if (flags(1:4) .eq. '-tab') then
+	    	tflag  = .true.
+	    	hflag  = .true.
+		bcflag = .false.
+		fancy  = 0
+C
+C EAM - Needs error checks all over the place!!!!
+C
+		hislun = NOISE
+		if (i.ge.narg) goto 799
+		call getarg(i+1,flags)
+		if (flags(1:1) .eq. '-') goto 799
+		hislun = 1
+		open(unit=hislun,file=flags,status='UNKNOWN'
+     &               ,carriagecontrol='LIST'
+     &              )
+		do i=1,MAXATM
+		    anisi(i) = 0.0
+		end do
+		goto 799
 	    endif
 	i = i + 1
 	if (i.le.narg) goto 5
@@ -155,8 +196,8 @@ c Table 6.1 of the ORTEP manual
 c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
-     &                  'V2.4b'
-	write (noise,*) 'E A Merritt - December 1997'
+     &                  'V2.4f'
+	write (noise,*) 'E A Merritt - May 1998'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -182,7 +223,7 @@ c
 c
       if (.not. hflag) then
 	WRITE(OUTPUT,'(A,I5,A)') 
-     &     'Raster3D thermal ellipsoid program V2.4b',
+     &     'Raster3D thermal ellipsoid program V2.4f',
      &     INT(prob*100.+0.5), '% probability bounds'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
@@ -315,12 +356,14 @@ c
 	WRITE(OUTPUT,'(A)') '*'
 	WRITE(OUTPUT,'(A)') '*'
       end if
-	WRITE(OUTPUT,'(A)') '9 Thermal ellipsoids from Rastep Version 2.4'
-	WRITE(OUTPUT,'(A,F5.2)') '9 Probability level',float(iprob)/50.
+      if (.not. tflag) then
+	WRITE(OUTPUT,'(A)') '# Thermal ellipsoids from Rastep Version 2.4f'
+	WRITE(OUTPUT,'(A,F5.2)') '# Probability level',float(iprob)/50.
+      end if
 c
 c Write ellipsoids to input file for render
 c
-      IF (fancy.eq.0) GOTO 139
+      IF (fancy.eq.0 .and. .not.tflag) GOTO 139
 c
 c First, optional pass, to write fancy stuff associated with ellipsoids
 c
@@ -347,7 +390,10 @@ c
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
-	    call anitoquad( anisou, pradius, quadric, eigens, evecs )
+	    if (anitoquad(anisou, pradius, quadric, eigens, evecs).lt.0) then
+	        write (noise,*) '*** Non-positive definite ellipsoid - ',
+     &				atom(iatm+1)(13:26)
+	    endif
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
 	    radlim = radlim * MARGIN
 c
@@ -364,7 +410,77 @@ c	Only for debugging ellipsoids
 903	    format(a,3f8.3,4x,a,f8.3,4x,a,f8.3)
 904	    format(a,9f7.3)
 c
-c	Draw principal axes instide bounding ellipsoid
+c	Tabulate principal axes of ellipsoid for each atom
+	  if (tflag) then
+	    do i=1,3
+	    	Uprin(i) = eigens(i)**2
+	    enddo
+	    if (Uprin(2).gt.Uprin(1)) then
+	    	Utemp    = Uprin(1)
+		Uprin(1) = Uprin(2)
+		Uprin(2) = Utemp
+	    endif
+	    if (Uprin(3).gt.Uprin(1)) then
+	    	Utemp    = Uprin(1)
+		Uprin(1) = Uprin(3)
+		Uprin(3) = Utemp
+	    endif
+	    if (Uprin(3).gt.Uprin(2)) then
+	    	Utemp    = Uprin(2)
+		Uprin(2) = Uprin(3)
+		Uprin(3) = Utemp
+	    endif
+c
+c	  Anisotropy we define as Umin / Umax
+c	  as in shelxpro output
+	    anisotropy  = min(Uprin(1),Uprin(2),Uprin(3))
+     &                  / max(Uprin(1),Uprin(2),Uprin(3))
+	    anisi(iatm) = anisotropy
+c
+c	  But don't count atoms which are perfectly isotropic
+	    if (anisotropy .eq. 1.0) then
+	    	niso  = niso + 1
+	    else
+	    	sum_a = sum_a + anisotropy
+	    	nanis = nanis + 1
+	    end if
+c
+c	  Ellipticity we define as 1 / anisotropy
+	    if (anisotropy.eq.0) then
+		ellipticity = 0
+	    else
+		ellipticity = 1. / anisotropy
+	    end if
+c
+c	  Longhi et al (1997) JMB 268, 779-799.
+c	  proposed another measure A = sigU / meanU
+	    Utemp  = (Uprin(1) + Uprin(2) + Uprin(3)) / 3.0
+	    Usigma = (Uprin(1)-Utemp)**2 
+     &		   + (Uprin(2)-Utemp)**2 + (Uprin(3)-Utemp)**2
+	    alonghi = Usigma / Utemp
+c
+c	  Might want to check correlation with Uiso
+	    Uiso = SPAM(4,iatm)
+c
+c	  Cosmetic change to atom identifier for the sake of sorting
+	    do i = 15,18
+		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
+	    enddo
+	    if (ATOM(iatm)(22:22) .ne. ' ') then
+	      do i = 23,25
+		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
+	      enddo
+	    endif
+	    write (output,905) ATOM(iatm)(14:26),
+     &            Uprin(1),Uprin(2),Uprin(3),anisotropy,alonghi,Uiso
+905	  format(A14,3F9.4,2X,F9.4,F9.4,F9.4)
+c
+c	  Also make a histogram of anisotropies
+	    i = anisotropy * 20. + 1
+	    histogram(i) = histogram(i) + 1
+	  endif
+c
+c	Draw principal axes inside bounding ellipsoid
 	  if (fancy.eq.1) then
 	    do i=1,3
 	      size = eigens(i) * pradius - 0.02
@@ -374,10 +490,31 @@ c	Draw principal axes instide bounding ellipsoid
 	      end(1)   = x + size*evecs(1,i)
 	      end(2)   = y + size*evecs(2,i)
 	      end(3)   = z + size*evecs(3,i)
-	      write (output,905) start, end
-905	      format(' 3',/,
+	      write (output,907) start, end
+907	      format(' 3',/,
      &             3f8.4,' 0.02',3f8.3,' 0.02','  0.5 1.0 0.3')
 	    enddo
+	  endif
+c
+c	Draw longest principle axis only
+c	(experimental use only - not supported or documented)
+	  if (fancy.eq.4) then
+	    imax = 1
+	    if (eigens(2).gt.eigens(imax)) imax = 2
+	    if (eigens(3).gt.eigens(imax)) imax = 3
+	    size = eigens(imax) * pradius 
+	    imin = 1
+	    if (eigens(2).lt.eigens(imin)) imin = 2
+	    if (eigens(3).lt.eigens(imin)) imin = 3
+	    imed = 6 - (imax+imin)
+	    size = size * eigens(imax)/eigens(imed)
+	    start(1) = x - size*evecs(1,imax)
+	    start(2) = y - size*evecs(2,imax)
+	    start(3) = z - size*evecs(3,imax)
+	    end(1)   = x + size*evecs(1,imax)
+	    end(2)   = y + size*evecs(2,imax)
+	    end(3)   = z + size*evecs(3,imax)
+	    write (output,907) start, end
 	  endif
 c
 c	Construct 3 quadrics corresponding to the 3 orthogonal planes
@@ -412,11 +549,52 @@ c     Set transparency for enclosing ellipoids
       if (fancy.eq.1 .or. fancy.eq.3) then
 	write (output,'(A,/,A)') '9 Begin transparent ellipsoids','8 '
 	write (output,'(A)') ' 15.  0.6   1.0 1.0 1.0   0.6   0 0 0 0'
-      else if (fancy.eq.2) then
+      else if (fancy.eq.2 .or. fancy.eq.4) then
 	goto 160
       endif
 c
   139 CONTINUE
+c
+c If we're just tabulating ellipticity, then we are all done now
+c
+      if (tflag) then
+	total = 0
+	do i = 1,20
+	    total = total + histogram(i)
+	end do
+	if (total.eq.0) then
+	    write (noise,*)  'No ANISOU records found'
+	    call exit(0)
+	end if
+	write (hislun,'(A)') '# Anisotropy  Fraction  Number'
+	write (hislun,'(A)') '#   range     of atoms of atoms'
+	do i = 1,20
+	    write (hislun,'(2F5.2,3X,F8.3,I10)') 
+     &		(float(i)-1.)/20., float(i)/20., 
+     &		float(histogram(i))/total, histogram(i)
+	end do
+c       Calculate mean and sigma of distribution
+	sum_d2 = 0.0
+	anis_mean = sum_A / float(nanis)
+	biso_mean = 0.0
+	do i = 1,MAXATM
+	    if (anisi(i).ne.0) then
+		sum_d2 = sum_d2 + (anisi(i) - anis_mean)**2
+		biso_mean = biso_mean + SPAM(4,i)
+	    end if
+	end do
+	anis_sigma = sqrt( sum_d2 / float(nanis - 1) )
+	biso_mean  = biso_mean / float(nanis)
+	biso_mean  = biso_mean * (3.14159*3.14159*8.0) / PRADIUS
+	write (hislun,'(A)')         '#'
+	write (hislun,'(A,I10)')     '# number of ANISOU records:',nanis+niso
+	write (hislun,'(A,I10)')     '#      non-isotropic atoms:',nanis
+	write (hislun,'(A,I10)')     '#          isotropic atoms:',niso
+	write (hislun,'(A,2F10.3)')  '# mean, sigma   Anisotropy:',
+     &                               anis_mean, anis_sigma
+	write (hislun,'(A,2F10.3)')  '# mean          Biso:      ',biso_mean
+        call exit(0)
+      end if
 c
 c Second pass write a single sphere or ellipsoid for each atom
 c
@@ -445,7 +623,10 @@ c
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
-	    call anitoquad( anisou, pradius, quadric, eigens, evecs )
+	    if (anitoquad(anisou, pradius, quadric, eigens, evecs).lt.0) then
+	        write (noise,*) '*** Non-positive definite ellipsoid - ',
+     &				atom(iatm+1)(13:26)
+	    endif
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
 	    radlim = radlim * MARGIN
 	    write (output,151) 14, x,y,z,radlim,red,green,blue

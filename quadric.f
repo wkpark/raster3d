@@ -117,6 +117,9 @@ C
       PARAMETER (MAXNPX = 32, MAXNPY = 32)
       PARAMETER (NSX = 360, NSY = 360)
 *
+      EXTERNAL PERSP
+      REAL     PERSP
+*
       COMMON /RASTER/ NTX,NTY,NPX,NPY
       INTEGER         NTX,NTY,NPX,NPY
 *
@@ -168,7 +171,8 @@ C
 	call transf (xq, yq, zq, TMAT)
 	radlim = radlim / TMAT(4,4)
 	if (eyepos.gt.0) then
-	    pfac = 1./(1.-zq/eyepos)
+c	    pfac = 1./(1.-zq/eyepos)
+	    pfac = persp(zq)
 	    xq = xq * pfac
 	    yq = yq * pfac
 	    zq = zq * pfac
@@ -727,7 +731,24 @@ c
 	end
 c	
 
-		    
 
-
+C	This one really has nothing to do with quadrics per se,
+C	but since it's invoked by qinp, both render and rastep
+C	need to be able to see it.
+C	Should really be in separate file of support routines
+C
+	FUNCTION PERSP( Z )
+	REAL PERSP, Z
+	COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+	REAL   XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT
+	REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
+	REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+	IF (Z/EYEPOS .GT. 0.999) THEN
+	    PERSP = 1000.
+	ELSE
+	    PERSP = 1. / (1. - Z/EYEPOS)
+	ENDIF
+	RETURN
+	END
 

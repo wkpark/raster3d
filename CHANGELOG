@@ -1,3 +1,8 @@
+ 7-May-98	V2.4f new ungrasp.f, fix crash if shadows + VERTEXRGB
+29-Apr-98	V2.4e Bug fix to TIFF output (blue channel was shifted by 1 pixel)
+18-Mar-98	V2.4d limit maximum distortion due to perspective, 
+		update ungrasp, mark resolution in TIFF images as 300dpi 
+ 6-Feb-98	V2.4c Fix bug in check against bounding sphere of quadrics
  1-Jan-98	V2.4b
 23-Dec-97	Verify installation under DU4.0, Redhat4.2, Irix5.3, Irix6.4
 		add patch to work around I/O glitch in AIX

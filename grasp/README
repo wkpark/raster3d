@@ -18,14 +18,6 @@ Here is a list of known problems:
   in a GRASP surface file.  Currently it can only deal with stored potentials
   and discrete color indexes.
 
-- The potential and color indexes are stored in the file are associated with
-  specific vertices, but they need to be used in describing Raster3D triangles.
-  Since the three vertices of the triangle can have different colors, I take
-  the average.  This works, but does not look nearly so nice as it would if
-  there were a machanism for interpolating colors smoothly within the triangle.
-  Yeah, it would be possible to add yet another object type to specify 
-  per-vertex color informations in render, but I'd rather not.
-
 - The ungrasp utility must be compiled and run on the same architecture machine
   as your GRASP executable.  I believe that means SGI only, but I could be
   wrong.
@@ -36,5 +28,12 @@ Here is a list of known problems:
     GRASP homepage:
 	http://tincan.bioc.columbia.edu/Lab/grasp/
 
-
 Ethan A Merritt - 8 Feb 1996
+
+-----------------------------------------------------------------------------
+
+18 Mar 1998
+	The ungrasp code has been updated to use per-vertex colors
+	(object type 17) in Raster3D V2.4d
+ 7 May 1998
+	And now it works for coloring by potential also

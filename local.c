@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.4(alpha)
+ * Raster3D V2.4e
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -41,6 +41,12 @@
  *		-invert	invert y coordinate axis
  * additional parameter passed in mode 1 calls to inform local() of options
  * set in render code (e.g. alpha channel)
+ *
+ * V2.4d	Set TIFF resolution flag to 300dpi
+ *		This may be incorrect, of course, but it's more likely to
+ *		be correct than the default treatment of 72dpi in programs
+ *		like PhotoShop
+ * V2.4e	Bugfix for TIFF output image (blue channel shifted by 1 pixel)
  */
 
 #include	<stdio.h>
@@ -223,12 +229,15 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 	    ofile = "render.tif";
 	  tfile=TIFFOpen(ofile,"w");
 	  TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.4alpha");
+	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.4d");
 	  TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
 	  TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
 	  TIFFSetField(tfile,TIFFTAG_IMAGEWIDTH,xsize);
 	  TIFFSetField(tfile,TIFFTAG_IMAGELENGTH,ysize);
+	  TIFFSetField(tfile,TIFFTAG_RESOLUTIONUNIT,2);
+	  TIFFSetField(tfile,TIFFTAG_XRESOLUTION,300.);
+	  TIFFSetField(tfile,TIFFTAG_YRESOLUTION,300.);
 #ifdef __alpha
 	  TIFFSetField(tfile,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB);
 #endif
@@ -409,20 +418,21 @@ void my_write_tiff(fp, buf1, buf2, buf3, buf4, size, scanline)
 
 {
 static int row=0;
-int i, j= -1;
+int i; 
+int j = 0;
 
   if (alpha_channel)
     for (i=0; i<size; i++) {
-	scanline[j++] = buf4[i];
 	scanline[j++] = buf1[i];
 	scanline[j++] = buf2[i];
 	scanline[j++] = buf3[i];
+	scanline[j++] = buf4[i];
     }
   else
     for (i=0; i<size; i++) {
-	scanline[j++] = buf3[i];
 	scanline[j++] = buf1[i];
 	scanline[j++] = buf2[i];
+	scanline[j++] = buf3[i];
     }
 
 if (TIFFWriteScanline(fp,scanline,row,0) < 0)
