@@ -25,7 +25,12 @@ if ($1 == '') then
    exit
 endif
 #
-normal3d -stereo < $1 > stereo3d.tmp
+if ($1 == ''-'') then
+   normal3d -stereo -expand > stereo3d.tmp
+else
+   normal3d -stereo -expand < $1 > stereo3d.tmp
+endif
+#
 echo "@stereo3d.tmp" >> left.r3d
 echo "@stereo3d.tmp" >> right.r3d
 render -tiff left.tiff  < left.r3d

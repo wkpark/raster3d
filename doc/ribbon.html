@@ -15,13 +15,13 @@ backbone for the
 molecular graphics package.<p>
 
 <listing>
-ribbon [-h] [-d[012345]] pdbfile
+ribbon [-h] [-d[0123456]] pdbfile
 </listing>
 or
 (to take PDB records from stdin)
 
 <listing>
-ribbon [-h] -d[012345] -
+ribbon [-h] -d[0123456] -
 </listing>
 Ribbon
 reads a Brookhaven PDB coordinate file and produces a file on stdout containing
@@ -50,7 +50,7 @@ set of scaling and processing options. The -h flag will suppress these header
 records so that the output file contains only triangle descriptors. This option
 is useful for producing files which describe only part of a scene, and which
 are to be later combined with descriptor files produced by other programs.
-<dt><i>-d[012345]</i><dd>By default ribbon requires interactive input to select
+<dt><i>-d[0123456]</i><dd>By default ribbon requires interactive input to select
 ribbon parameters and coloring information. Five default coloring schemes are
 implemented, however, and these may be selected as a command line option to
 bypass any interactive input. 
@@ -64,6 +64,8 @@ Note that pattern
 <br>		matching on the color records is not done; colors are simply taken
 sequentially as new 
 <br>		chains are encountered.</dl><h4>
+<br>-d6 		Take color from nearest CA atom using color match templates
+<br>			from the COLOUR records at the head of the input file.
 <a name="RTFToC22">DESCRIPTION</a></h4>
 The input to ribbon consists of a single text file containing colour
 information [optional] and atomic coordinates in Brookhaven PDB data bank

@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.3c (7 May 1997)
+*     Version 2.3d (7 Aug 1997)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -283,7 +283,7 @@
 *
 *
 *     Overkill:
-      IMPLICIT REAL*4 (A-H, O-Z)
+      IMPLICIT REAL   (A-H, O-Z)
 *
 *     I/O units for control input, image output, info output
       INTEGER INPUT, INPUT0, OUTPUT, NOISE
@@ -292,7 +292,7 @@
       PARAMETER (MAXLEV=5)
 *
 *     Other possibly platform-dependent stuff
-      REAL*4	HUGE
+      REAL  	HUGE
       PARAMETER (HUGE = 1.0e37)
 *     Slop is related to the accuracy (in pixels) to which we must predict
 *     shadow edges. Too low a value causes whole triangles to be spuriously
@@ -301,7 +301,7 @@
 *     EAM March 97 - optimal value seems to depend on tile size
 *                    ZSLOP will be set below to SLOP * MAX(NPX,NPY)
       PARAMETER (SLOP= 0.35)
-      REAL*4    ZSLOP
+      REAL      ZSLOP
 *
 *     Codes for triangle, sphere, truncated cone, and string of pearls
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
@@ -394,7 +394,7 @@
       INTEGER SCHEME
 *
 *     Background colour
-      REAL*4 BKGND(3)
+      REAL   BKGND(3)
 *
 *     "Shadow mode?"
       LOGICAL SHADOW
@@ -403,22 +403,22 @@
       INTEGER IPHONG
 *
 *     Straight-on (secondary) light source contribution
-      REAL*4 STRAIT
+      REAL   STRAIT
 *
 *     Ambient light contribution
-      REAL*4 AMBIEN
+      REAL   AMBIEN
 *
 *     Specular reflection component
-      REAL*4 SPECLR
+      REAL   SPECLR
 *
 *     Distance (in +z) of viewing eye
-      REAL*4 EYEPOS
+      REAL   EYEPOS
 *
 *     Primary light source position
-      REAL*4 SOURCE(3)
+      REAL   SOURCE(3)
 *
 *     Input transformation
-      REAL*4 TMAT(4,4)
+      REAL   TMAT(4,4)
 *
 *     Input mode
       INTEGER INMODE
@@ -433,12 +433,12 @@
       LOGICAL INFLGS(MXTYPE),INFLG
 *
 *     Shortest rotation from light source to +z axis
-      REAL*4 SROT(3,3)
+      REAL   SROT(3,3)
 *
 *     Stuff for shading
-      REAL*4 NL(3),NORMAL(3),LDOTN
-      REAL*4 RGBCUR(3),RGBSHD(3),RGBFUL(3)
-      REAL*4 SPECOL(3)
+      REAL   NL(3),NORMAL(3),LDOTN
+      REAL   RGBCUR(3),RGBSHD(3),RGBFUL(3)
+      REAL   SPECOL(3)
 *
 *     The s & m guys are for the shadow box in the following
 *
@@ -453,13 +453,13 @@
 *     and remember any special props of current material on input
       INTEGER MLIST(MAXMAT)
       LOGICAL MATCOL
-      REAL*4  RGBMAT(3)
+      REAL    RGBMAT(3)
 *
 *     Object details, shadow object details
-      REAL*4 DETAIL(MAXDET), SDTAIL(MAXSDT)
+      REAL   DETAIL(MAXDET), SDTAIL(MAXSDT)
 *
 *     Input buffer for details
-      REAL*4 BUF(100)
+      REAL   BUF(100)
 *
 *     Number of objects in each tile's short list (m... are for shadows)
       INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
@@ -475,7 +475,7 @@
       INTEGER KSHORT(MAXSHR), MSHORT(MAXSSL)
 *
 *     Temporary for sorting
-      REAL*4 ZTEMP(MAXOBJ)
+      REAL   ZTEMP(MAXOBJ)
 *
 *     Where the permutation representing the sort is stored
       INTEGER ZINDEX(MAXOBJ)
@@ -488,10 +488,10 @@
       COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
      &                        NORMTP, NORM2D, NORM3D
       INTEGER NTRANSP, INDTOP, IND2ND, IND3RD
-      REAL*4  ZTOP, Z2ND, Z3RD
-      REAL*4  NORMTP(3), NORM2D(3), NORM3D(3)
-      REAL*4  RGBLND(3), RGBLN1(3)
-      REAL*4  BLEND0, BLEND1, SBLEND
+      REAL    ZTOP, Z2ND, Z3RD
+      REAL    NORMTP(3), NORM2D(3), NORM3D(3)
+      REAL    RGBLND(3), RGBLN1(3)
+      REAL    BLEND0, BLEND1, SBLEND
       PARAMETER (EDGESLOP = 0.1)
 *
 * Support for a "glow" light source 
@@ -501,7 +501,7 @@
       INTEGER	GLOWLIST(MAXGLOWS), NGLOW
 *
 * There is not intended to be Z-clipping in back, but maybe in the future...
-      REAL*4	BACKCLIP
+      REAL  	BACKCLIP
 *
 *     Output buffer
 *     EAM May 1990 invert index order for packing efficiency on IRIS
@@ -520,7 +520,7 @@
       INTEGER IDET(MXTYPE),KDET(MXTYPE),SDET(MXTYPE)
 *
 *     Keep track of actual coordinate limits (for information only)
-      REAL*4 TRULIM(3,2)
+      REAL   TRULIM(3,2)
 c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
@@ -562,7 +562,7 @@ c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
-      WRITE (NOISE,*) 'Raster3D V2.3c - 7 May 1997'
+      WRITE (NOISE,*) 'Raster3D V2.3d - 7 Aug 1997'
 *
 *     Initialize to level 0 of file indirection
       INPUT = INPUT0
@@ -2824,8 +2824,8 @@ C
 *     END
 
       SUBROUTINE TRANSF (X,Y,Z, T)
-      REAL*4 X,Y,Z,T(4,4)
-      REAL*4 H(4)
+      REAL   X,Y,Z,T(4,4)
+      REAL   H(4)
       H(1) = X*T(1,1) + Y*T(2,1) + Z*T(3,1) + T(4,1)
       H(2) = X*T(1,2) + Y*T(2,2) + Z*T(3,2) + T(4,2)
       H(3) = X*T(1,3) + Y*T(2,3) + Z*T(3,3) + T(4,3)
@@ -2839,7 +2839,7 @@ C
 
       SUBROUTINE HSORTD (N, A, NDEX)
       INTEGER N
-      REAL*4 A(N)
+      REAL   A(N)
       INTEGER NDEX(N)
 *
 *       heapsort on double precision
@@ -2876,7 +2876,7 @@ C
       SUBROUTINE HSIFTD (N, A, NDEX, L, R)
 *     used by hsortd
       INTEGER N
-      REAL*4 A(N)
+      REAL   A(N)
       INTEGER NDEX(N), L, R
       INTEGER I, J, X
       I = L
@@ -2894,7 +2894,7 @@ C
       RETURN
       END
       SUBROUTINE PLANER (X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3, A,B,C,D)
-      IMPLICIT REAL*4 (A-Z)
+      IMPLICIT REAL   (A-Z)
 *     solve for coefficients of plane eqn z=ax+by+c
 *     and yield d=0 in case of degenerate ("edge-on") triangle
       D1 = Z1*(Y2-Y3)       - Y1*(Z2-Z3)       + Z2*Y3-Y2*Z3
@@ -2935,14 +2935,14 @@ C
 	LOGICAL  CYL1
 c	implicit NONE
 	INTEGER flag
-	REAL*4	x1,y1,z1, x2,y2,z2, xb,yb,zb
-	REAL*4	R
-	REAL*4	xa,ya,za
+	REAL  	x1,y1,z1, x2,y2,z2, xb,yb,zb
+	REAL  	R
+	REAL  	xa,ya,za
 c
-	REAL*4	ca,cb,cg,dx,dy,dz,d2
-	REAL*4	A0,A1,A2,Q
-	REAL*4	p1,r2,dx2,dy2
-	REAL*4	dd1,dd2
+	REAL  	ca,cb,cg,dx,dy,dz,d2
+	REAL  	A0,A1,A2,Q
+	REAL  	p1,r2,dx2,dy2
+	REAL  	dd1,dd2
 c
 c	start with direction cosines * d2
 	ca = x2 - x1
@@ -3062,17 +3062,17 @@ C is transparent also we have to show something reasonable underneath it.
 C
 	FUNCTION RANK( IND, ZP, NORMAL, FLAG )
 *
-	IMPLICIT REAL*4 (A-H, O-Z)
+	IMPLICIT REAL   (A-H, O-Z)
 	INTEGER  IND
-	REAL*4   ZP, NORMAL(3)
+	REAL     ZP, NORMAL(3)
 	INTEGER  FLAG(1)
 *
 *     Support for transparency
       COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
      &                        NORMTP, NORM2D, NORM3D
       INTEGER NTRANSP, INDTOP, IND2ND, IND3RD
-      REAL*4  ZTOP, Z2ND, Z3RD
-      REAL*4  NORMTP(3), NORM2D(3), NORM3D(3)
+      REAL    ZTOP, Z2ND, Z3RD
+      REAL    NORMTP(3), NORM2D(3), NORM3D(3)
 *
 *     Bit definitions for FLAG(MAXOBJ) array
       INTEGER    FLAT,      RIBBON,    SURFACE,   PROPS

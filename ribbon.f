@@ -50,8 +50,9 @@ C
 C
 C Get first CA and O
 1     CALL GETCAO(XCA(1,1),XO(1,1),NAT,NATOM,IERR)
-      IF(NAT.LE.0) RETURN
-      IF(IERR.NE.0) GO TO 1
+CEAM  IF(NAT.LE.0) RETURN
+CEAM  IF(IERR.NE.0) GO TO 1
+      IF(IERR.NE.0) RETURN
       I=0
 C
 C  Loop for residues
@@ -115,6 +116,8 @@ C
       FR=(FLOAT(J)-RIB2)*DRIB
       CALL SCALEV(F,FR,E)
       CALL VSUM(GUIDE(1,I,J),P,F)
+C     EAM - Maybe should be NAT-2 ??
+      guide(4,i,j) = NAT - 3
 20    CONTINUE
 C
 C Store things for next residue
@@ -129,7 +132,8 @@ C
       CALL RIBDRW(GUIDE,NRIB,MAXRES,NPT,NCHORD)
 C
 C Loop chains if required
-      IF(NAT.GT.0) GO TO 1
+CEAM  IF(NAT.GT.0) GO TO 1
+      IF (IERR.EQ.0) GOTO 1
 C
       RETURN
       END
@@ -187,11 +191,12 @@ C
       DIMENSION XCA(3),XO(3)
 C
 	parameter	(MAXATOM=10000)
-	common /SPAM/ natm, SPAM(7,MAXATOM)
+	common /SPAM/ natm, SPAM(4,MAXATOM), SCAM(MAXATOM)
+	integer SCAM
 c
 	if ((nat .gt. natm) .or. (nat .gt. natom-1)) then
 	     ierr = 1
-	     nat = -1
+CEAM	     nat = -1
 	     return
 	end if
 

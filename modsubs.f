@@ -9,17 +9,6 @@ C
       RETURN
       END
 C
-      SUBROUTINE ICROSS(B,C,A)
-C     ========================
-C
-C Integer version
-C
-      INTEGER A(3),B(3),C(3)
-      A(1)=B(2)*C(3)-C(2)*B(3)
-      A(2)=B(3)*C(1)-C(3)*B(1)
-      A(3)=B(1)*C(2)-C(1)*B(2)
-      RETURN
-      END
       FUNCTION DOT(A,B)
 C     ================
 C
@@ -27,15 +16,6 @@ C     DOT PRODUCT OF TWO VECTORS
 C
       DIMENSION A(3),B(3)
       DOT=A(1)*B(1)+A(2)*B(2)+A(3)*B(3)
-      RETURN
-      END
-      FUNCTION IDOT(A,B)
-C     =================
-C
-C     Dot product of two vectors, integer version
-C
-      INTEGER A(3),B(3)
-      IDOT=A(1)*B(1)+A(2)*B(2)+A(3)*B(3)
       RETURN
       END
 	SUBROUTINE MATMUL(A,B,C)
@@ -78,9 +58,9 @@ C
 C	A=(B)-1
 C
 	REAL A(3,3),B(3,3),C(3,3)
-	CALL CROSS(C(1,1),B(1,2),B(1,3))
-	CALL CROSS(C(1,2),B(1,3),B(1,1))
-	CALL CROSS(C(1,3),B(1,1),B(1,2))
+	CALL CROSS(B(1,2),B(1,3),C(1,1))
+	CALL CROSS(B(1,3),B(1,1),C(1,2))
+	CALL CROSS(B(1,1),B(1,2),C(1,3))
 	D=DOT(B(1,1),C(1,1))
 C
 C	TEST DETERMINANT
@@ -96,33 +76,7 @@ C
 20	A(I,J)=C(J,I)/D
 	RETURN
 	END
-	SUBROUTINE IMINV(A,B,D)
-C	=======================
 C
-C    Integer version
-C	INVERT A GENERAL 3X3 MATRIX AND RETURN DETERMINANT IN D
-C
-C	A=(B)-1
-C
-	INTEGER A(3,3),B(3,3),C(3,3),D
-	CALL ICROSS(C(1,1),B(1,2),B(1,3))
-	CALL ICROSS(C(1,2),B(1,3),B(1,1))
-	CALL ICROSS(C(1,3),B(1,1),B(1,2))
-	D=IDOT(B(1,1),C(1,1))
-C
-C	TEST DETERMINANT
-C
-	IF(IABS(D).GT.0)GO TO 10
-	D=0
-	RETURN
-C
-C	DETERMINANT IS NON-ZERO
-C
-10	DO 20 I=1,3
-	DO 20 J=1,3
-20	A(I,J)=C(J,I)/D
-	RETURN
-	END
       SUBROUTINE SCALEV(A,X,B)
 C     ========================
 C

@@ -265,9 +265,9 @@ C
 C Assume constant colour for surface, unless discrete vertex colors are
 C in the GRASP file.
 C
-	red   = 0.855
-	green = 0.855
-	blue  = 0.855
+	red   = 0.92
+	green = 0.92
+	blue  = 0.92
 	radius = 0.018
 	
 	do i=1,ntriangles
@@ -284,13 +284,13 @@ C
 	    if (potcol) then
 		pot   = (potent(i1) + potent(i2) + potent(i3)) / 3.
 		if (pot.lt.0) then
-		    red   = 0.9 + 0.1*(pot/potmin)
-		    green = 0.9 - 0.8*(pot/potmin)
-		    blue  = 0.9 - 0.8*(pot/potmin)
+		    red   = 0.95 + 0.05*(pot/potmin)
+		    green = 0.95 - 0.85*(pot/potmin)
+		    blue  = 0.95 - 0.85*(pot/potmin)
 		else
-		    blue  = 0.9 + 0.1*(pot/potmin)
-		    green = 0.9 - 0.8*(pot/potmax)
-		    red   = 0.9 - 0.8*(pot/potmax)
+		    blue  = 0.95 + 0.05*(pot/potmin)
+		    green = 0.95 - 0.85*(pot/potmax)
+		    red   = 0.95 - 0.85*(pot/potmax)
 		endif
 	    endif
 
@@ -302,6 +302,13 @@ C
 		green = (coltab(j1,2) + coltab(j2,2) + coltab(j3,2)) / 3.
 		blue  = (coltab(j1,3) + coltab(j2,3) + coltab(j3,3)) / 3.
 	    endif
+
+c	    Modify code to account for render's desire to take sqrt(color)
+c	    (color mapping above changed also)
+c	    Albert Berghuis July 1997
+	    red   = red*red
+	    green = green*green
+	    blue  = blue*blue
 
 C	    /* Grid of lines along triangle edges */
 	    if (grid) then

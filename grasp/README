@@ -10,6 +10,10 @@ to make due with non-ideal conversion utilities like this one.
 
 Here is a list of known problems:
 
+- You must select the "absolute centering" option when you save the GRASP
+  surface.  That is the only way to preserve the original PDB coordinates
+  associated with the stored surface.
+
 - ungrasp does not know about all the possible types of information stored
   in a GRASP surface file.  Currently it can only deal with stored potentials
   and discrete color indexes.

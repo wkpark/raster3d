@@ -1,14 +1,14 @@
 .ad l
 .nh
-.TH RIBBON 1 "23 November 1993" "Raster3D"
+.TH RIBBON 1 "4 August 1997" "Raster3D"
 .SH NAME
 
 ribbon - preprocessor for ribbon models in Raster3D molecular graphics package
 .SH SYNOPSIS
 
-   "ribbon" [\fI-h\fP] [\fI-d[012345]\fP] pdbfile
+   "ribbon" [\fI-h\fP] [\fI-d[0123456]\fP] pdbfile
  or
-   "ribbon" [\fI-h\fP] \fI-d[012345]\fP -     (to take PDB records from stdin)
+   "ribbon" [\fI-h\fP] \fI-d[0123456]\fP -     (to take PDB records from stdin)
 
 .PP
 \fIRibbon\fP reads a Brookhaven PDB coordinate file and 
@@ -42,7 +42,7 @@ This option is useful for producing files which describe only part
 of a scene, and which are to be later combined with descriptor files
 produced by other programs.
 
-.B "-d[012345]"
+.B "-d[0123456]"
 .PP
 By default \fIribbon\fP requires interactive input to select
 ribbon parameters and coloring information.  Five default coloring
@@ -57,6 +57,8 @@ command line option to bypass any interactive input.
 		input stream. Note that pattern matching on the color
 		records is _not_ done; colors are simply taken sequentially
 		as new chains are encountered.
+     -d6	Color by nearest CA atom as taken from the COLOUR records
+		at the head of the input file (new in version 2.3d)
 
 .SH DESCRIPTION
 .PP 

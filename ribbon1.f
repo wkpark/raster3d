@@ -34,7 +34,7 @@
 *                   5:      each chain is new color (from successive input
 *                               (COLOR cards at start of input file)
 *		    6:      use prefixed COLOR cards (as in SETUP/RENDER)
-*				(not implemented)
+*				(implemented 4-Aug-1997 EAM)
 *		COLOR1,COLOR2,COLOR3	RGB components (9f8.0)
 c                                             
       INTEGER INPUT, OUTPUT, NOISE
@@ -51,11 +51,13 @@ C	Modified to read in 3x3 view matrix (e.g. from CCP FRODO view command)
 C	from file.  Matrix is applied before
 C	finding translation, center, and scale.  Afterwards the input matrix
 C	to RENDER is therefore the identity matrix.
+C EAM Aug 1997 - Honor COLOUR requests
 C                                                     
 c
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3),
      &  		RGB(3,MAXCOL)
-	common /SPAM/ natm, SPAM(7,MAXATM)
+	common /SPAM/   natm, SPAM(4,MAXATM), SCAM(MAXATM)
+	integer		SCAM
 	common /FLAGS/  mflag, hflag, dflag
 	logical		mflag, hflag, dflag
 c
@@ -153,8 +155,6 @@ c
         WRITE(NOISE,*) 'No colours in input.'
 c       STOP 40
       ENDIF
-C     Atom-based colors not currently supported, ignore them
-      ICOL = 1
 C
       XMAX = -1E20
       XMIN =  1E20
@@ -179,9 +179,17 @@ C
             SPAM(2,IATM) = Y
             SPAM(3,IATM) = Z
             SPAM(4,IATM) = RAD
-            SPAM(5,IATM) = RGB(1,ICOL)
-            SPAM(6,IATM) = RGB(2,ICOL)
-            SPAM(7,IATM) = RGB(3,ICOL)
+C
+C	    EAM Aug 1997 - finally get around to honoring atom colors
+            SPAM(5,IATM) = 1
+	    DO 84 ICOL = 1, NCOL
+		IF (SMATCH(TEST,MASK(ICOL))) THEN
+		    SCAM(IATM) = ICOL
+		    GOTO 86
+		ENDIF
+   84	    CONTINUE
+   86	    CONTINUE
+C
             XMAX = MAX(XMAX,X+RAD)
             XMIN = MIN(XMIN,X-RAD)
             YMAX = MAX(YMAX,Y+RAD)
@@ -234,15 +242,12 @@ C
 	write (noise,156) '     scale:', SCALE
   156	format(1x,a,3f8.2)
 c
-c      DO 150 IATM=1,NATM
-c        WRITE(OUTPUT,'(7F8.3)') (SPAM(I,IATM),I=1,7)
-c150   CONTINUE
 c
 	if (dflag) then
 	    width = 1.5
 	    offset = 1.2
 	    nchord = 5
-	    if (ischeme .le. 0 .or. ischeme .gt. 5) ischeme = 2
+	    if (ischeme .le. 0 .or. ischeme .gt. 6) ischeme = 2
 	     call vload( color1, 0.0, 0.0, 0.4 )
 	     call vload( color2, 0.5, 0.0, 0.0 )
 	     call vload( color3, 0.6, 0.6, 0.6 )
@@ -270,7 +275,7 @@ c	because smoothed curve doesn't go through guide points.
      5	/,'      5: new color for each chain (requires COLOUR cards)')
 	write (noise,3) 'Coloring scheme: '
 	read  (5,158) nq,ischeme
-	if (nq.eq.0 .or. ischeme.le.0 .or. ischeme.gt.5) ischeme = 1
+	if (nq.eq.0 .or. ischeme.le.0 .or. ischeme.gt.6) ischeme = 1
 	if (ischeme .eq. 1) write (noise,3)
      1      'COLOR1 (RGB values, 3f8.0): '
 	if (ischeme .eq. 2) write (noise,3)
@@ -279,7 +284,7 @@ c	because smoothed curve doesn't go through guide points.
      1      'COLOR1, COLOR2 (RGB values, 6f8.0): '
 	if (ischeme .eq. 4) write (noise,3) 
      1      'COLOR1, COLOR2, COLOR3 (RGB values, 9f8.0): '
-	if (ischeme .ne. 5)
+	if (ischeme .lt. 5)
      1      read  (5,157) nq,color1,color2,color3
 	if (nq .eq. 0) then
 	     call vload( color1, 0.0, 0.0, 0.4 )
@@ -405,13 +410,15 @@ c
 c
 c	fill 4th coord with fraction of chain traced
 c
-	color_inc = 1. / float(npt)
+	color_inc = 1.000 / float(npt)
 	fraction  = 0.0
-	do i = 1, npt
-	    guide(4,i,1) = fraction
-	    guide(4,i,2) = fraction
-	    fraction = fraction + color_inc
-	end do
+	if (ischeme.le.5) then
+	    do i = 1, npt
+		guide(4,i,1) = fraction
+		guide(4,i,2) = fraction
+		fraction = fraction + color_inc
+	    end do
+	endif
 c
 c	calculate spline segments
 c
@@ -525,9 +532,11 @@ c	   scheme 3	COLOR1 on front, COLOR3 (=COLOR2) on back
 c	   scheme 4	combination of 2 and 3 above
 c	   scheme 5	color each new chain a new color from RGB 
 c
-	parameter (MAXCOL = 5000)
+        PARAMETER (MAXCOL=5000, MAXATM=10000)
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3),
      &			RGB(3,MAXCOL)
+	common /SPAM/ NATM, SPAM(4,MAXATM), SCAM(MAXATM)
+	integer SCAM
 	real	vec1(3), vec2(3), vec3(3)
 c
 	if ((ischeme .eq. 3) .or. (ischeme .eq. 4)) then 
@@ -553,7 +562,12 @@ c
 		color(3) = fraction*color2(3) + (1.-fraction)*color1(3)
 	else if (ischeme .eq. 5) then
 		call vload( color, RGB(1,cindex), RGB(2,cindex), RGB(3,cindex) )
-	else 
+	else if (ischeme .eq. 6) then
+		ICOL = SCAM(fraction)
+		color(1) = RGB(1,icol)
+		color(2) = RGB(2,icol)
+		color(3) = RGB(3,icol)
+	else
 		call vload( color, color1(1), color1(2), color1(3) )
 	end if
 	return

@@ -1,3 +1,12 @@
+ 4-Aug-97	V2.3d
+		ribbon option -d6 to use COLOUR templates for ribbon color
+		include a copy of local_jpeg.c in distribution
+		update the README instructions for patching Molscript
+28-Jul-97	Square the colors in ungrasp (suggested by Albert Berghuis).
+17-Jun-97	"stereo3d -" will accept input from stdin 
+13-May-97	Add BACKFACE material property, reduce amount of default
+		diagnostic output (still available via render -debugging),
+		EYEPOS = 0 to disable perspective in rendering
  8-May-97	correct order of scheme=4 testing in normal3d.f
  7-May-97	V2.3c 
 		remove DATA statements to make Sun compiler happy
