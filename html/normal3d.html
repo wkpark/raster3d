@@ -13,9 +13,9 @@
 any coordinate manipulations specified in the header, and writes the
 modified file to <i>stdout</i>.  <br>
 
-<listing>
+<pre>
 normal3d [-h] [-expand] [-stereo] &lt; infile.r3d &gt; normalized.r3d
-</listing>
+</pre>
 
 The output file from <b>normal3d</b> describes exactly the same image as the
 original input file. Header records are left unchanged except for
@@ -54,7 +54,7 @@ of your image descriptions exceed the values compiled into <b>render</b>.<p>
 <h4> EXAMPLES</h4>
 Feed a large file through <b>normal3d</b> to judge array size requirements for rendering:
 
-<listing>
+<pre>
 
 normal3d < largeinputfile.r3d > /dev/null
 
@@ -77,7 +77,7 @@ normal3d < largeinputfile.r3d > /dev/null
  True center of input coordinates (not used):
  -0.7435400 3.0629992E-02 -0.4582600
 
-</listing>
+</pre>
 
 <h4>AUTHORS</h4>
 Ethan A Merritt.

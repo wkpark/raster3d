@@ -31,7 +31,7 @@ The program can be run in an alternate mode, controlled by the -tabulate option,
 in which the primary output to stdout is a list of the Eigenvalues of the U<sub>ij</sub> 
 matrix, followed by the corresponding atomic anisotropy and isotropic U<sub>eq</sub>, 
 for each atom in the input file with both an ATOM record and a matching ANISOU record.
-<p>
+</p>
 
 
 <H4> EXAMPLES</H4>
@@ -56,6 +56,7 @@ of anisotropy to a separate file:
 
 <pre>rastep -tab summary.out &lt; infile.pdb &gt; anisotropy.out
 </pre>
+</p>
 
 <H4>OPTIONS</H4>
 
@@ -66,30 +67,32 @@ of anisotropy to a separate file:
 along the view direction. </DD><p>
 
 
-<img src="r3d_example9.jpeg" alt="" align=right>
 <DT><i>-Bcolor Bmin Bmax</i></DT>
 
-<DD>Assign colors based on B values rather than matching ATOM records against
+<DD>
+    <img src="r3d_example9.jpeg" alt="" align=right>
+Assign colors based on B values rather than matching ATOM records against
 input or default COLOUR records. Atoms with B &lt;= Bmin will be colored
 dark blue; atoms with B &gt;= Bmax will be colored light red; atoms with
 Bmin &lt; B &lt; Bmax will be assigned colors shading smoothly through
 the spectrum from blue to red. </DD><p>
 <br clear=all>
 
-<DT><I>-fancy[0-3]</I></DT>
+<DT><I>-fancy[0-6]</I></DT>
 
 <DD>The -fancy option selects increasingly complex representations of the
 rendered ellipsoids (see figure)  </DD>
 
 <DL>
 <DT> -fancy0 [default] solid surface
-<DT> -fancy1 draw principal axes of ellipsoid with a transparent bounding
-      surface 
+<DT> -fancy1 draw principal axes of ellipsoid with a transparent bounding surface 
 <DT> -fancy2 draw colored equatorial planes of the ellipsoid
-<DT> -fancy3 draw colored equatorial planes with a transparent bounding
-      surface
+<DT> -fancy3 draw colored equatorial planes with a transparent bounding surface
+<DT> -fancy4 draw longest principle axis of ellipsoid
+<DT> -fancy5 for ORTEP lovers, draw ellipsoid with octant missing
+<DT> -fancy6 for ORTEP lovers who want the missing octant to be a different color
 </DL>
-<center><img src="rastep_options.gif" alt="[figure]"></center>
+<center><img src="rastep_options.gif" alt="[figure]" vspace=2></center>
 <p>
 <DT><I> -h</I></DT>
 
@@ -135,6 +138,7 @@ allows you to change the radius of the bonds.
 If the radius is set to 0 no bonds are drawn.</DD><p>
 
 </DL>
+</p>
 
 <H4>OPTIONS USED FOR STATISTICAL ANALYSIS</H4>
 
@@ -163,6 +167,7 @@ center-of-mass. Output to comtabfile if specified, otherwise to
 <I>stdout</i> </DD><p>
 
 </DL>
+</p>
 
 <H4>NOTES</H4>
 

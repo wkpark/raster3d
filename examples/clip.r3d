@@ -1,0 +1,8 @@
+# set clipping plane
+#16
+#FRONTCLIP    2.
+8
+  -1.0 -1.0  1.0 1.0 1.0   0.0   0 1 0 2
+FRONTCLIP 2.
+BACKFACE 0.6 0.4 0.6 0 0
+

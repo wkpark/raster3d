@@ -9,15 +9,13 @@ my (@norm_x, @norm_y, @norm_z);
 my ($v1, $v2, $v3, $type);
 
 if ($#ARGV < 1) {
-	print "Usage: msms2r3d msms_face msms_vert\n",
-		"This will take the two files output from msms and reconstruct\n",
-		"the surface in one raster3D file which is redirected to the output stream.\n";
+	print "Usage: msms2r3d msms_face msms_vert > surfacefile.r3d\n",
 	exit(-1);
 }
 
-$red = 0.866;
+$red   = 0.866;
 $green = 0.866;
-$blue = 0.866;
+$blue  = 0.866;
 
 $msms_face = $ARGV[0];
 $msms_vert = $ARGV[1];
@@ -38,7 +36,7 @@ while ( $line = <VERT> ) {
 
 	@words = split ( ' ', $line);
 
-	# the first 3 column have the x,y,z for the vertex
+	# the first 3 columns have the x,y,z for the vertex
 	$vert_x[$count] = $words[0];
 	$vert_y[$count] = $words[1];
 	$vert_z[$count] = $words[2];
@@ -98,5 +96,3 @@ while ($line = <FACE>) {
 close FACE;
 
 exit(1);
-
-

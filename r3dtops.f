@@ -1,7 +1,7 @@
 *******************************************************************************
 *               Support routines for PostScript labels                        *
 *******************************************************************************
-*     Version 2.5e
+*     Version 2.5g
 *
 * EAM Dec 1996	- Initial version (called labels3d, later changed)
 * EAM May 1999	- Updated to match V 2.4j as stand-alone program
@@ -10,6 +10,8 @@
 *		  TeX-like syntax for greek, superscript, subscript
 *		  sub- and super- scripts use 0.8 * current font size
 * EAM Sep 2000	- tweak RED values in work-around for ImageMagick bug
+* EAM Jun 2001	- Tru64 f90 compiler barfs on '\\' as meaning a single \
+*		  re-work pathway through ghostscript + ImageMagick 5.3.2
 *******************************************************************************
 *
 * These routines are called from render.f to handle object types 10, 11 and 12.
@@ -40,6 +42,7 @@
       INTEGER  INPUT, INTYPE, KEEP
       LOGICAL  MATCOL
       REAL     RGBMAT(3)
+      CHARACTER*1 BACKSLASH
 *
 *     Input transformation
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
@@ -61,12 +64,12 @@
       INTEGER           ISOLATION
 *
 *     Command line options
-      COMMON /OPTIONS/ NSCHEME, NAX, NAY, INVERT, OTMODE, QUALITY
-     &               , LFLAG, FONTSCALE
-      INTEGER          NSCHEME
+      COMMON /OPTIONS/ FONTSCALE, ZOOM, NSCHEME, SHADOWFLAG, 
+     &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
+      REAL             FONTSCALE, ZOOM
+      INTEGER          NSCHEME, SHADOWFLAG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
-      LOGICAL          INVERT, LFLAG
-      REAL             FONTSCALE
+      LOGICAL*2        INVERT, LFLAG
 *
 *     Stuff for labels
       COMMON /LABELS/ LB
@@ -115,9 +118,9 @@
 	PSSCALE = PSCALE
 *     For some reason ImageMagick messes up image composition if the
 *     background is pure white or pure black. 
-*     Work-around is to tweak the background.
-	if (bkgnd(1).eq.1.0) bkgnd(1) = 0.9900
-	if (bkgnd(1).eq.0.0) bkgnd(1) = 0.0001
+*     Work-around is to tweak the background. (Abandoned this idea for 2.6)
+COLD	if (bkgnd(1).eq.1.0) bkgnd(1) = 0.9900
+COLD	if (bkgnd(1).eq.0.0) bkgnd(1) = 0.0001
 	RED = sqrt( bkgnd(1) )
 	GRN = sqrt( bkgnd(2) )
 	BLU = sqrt( bkgnd(3) )
@@ -361,7 +364,8 @@ c	Unfortunately this is not easily made compatible with anything other
 c	that Left-Align.
 c	Possibly these problems can be fixed by additional PostScript code?
 c
-	  if (labelstring(i:i) .eq. '\\') then
+	  backslash = '\\'
+	  if (labelstring(i:i) .eq. backslash) then
 	    j = i
    83	    j = j + 1
    	    if (labelstring(j:j).ge.'A' .and. labelstring(j:j).le.'Z')
@@ -395,7 +399,7 @@ c
 	      ibeg = i + 1
 	      goto 81
 	    else
-	      if (labelstring(i:i).eq.'\\') labelstring(i:i)='^'
+	      if (labelstring(i:i).eq.backslash) labelstring(i:i)='^'
 	      write(LB,804) labelstring(i:i),'show'
 	      write(LB,600) 'RestoreFont'
 	      write(LB,600) '0 FontHeight 0.3 mul rmoveto'
@@ -415,7 +419,7 @@ c
 	      ibeg = i + 1
 	      goto 81
 	    else
-	      if (labelstring(i:i).eq.'\\') labelstring(i:i)='^'
+	      if (labelstring(i:i).eq.backslash) labelstring(i:i)='^'
 	      write(LB,804) labelstring(i:i),'show'
 	      write(LB,600) 'RestoreFont'
 	      write(LB,600) '0 FontHeight -0.3 mul rmoveto'
@@ -437,7 +441,7 @@ c
 c	End of TeX-like escape processing
 c
    90	CONTINUE
-	  IF  ( LABELSTRING(I:I)    .EQ.'\\'
+	  IF  ( LABELSTRING(I:I)    .EQ.backslash
      &    .AND. LABELSTRING(I+1:I+1).EQ.'n') THEN
 	    IF (IBEG.LT.I) THEN
 	      IF (IALIGN.EQ.1) THEN
@@ -454,7 +458,7 @@ c
 	    IBEG = I+2
 	    GOTO 81
 	  ENDIF
-	  IF  ( LABELSTRING(I:I)    .EQ.'\\'
+	  IF  ( LABELSTRING(I:I)    .EQ.backslash
      &    .AND. LABELSTRING(I+1:I+1).EQ.'v') THEN
 	    IF (IBEG.LT.I) THEN
 	      IF (IALIGN.EQ.1) THEN
@@ -469,7 +473,7 @@ c
 	    IBEG = I+2
 	    GOTO 81
 	  ENDIF
-	  IF  ( LABELSTRING(I:I)    .EQ.'\\'
+	  IF  ( LABELSTRING(I:I)    .EQ.backslash
      &    .AND. LABELSTRING(I+1:I+1).EQ.'b') THEN
 	    IF (IBEG.LT.I) THEN
 	      IF (IALIGN.EQ.1) THEN
@@ -484,7 +488,7 @@ c
 	    IBEG = I+2
 	    GOTO 81
 	  ENDIF
-	  IF  ( LABELSTRING(I:I)    .EQ.'\\'
+	  IF  ( LABELSTRING(I:I)    .EQ.backslash
      &    .AND. LABELSTRING(I+1:I+1).EQ.'A') THEN
      	    LABELSTRING(I+1:I+1) = CHAR(197)
      	  ENDIF

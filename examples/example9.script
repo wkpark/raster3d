@@ -18,14 +18,17 @@ sleep 3
 rastep -fancy3         < sugarG.pdb | render | display -geometry 50%x50%+0+350 -title "fancy3" avs:- &
 sleep 3
 #
-rastep -Bcolor 10. 40. < sugarG.pdb | render | display -geometry 50%x50%+350+350 -title "colored by B value" avs:- &
+rastep -Bcolor 6. 26. < sugarG.pdb | render | display -geometry 50%x50%+350+350 -title "colored by B value" avs:- &
+sleep 3
+#
+rastep -fancy6 -Bcolor 6. 26. < sugarG.pdb | render | display -geometry 50%x50%+700+350 -title "fancy6 for ORTEP lovers" avs:- &
 sleep 3
 #
 echo ""
 echo ""
 echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 echo ""
-echo "You should now have 5 windows tiled on the upper left of your display, "
+echo "In a minute you should have 6 windows in the upper left of your display,"
 echo "illustrating different thermal ellipsoid options in the rastep program."
 echo ""
 echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"

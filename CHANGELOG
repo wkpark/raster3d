@@ -1,3 +1,33 @@
+10-Jul-2001	Modify Makefile to work around Irix make inadequacies
+ 9-Jul-2001	Release 2.6b
+ 8-Jul-2001	Start checkout tests for version 2.6b
+ 8-Jul-2001	Add control info to build rpm package under Mandrake 8.0
+ 		rpm version is compiled with "pgf77 -O -Munroll -tp px"
+ 6-Jul-2001	Clean up some code in rastep.f that pgf77 didn't like
+14-Jun-2001	Rearrange /OPTIONS/ and kludge backslash processing in 
+		r3dtops.f to make f90 compiler happy on Tru 64 unix.
+		Revise label3d to be compatible with ImageMagick 5.3.2: 
+		process is now ps -> png -> transparent -> combine/composite
+ 7-May-2001	Allow GPROP option TRANSLATION to appear on single line
+ 		Pay attention to -DNETWORKBYTEORDER in avs2ps.c code
+10-Apr-2001	rastep modified to offer new ORTEP_LIKE BOUNDING_PLANES
+ 9-Apr-2001	A big oops - BACKCLIP wasn't initialized in normal3d.f
+ 6-Apr-2001	Remove explicit REAL*4 from all programs
+ 		Increase input line buffer to 132 chars from 80 chars
+16-Mar-2001	Construct Makefile shared by all(?) platforms
+		have -Bcolor option to rods produce shaded bonds
+		check all READ statements for ERR= handling
+		add -zoom flag to render
+ 4-Mar-2001	break out array size PARAMETERS into parameters.incl
+27-Feb-2001	catch illegal size flag cleanly in parse.f
+26-Feb-2001	Finish adding RAFTER/TAFTER/ISOLATE support to normal3d
+		start alpha test (2.6a) of BOUNDING_PLANE support
+		ORTEP_LIKE option is still pretty hokey, but the rest works
+21-Feb-2001	Begin addition of BOUNDING_PLANE support
+15-Feb-2001	Add -shadow -noshadow flags to parse.f
+		Write full program name + version in TIFF and JPEG output
+17-Jan-2001	Change output format 211 for bonds in rastep.f
+... since V2.5f ...
 15-Nov-2000	V2.5f release
 13-Nov-2000	Fixed similar error in RAFTER applied to surface normals
 27-Oct-2000	Fixed error in ISOLATION of surface normals

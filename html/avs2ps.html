@@ -14,9 +14,9 @@ avs2ps is distributed as part of the <a href="raster3d.html"> Raster3D </a>
 molecular graphics package.<br>
 avs2ps converts an AVS image input on stdin to monochrome PostScript on stdout.
 
-<listing>
+<pre>
 avs2ps [-b] [-dpi xxx] &lt; infile.avs &gt; outfile.ps
-</listing>
+</pre>
 avs2ps
 converts a 24-bit color image file in AVS format into a dithered monochrome
 PostScript image with the same number of pixels as the input file. avs2ps may
@@ -33,17 +33,17 @@ Floyd-Steinberg error diffusion.
 Produce an unbordered black &amp; white image suitable for printing on a 300
 dpi PostScript printer:
 
-<listing>
+<pre>
  render &lt; description.r3d | avs2ps &gt; image.ps
-</listing>
+</pre>
 Add
 a border, and prepare image for a 400 dpi printer:
 
-<listing>
+<pre>
  render &lt; description.r3d | avs2ps -b -dpi 400 &gt; image.ps
-</listing>
+</pre>
+<h4>OPTIONS</h4>
 <dl>
-<dt><h4>OPTIONS</h4></dl><dl>
 <dt><i>-b</i><dd>Draw a border around the figure. By default avs2ps will
 produce a borderless image 0.5 inch in from the bottom left of the page.
 <dt><i>-dpi xxx</i><dd>By default avs2ps writes header records into the

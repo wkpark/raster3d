@@ -1,6 +1,6 @@
       PROGRAM NORMAL3D
 *
-*     Version 2.5e 21-Sep-2000
+*     Version 2.5g 26-Feb-2001
 *
 * EAM Jan 1996	- Initial release as part of version 2.2
 * EAM Aug 1996	- Add -expand option to deal with file indirection
@@ -18,6 +18,7 @@
 * EAM Jan 2000	- V2.5b general release
 * EAM Feb 2000	- compatible with new object type VERTRANSP
 * EAM Sep 2000	- V2.5e uncompress files ending in .Z or .gz
+* EAM Feb 2001	- BOUNDING_PLANEs
 *
 *	This program is part of the Raster3D package.
 *	It is simply a stripped down version of the input section of 
@@ -110,19 +111,21 @@
       PARAMETER (STDIN=5, INPUT0=7, OUTPUT=6, NOISE=0)
       INTEGER LEFT, RIGHT
       PARAMETER (LEFT=1, RIGHT=2)
-*     Allowable levels of file indirection.
-      PARAMETER (MAXLEV=5)
+*
+*     User-settable array limits
+      INCLUDE 'parameters.incl'
+*
       INTEGER    ILEVEL
 *
-      REAL  	HUGE
-      PARAMETER (HUGE = 1.0e37)
-*
 *     Codes for triangle, sphere, truncated cone, and string of pearls
-      INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
+      INTEGER TRIANG, SPHERE, INTERNAL, CYLIND, CYLFLAT
       INTEGER PLANE, QUADRIC, MXTYPE, FONT, GLOWLIGHT
       INTEGER NORMS, VERTEXRGB, VERTRANSP
-      PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
-      PARAMETER (CYLIND = 3, CYLFLAT= 5)
+      PARAMETER (TRIANG   = 1)
+      PARAMETER (SPHERE   = 2)
+      PARAMETER (CYLIND   = 3)
+      PARAMETER (INTERNAL = 4)
+      PARAMETER (CYLFLAT  = 5)
       PARAMETER (PLANE    = 6)
       PARAMETER (NORMS    = 7)
       PARAMETER (MATERIAL = 8)
@@ -141,7 +144,7 @@
 *
 *
 *     Title for run
-      CHARACTER*80 TITLE
+      CHARACTER*132 TITLE
 *
 *     Number of tiles
       COMMON /RASTER/ NTX, NTY, NPX, NPY
@@ -182,6 +185,8 @@
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
 *     Post-hoc transformation on top of original TMAT
       REAL   RAFTER(4,4), TAFTER(3)
+      EXTERNAL DET
+      REAL     DET
 *
 *     Distance (in +z) of viewing eye
       REAL   EYEPOS
@@ -248,12 +253,19 @@ c
       EXTERNAL ungz
       INTEGER  ungz
 *
+* Support for BOUNDING_PLANE internal object type
+      REAL BPLANE(3), BPNORM(3)
+*
 *     Keep track of actual coordinate limits (for information only)
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
      &                , ISOLATION
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
       INTEGER           ISOLATION
-      FRONTCLIP    = HUGE
+
+*     Assume no clipping
+      BACKCLIP  = -HUGE
+      FRONTCLIP =  HUGE
+	    
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
       TRULIM (3,1) = HUGE
@@ -261,29 +273,31 @@ c
       TRULIM (2,2) = -HUGE
       TRULIM (3,2) = -HUGE
 *
-      IDET(TRIANG) = 12
-      IDET(SPHERE) = 7
-      IDET(PEARLS) = 11
-      IDET(TRCONE) = 11
-      IDET(CYLIND) = 11
-      IDET(PLANE)  = 12
-      IDET(NORMS ) = 9
+      IDET(TRIANG)   = 12
+      IDET(SPHERE)   =  7
+      IDET(CYLFLAT)  = 11
+      IDET(CYLIND)   = 11
+      IDET(PLANE)    = 12
+      IDET(NORMS )   =  9
       IDET(MATERIAL) = 10
-      IDET(LABEL)  = 6
-      IDET(GLOWLIGHT) = 10
-      IDET(QUADRIC)   = 17
-      IDET(VERTEXRGB) = 9
-      IDET(VERTRANSP) = 3
-      SDET(TRIANG) = 13
-      SDET(SPHERE) = 4
-      SDET(CYLIND) = 8
-      SDET(QUADRIC)= 14
-      SDET(PLANE)  = 1
-      SDET(NORMS ) = 1
-      SDET(MATERIAL)  = 1
-      SDET(GLOWLIGHT) = 1
-      SDET(VERTEXRGB) = 1
-      SDET(VERTRANSP) = 1
+      IDET(LABEL)    =  6
+      IDET(GLOWLIGHT)= 10
+      IDET(QUADRIC)  = 17
+      IDET(VERTEXRGB)=  9
+      IDET(VERTRANSP)=  3
+      IDET(INTERNAL) = 20
+
+      SDET(TRIANG)   = 13
+      SDET(SPHERE)   =  4
+      SDET(CYLIND)   =  8
+      SDET(QUADRIC)  = 14
+      SDET(INTERNAL) = 20
+      SDET(PLANE)    =  1
+      SDET(NORMS )   =  1
+      SDET(MATERIAL) =  1
+      SDET(GLOWLIGHT)=  1
+      SDET(VERTEXRGB)=  1
+      SDET(VERTRANSP)=  1
 *
 c
 c	-h option suppresses header records in output
@@ -367,22 +381,22 @@ c
 *
 *     2.4h - allow file indirection for header
       IF (TITLE(1:1) .EQ. '@') THEN
-	DO I=80,2,-1
+	DO I=132,2,-1
 	  IF (TITLE(I:I).NE.' ') J = I
 	ENDDO
-	OPEN (UNIT=INPUT0,ERR=101,STATUS='OLD',FILE=TITLE(J:80))
-	WRITE (NOISE,'(A,A)') '  + Opening input file ',TITLE(J:80)
+	OPEN (UNIT=INPUT0,ERR=101,STATUS='OLD',FILE=TITLE(J:132))
+	WRITE (NOISE,'(A,A)') '  + Opening input file ',TITLE(J:132)
 	INPUT = INPUT0
 	ILEVEL = 1
 	READ (INPUT,'(A)',ERR=101) TITLE
 	IF (TITLE(1:1).EQ.'#') GOTO 100
 	GOTO 102
-  101	WRITE (NOISE,'(A,A)') ' >> Cannot open or read file ',TITLE(2:80)
+  101	WRITE (NOISE,'(A,A)') ' >> Cannot open or read file ',TITLE(2:132)
 	CALL EXIT(-1)
   102	CONTINUE
       ENDIF
 *
-      DO K = 80,1,-1
+      DO K = 132,1,-1
         IF (TITLE(K:K).NE.' ') GOTO 103
       ENDDO
   103 CONTINUE
@@ -715,8 +729,8 @@ c     Aug 1996 - allow file indirection
  	CALL ASSERT(ILEVEL.LT.MAXLEV, 
      &	            'Too many levels of indirection')
      	J = 1
-	K = 80
- 	DO I=80,2,-1
+	K = 132
+ 	DO I=132,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
 	  IF (LINE(I:I).EQ.'#') K = I-1
 	  IF (LINE(I:I).EQ.'!') K = I-1
@@ -735,17 +749,17 @@ cdebug	    it doesn't support dispose='DELETE'.
 	    line(k+1:k+1) = char(0)
 	    if (0 .gt. ungz( line(j:k+1), fullname )) goto 74
 	    j = 1
-	    k = 80
-	    do i=80,2,-1
+	    k = 132
+	    do i=132,2,-1
 	      if (fullname(i:i).eq.' ')     k = i-1
 	      if (fullname(i:i).eq.char(0)) k = i-1
 	    enddo
 	    if (verbose) 
      &		write(noise,*) 'Creating temporary file: ',fullname(j:k)
 	    open (unit=input0+ilevel,err=74,status='OLD',
-     &		  DISPOSE='DELETE',
+     &            DISPOSE='DELETE',
      &		  file=fullname(j:k))
-	    fullname = line(2:80)
+	    fullname = line(2:132)
 	    goto 72
 cdebug
 	ENDIF
@@ -763,7 +777,7 @@ cdebug
 	CALL LIBLOOKUP( LINE(J:K), FULLNAME )
 	OPEN (UNIT=INPUT0+ILEVEL,ERR=74,STATUS='OLD',FILE=FULLNAME)
    72	CONTINUE
-	DO I = 80,2,-1
+	DO I = 132,2,-1
 	  IF (FULLNAME(I:I).EQ.' ') J = I
 	ENDDO
  	WRITE (NOISE,'(A,A)') '  + Opening input file ',FULLNAME(1:J)
@@ -784,7 +798,7 @@ c
 	END IF
 	IF (INTYPE.EQ.CYLFLAT) INTYPE = CYLIND
         CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
-        CALL ASSERT (INTYPE.NE.PEARLS,'sorry, no pearls yet')
+        CALL ASSERT (INTYPE.NE.INTERNAL,'Object type 4 not supported')
 c
 8     CONTINUE
         INFMT = INFMTS(INTYPE)
@@ -938,18 +952,30 @@ c
         X3A = BUF(7)
         Y3A = BUF(8)
         Z3A = BUF(9)
-*	Apply rotation matrix, but not translation components
-	X1B = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
-	Y1B = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
-	Z1B = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
-	X2B = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
-	Y2B = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
-	Z2B = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
-	X3B = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
-	Y3B = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
-	Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+	IF (ISOLATION.EQ.0) THEN
+*	  Apply rotation matrix, but not translation components
+	  X1B = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
+	  Y1B = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
+	  Z1B = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
+	  X2B = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
+	  Y2B = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
+	  Z2B = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
+	  X3B = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
+	  Y3B = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
+	  Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+*	  Also apply post-rotation, if any
+	  X1A = RAFTER(1,1)*X1B + RAFTER(1,2)*Y1B + RAFTER(1,3)*Z1B
+	  Y1A = RAFTER(2,1)*X1B + RAFTER(2,2)*Y1B + RAFTER(2,3)*Z1B
+	  Z1A = RAFTER(3,1)*X1B + RAFTER(3,2)*Y1B + RAFTER(3,3)*Z1B
+	  X2A = RAFTER(1,1)*X2B + RAFTER(1,2)*Y2B + RAFTER(1,3)*Z2B
+	  Y2A = RAFTER(2,1)*X2B + RAFTER(2,2)*Y2B + RAFTER(2,3)*Z2B
+	  Z2A = RAFTER(3,1)*X2B + RAFTER(3,2)*Y2B + RAFTER(3,3)*Z2B
+	  X3A = RAFTER(1,1)*X3B + RAFTER(1,2)*Y3B + RAFTER(1,3)*Z3B
+	  Y3A = RAFTER(2,1)*X3B + RAFTER(2,2)*Y3B + RAFTER(2,3)*Z3B
+	  Z3A = RAFTER(3,1)*X3B + RAFTER(3,2)*Y3B + RAFTER(3,3)*Z3B
+	ENDIF
 *       write it back out again
-	WRITE (OUTPUT,91) X1B,Y1B,Z1B, X2B,Y2B,Z2B, X3B,Y3B,Z3B
+	WRITE (OUTPUT,91) X1A,Y1A,Z1A, X2A,Y2A,Z2A, X3A,Y3A,Z3A
 *
 *	Vertex colors for preceding triangle 
 *	(no transformation needed)
@@ -974,6 +1000,7 @@ c
 	NPROPM = NPROPM + 1
 	NDET = NDET + IDET(INTYPE)
 	MDET = MDET + SDET(INTYPE)
+	NBOUNDS = 0
 	SPHONG = BUF(1)
 	SSPEC  = BUF(2)
 	SR     = BUF(3)
@@ -991,18 +1018,40 @@ c
 	IF (OPT(4).GT.0) THEN
 	  DO I = 1, OPT(4)
             READ (INPUT,'(A)',END=50) LINE
-	    DO J = 80, 1, -1
+	    DO J = 132, 1, -1
 	      IF (LINE(J:J).NE.' '.AND.LINE(J:J).NE.'	') L = J
 	    ENDDO
 	    IF (LINE(L:L+8).EQ.'FRONTCLIP') THEN
-	      READ(LINE(L+10:72),*) ZCLIP
+	      READ(LINE(L+10:132),*) ZCLIP
 	      ZCLIP = ZCLIP / TMAT(4,4)
 	      WRITE(OUTPUT,'(A9,1X,F9.3)') 'FRONTCLIP',ZCLIP
+	    ELSE IF (LINE(L:L+7).EQ.'BACKCLIP') THEN
+	      READ(LINE(L+9:132),*) ZCLIP
+	      ZCLIP = ZCLIP / TMAT(4,4)
+	      WRITE(OUTPUT,'(A8,2X,F9.3)') 'BACKCLIP',ZCLIP
+	    ELSE IF (LINE(L:L+13).EQ.'BOUNDING_PLANE') THEN
+	      NBOUNDS = NBOUNDS + 1
+	      READ (LINE(L+15:132),*) IBPTYPE,XB,YB,ZB,xn,yn,zn
+	      CALL TRANSF(XB,YB,ZB)
+	      xnb = xn*TMAT(1,1) + yn*TMAT(2,1) + zn*TMAT(3,1)
+              ynb = xn*TMAT(1,2) + yn*TMAT(2,2) + zn*TMAT(3,2)
+              znb = xn*TMAT(1,3) + yn*TMAT(2,3) + zn*TMAT(3,3)
+              xn = RAFTER(1,1)*xnb + RAFTER(1,2)*ynb + RAFTER(1,3)*znb
+              yn = RAFTER(2,1)*xnb + RAFTER(2,2)*ynb + RAFTER(2,3)*znb
+              zn = RAFTER(3,1)*xnb + RAFTER(3,2)*ynb + RAFTER(3,3)*znb
+              temp = sqrt(xn*xn + yn*yn + zn*zn)
+              xn = xn/temp
+              yn = yn/temp
+              zn = zn/temp
+	      write(output,'(A14,I3,3(1X,F10.5),3F9.5)')
+     &		'BOUNDING_PLANE',ibptype,xb,yb,zb,xn,yn,zn
 	    ELSE
 	      WRITE(OUTPUT,1) LINE
 	    ENDIF
 	  ENDDO
 	ENDIF
+	NDET = NDET + NBOUNDS*IDET(INTERNAL)
+	MDET = MDET + NBOUNDS*SDET(INTERNAL)
 *
 *     Font alignment options:
 *	C - centered, have to transform coords
@@ -1075,21 +1124,30 @@ c
 *
       ELSEIF (INTYPE.EQ.GPROP) THEN
 	read (input,702,end=50) line
-	do j = 80, 1, -1
+	do j = 132, 1, -1
 	    if (line(j:j).ne.' '.and.line(j:j).ne.'	') l = j
 	enddo
 	if (line(l:l+2).eq.'FOG') then
 	    write(output,1) line
 	else if (line(l:l+8).EQ.'FRONTCLIP') then
-	    read (line(l+10:72),*) zclip
+	    read (line(l+10:132),*) zclip
 	    zclip = zclip / TMAT(4,4)
 	    write(output,'(''FRONTCLIP '',f7.3)') zclip
 	else if (line(l:l+7).EQ.'BACKCLIP') then
-	    read (line(10:72),*) zclip
+	    read (line(10:132),*) zclip
 	    zclip = zclip / TMAT(4,4)
 	    write(output,'(''BACKCLIP '',f7.3)') zclip
 	else if (line(l:l+7).eq.'ROTATION') then
-	    read (input,*,err=48) ((RAFTER(i,j),j=1,3),i=1,3)
+	    read (line(l+9:132),*,err=771,end=771) 
+     &		((RAFTER(i,j),j=1,3),i=1,3)
+     	    goto 772
+  771	    read (input,*,err=48) ((RAFTER(i,j),j=1,3),i=1,3)
+  772	    continue
+  774       WRITE (NOISE,775) ((RAFTER(I,J),J=1,3),I=1,3)
+  775       FORMAT('Post-rotation matrix:  ',3(/,3F10.4))
+  	    d = det(rafter)
+	    IF (ABS(1.0-ABS(D)).GT.0.02) WRITE (NOISE,*)
+     &      '>>> Warning: Post-rotation matrix has determinant',D
 	    call qsetup
 	    write(output,'(''DUMMY ROTATION'')')
 	else if (line(l:l+10).eq.'TRANSLATION') then
@@ -1103,10 +1161,8 @@ c
    	write(NOISE,'(A,A)')
      &	    '>> Unrecognized or incomplete GPROP option ',LINE
 c
-      ELSEIF (INTYPE.EQ.TRCONE) THEN
-        CALL ASSERT(.FALSE.,'trcones coming soon...')
-      ELSEIF (INTYPE.EQ.PEARLS) THEN
-        CALL ASSERT(.FALSE.,'pearls coming soon...')
+      ELSEIF (INTYPE.EQ.INTERNAL) THEN
+        CALL ASSERT(.FALSE.,'>>> Object type 4 not supported')
       ELSE
         CALL ASSERT(.FALSE.,'crash 50')
       ENDIF
@@ -1156,7 +1212,7 @@ c
 	XA = (TRULIM(1,1) + TRULIM(1,2)) / 2.0
 	YA = (TRULIM(2,1) + TRULIM(2,2)) / 2.0
 	ZA = (TRULIM(3,1) + TRULIM(3,2)) / 2.0
-      WRITE (NOISE,*) XA, YA, ZA
+      WRITE (NOISE,'(3F10.4)') XA, YA, ZA
 *
       call exit(0)
       end
@@ -1180,7 +1236,7 @@ C     STOP 1234
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
      &                 ,RAFTER, TAFTER
-      REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
+      REAL   XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT
 *     Transformation matrix, inverse of transpose, and transposed inverse
       REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
 *     Shortest rotation from light source to +z axis
@@ -1225,13 +1281,13 @@ C     STOP 1234
 c
 	character*(*) name
 	character*128 fullname
-	character*80  R3DLIB
+	character*132  R3DLIB
 c
 	call getenv('R3D_LIB',R3DLIB)
 c
 	fullname = ' '
 	len = 0
-	do i = 1, 80
+	do i = 1, 132
 	    if (R3DLIB(i:i).ne.' ') len = i
 	enddo
 	if (len.eq.0) then
@@ -1254,4 +1310,12 @@ c
 c
 	return
 	end
+
+        FUNCTION DET( A )
+        REAL     DET, A(4,4)
+        DET = A(1,1)*A(2,2)*A(3,3) + A(1,2)*A(2,3)*A(3,1) 
+     &      + A(2,1)*A(3,2)*A(1,3) - A(1,1)*A(2,3)*A(3,2)
+     &      - A(3,3)*A(1,2)*A(2,1) - A(1,3)*A(2,2)*A(3,1)
+        RETURN
+        END
 

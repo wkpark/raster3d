@@ -10,7 +10,7 @@ Files
 
 These are hypertext versions of the PostScript documentation.  I do not 
 know of any truly general conventions for where to install them, but
-/usr/local/man/html seems a likely bet.
+/usr/local/share/Raster3D/html is the default I use in Makefile.template. 
 
 Files
         r3d_docbkg.jpg  r3d_docstyle.css 

@@ -59,6 +59,7 @@ C
 c
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
      &  		,RGB(3,MAXCOL)
+ 	integer		cindex
 	common /SPAM/   natm, SPAM(4,MAXATM), SCAM(MAXATM)
 	integer		SCAM
 	common /FLAGS/  mflag, hflag, dflag
@@ -69,7 +70,7 @@ c
 	character*32	flags
 	character*80	line
 	common /matrix/ matrix, coords
-	real*4		matrix(3,3), coords(3)
+	real		matrix(3,3), coords(3)
 	data		matrix / 1.,0.,0.,0.,1.,0.,0.,0.,1. /
 c
 c	-h causes the header records not to be printed
@@ -332,9 +333,9 @@ c
 	subroutine view_matrix
 c
 	common /matrix/ matrix, coords
-	real*4		matrix(3,3), coords(3)
+	real		matrix(3,3), coords(3)
 c
-	real*4		phiX, phiY, phiZ
+	real		phiX, phiY, phiZ
 	parameter (noise = 0)
 	parameter (R2D = 180./3.1415927)
 
@@ -410,6 +411,7 @@ C
 c
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
      &			,RGB(3,MAXCOL)
+ 	integer		cindex
 	common /FLAGS/  mflag, hflag, dflag
 	logical		mflag, hflag, dflag
 c
@@ -530,7 +532,7 @@ c
 	end
 
 	subroutine vload( v, s1, s2, s3 )
-	real*4 v(3)
+	real v(3)
 	v(1) = s1
 	v(2) = s2
 	v(3) = s3
@@ -538,7 +540,7 @@ c
 	end
 
 	subroutine colorit( color, fraction, point1, point2, point3 )
-	real*4	color(3), point1(3), point2(3), point3(3)
+	real	color(3), point1(3), point2(3), point3(3)
 c
 c	   scheme 1	solid color (COLOR1)
 c	   scheme 2	shade from COLOR1 at 1st residue to COLOR2 at last
@@ -549,6 +551,7 @@ c
         PARAMETER (MAXCOL=5000, MAXATM=10000)
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
      &			,RGB(3,MAXCOL)
+ 	integer		cindex
 	common /SPAM/ NATM, SPAM(4,MAXATM), SCAM(MAXATM)
 	integer SCAM
 	real	vec1(3), vec2(3), vec3(3)
@@ -580,11 +583,11 @@ c
 	else if (ischeme .eq. 5) then
 		call vload( color, 
      &			    RGB(1,cindex), RGB(2,cindex), RGB(3,cindex))
-	else if (ischeme .eq. 6) then
-		ICOL = SCAM(fraction)
-		color(1) = RGB(1,icol)
-		color(2) = RGB(2,icol)
-		color(3) = RGB(3,icol)
+c	else if (ischeme .eq. 6) then
+c		ICOL = SCAM(fraction)
+c		color(1) = RGB(1,icol)
+c		color(2) = RGB(2,icol)
+c		color(3) = RGB(3,icol)
 	else
 		call vload( color, color1(1), color1(2), color1(3) )
 	end if
@@ -592,9 +595,9 @@ c
 	end
 
 	subroutine bspline( v1, v2, v3, t, v4 )
-	real*4 v1(4), v2(4), v3(4)
-	real*4 t
-	real*4 v4(4)
+	real v1(4), v2(4), v3(4)
+	real t
+	real v4(4)
 c
 	frac3 = 0.5 * t*t
 	frac1 = 0.5 * (1.-t) * (1.-t)

@@ -6,7 +6,7 @@
 <body>
 <img src="r3d_icon.gif" alt="" align=left vspace=10>
 <br>
-<h1 align=center>Raster3D V2.5d</h1>
+<h1 align=center>Raster3D V2.6</h1>
 <br clear=all>
 
 The Raster3D molecular graphics package consists of a core program 
@@ -17,7 +17,7 @@ scene descriptions for input to render.
 Raster3D can also render images composed using other programs such as 
 <a href="#refs">Molscript</a> and 
 <a href="http://www.scripps.edu/pub/dem-web/index.html">XtalView</a>.
-<p>
+
 
 <div class="box">
 <table noborder>
@@ -69,8 +69,12 @@ Raster3D can also render images composed using other programs such as
 	Animation</a>
     <li><a href="r3d_hints.html#black-white">
 	Black &amp White figures</a>
-    <li><a href="r3d_hints.html#colours">
-	Colours</a>, and a
+    <li><a href="r3d_hints.html#clipping">
+    	Clipping planes</a> and
+	<a href="r3d_hints.html#bounding">
+	Bounding planes</a>
+    <li><a href="r3d_hints.html#colors">
+	Colors</a>, and a
         <a href="r3d_colorpicker.html">
         <font color=#cc0000>C</font><font color=#ff00ff>o</font><font color=#0000cc>l</font><font color=#009900>o</font><font color=#996500>r</font> picking tool</a>
     <li><a href="r3d_hints.html#composing">
@@ -87,8 +91,6 @@ Raster3D can also render images composed using other programs such as
 	Shadowing</a>
     <li><a href="r3d_hints.html#stereo1">
 	Side-by-side figures and stereo pairs</a>
-    <li><a href="r3d_hints.html#stereo2">
-	Stereo pairs and Molscript</a>
     <li><a href="r3d_hints.html#output device">
 	Tailoring your image to the output device</a>
     <li><a href="r3d_transparent.html">
@@ -103,69 +105,87 @@ Raster3D can also render images composed using other programs such as
 </div>
 
 <h4><a name="general">SYNOPSIS</a></h4>
+<p>
 Raster3D uses a fast Z-buffer algorithm to produce high quality pixel images
 featuring one shadowing light source, additional non-shadowing light sources,
 specular highlighting, transparency, and Phong shaded surfaces.
 Output is in the form of a pixel image with 24 bits of color
-information per pixel.<p>
+information per pixel plus one matte channel.
+</p>
+
+<p>
 Raster3D does not depend on graphics hardware. Four common image output
 formats are supported: AVS, JPEG, TIFF, and SGI libimage.  To actually view or
 manipulate the images produced, you must also have installed an image viewing
 package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).
 The Raster3D rendering program can be integrated with ImageMagick to
 expand the flexibility of output formats and interactive use.
+</p>
 
-Ancillary programs are provided for the generation of object
-descriptions based on atomic coordinates stored in Brookhaven PDB format.
-Although the rendering program is not specific to molecular graphics, Raster3D
-is not intended as a general purpose ray-tracing program. 
-Some of the algorithms used have been chosen for speed rather than generality;
-that is, they happen to work well for the types of images the program is 
-intended for, but may produce odd results if used for very different types of
-image.
 <p>
+Ancillary programs are provided for the generation of object
+descriptions based on atomic coordinates stored in PDB format.
+Although Raster3D is not intended as a general purpose ray-tracing program,
+nothing in the rendering process is specific to molecular graphics. 
+Some of the algorithms used have been chosen for speed rather than generality,
+however. They work well for molecular graphics images, but possibly 
+would produce odd results if used for very different types of image.
+</p>
 
+<p>
 Raster3D currently supports rendering six object types: spheres,
 triangles, planes, smooth-ended cylinders, round-ended cylinders,
-and quadric surfaces.
-<p>
+and quadric surfaces.  It also supports the definition of material
+properties (transparency, bounding planes, color, reflectivity)
+that apply to groups of objects within the rendered scene.
+</p>
 
-Version 2.1 added support for two additional "object types" which are
-really modifiers for characteristic properties of existing objects. One
-of these allows specification of explicit surface normals at triangle
-vertices; the other allows specification of surface reflectance
-properties specific to individual objects.
 <p>
+Version 2.1 added support for additional "object types" which are
+really modifiers for characteristic properties of existing objects.
+These have since been expanded to include the specification of 
+explicit surface normals, colors, and transparency at the vertices
+of the current object.
+</p>
 
-Version 2.2 added support for transparent objects, including transparent
-molecular surfaces.
 <p>
+Version 2.2 added support for transparency.
+</p>
 
+<p>
 Version 2.3 added support for
 file indirection, additional anti-aliasing options, internal
-light sources, a separate alpha blend (matte) channel in the rendered image, 
-and some additional properties for special materials. 
+light sources, and a separate alpha blend (matte) channel in the rendered image. 
 There is a new shell script, <a href="stereo3d.html">stereo3d</a>
 to automatically generate a side-by-side stereo pair from a Raster3D input file.
-<p>
+</p>
 
+<p>
 Version 2.4 added support for
-generalized quadric surfaces (ellipsoids, cones, etc) and interpolation
-of colors assigned to the vertices of triangles.
+generalized quadric surfaces (ellipsoids, cones, etc).
 Input lines beginning with '#' are treated as comments.
-There is a new utility program <a href="rastep.html">rastep</a>
+It introduced the utility program <a href="rastep.html">rastep</a>
 which generates "thermal ellipsoid" representations of atoms based on the
-Biso or Uij entries in a PDB file (ANISOU cards). The option of colouring 
-based on B values has been added here and elsewhere.
-<p>
+Biso or Uij entries in a PDB file (ANISOU cards). The option of coloring 
+based on B values was added here and elsewhere.
+</p>
 
-<b>Version 2.5</b> adds support for Z-clipping, output to a JPEG image
+<p>
+Version 2.5 added support for Z-clipping, output to a JPEG image
 file on stdout, piped output to ImageMagick for automatic conversion to
 additional image types, and file indirection of header records.
-It also includes upgraded support for handling labels (object types
+It also upgraded support for handling labels (object types
 10,11,12) using PostScript. See 
 <a href="r3dtops.html">r3dtops</a> and <a href="label3d.html">label3d</a>
 documentation.
+</p>
+
+<p>
+<b>Version 2.6</b> adds support for bounding planes, and removes the
+previous limit on stacking transparent objects.  The installation process
+has been modified so that all user-configurable options are collected into
+the files <i>parameters.incl</i> and <i>Makefile.template</i>.
+</p>
 
 <h4>
 <a name="examples">EXAMPLES</a></h4>
@@ -175,7 +195,7 @@ composed of any combination of these. The following set of commands would
 produce a composite figure of an Fe-containing metalloprotein with a smoothly
 shaded ribbon representation of the protein and spheres drawn for the Fe atoms: 
 
-<listing>
+<pre>
 # 
 # Draw smooth ribbon with default color scheme 2, 
 # save description (with header records) in ribbon.r3d 
@@ -191,51 +211,52 @@ grep ``FE'' protein.pdb | cat colorfile - | balls -h &gt; irons.r3d
 # combine the two descriptions and render as AVS image file 
 # 
 cat ribbon.r3d irons.r3d | render &gt; picture.x
-</listing>
+</pre>
 One can alternatively use Molscript to produce a Raster3D 
 input file by using the -r switch. Integrated use of
 Molscript/Raster3D/ImageMagick allows one to describe, render, and view 3D
 representations of existing Molscript figures. 
 
-<listing>
+<pre>
 molscript -r &lt; infile.dat | render | display avs:-
-</listing>
+</pre>
 A similar example using xv as an image viewer, and assuming that 
 TIFF support has been built into the render program:
 
-<listing>
+<pre>
 molscript -r &lt; infile.dat | render -tiff image.tif 
 xv image.tif
-</listing>
+</pre>
 The same image rendered as a side-by-side stereo pair:
 
-<listing>
+<pre>
 molscript -r &lt; infile.dat > input.r3d; stereo3d input.r3d; xv stereo.tiff
 
-</listing>
+</pre>
 The
 Raster3D distribution also includes a filter utility which will convert the
 24-bit color output stream from render into a dithered black &amp; white
 PostScript image:
 
-<listing>
+<pre>
 render &lt; description.r3d | avs2ps &gt; picture.ps
 
-</listing>
+</pre>
 
 <h4><a name="source">SOURCE</a></h4>
 <dl>
 <dt><i>anonymous ftp site:	</i>
-<dd>ftp.bmsc.washington.edu /pub/raster3d/
+    <dd>ftp.bmsc.washington.edu /pub/raster3d/
 <dt><i>via WWW: </i>
-<dd><a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
-http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
+    <dd><a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+        http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 <dt><i>contact: 	</i>
-<dd>Ethan A Merritt
-<br>Dept of Biological Structure
-<br>University of Washington,
-<br>Seattle WA 98195-7742
-<br>merritt@u.washington.edu</dl>
+    <dd>Ethan A Merritt
+    <br>Dept of Biological Structure
+    <br>University of Washington,
+    <br>Seattle WA 98195-7742
+    <br>merritt@u.washington.edu
+</dl>
 
 <h4><a name="related">RELATED PROGRAMS </a></h4>
 
@@ -262,7 +283,7 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	(also available via anonymous ftp from 
 	<a href="ftp://ftp.x.org"> 
 	ftp.x.org </a>) 
-	and John Bradley's xv.<p>
+	and John Bradley's xv.
     <dt>Ghostscript
     <dd>Used only by the label-processing tools 
 	<a href="r3dtops.html">r3dtops</a> and <a href="label3d">label3d</a>.
@@ -280,12 +301,16 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	Molscript web page at 
 	<a href="http://www.avatar.se/molscript">
 	http://www.avatar.se/molscript</a>.
-    <dt>ORTEX
+    <dt>ORTEP and the small molecule world
     <dd>ORTEX V7 (an interactive descendent of Carroll Johnson's ORTEP program) 
-	now supports Raster3D as an output mode. ORTEX runs under DOS/Windows, 
-	which makes this the only WIndows port of Raster3D that I know of. 
+	now supports Raster3D as an output mode. ORTEX runs under DOS/Windows,
+	and is available from
 	<a href="http://www.ucg.ie/cryst/software.htm">
-	http://www.ucg.ie/cryst/software.htm</a>
+	http://www.ucg.ie/cryst/software.htm</a>.
+	Another small molecule package running under Windows and incorporating 
+	Raster3D rendering options is WinGX, available from 
+	<a hred="http://www.chem.gla.ac.uk/~louis/software">
+	http://www.chem.gla.ac.uk/~louis/software</a>.
     <dt>TkRaster3D
     <dd> an X11-based front-end (GUI) for the Raster3D programs developed by 
 	Hillary Gilson at NIST, 
@@ -296,6 +321,11 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	at the University of Illinois, 
 	<a href="http://www.ks.uiuc.edu/Research/vmd/">
 	http://www.ks.uiuc.edu/Research/vmd/</a>
+    <dt>X3DNA
+    	<dd>Figure generation and analysis tool for RNA and DNA structures.
+	    X3DNA Web site:
+	    <a href="http://rutchem.rutgers.edu/~xiangjun/3DNA/index.html">
+	    http://rutchem.rutgers.edu/~xiangjun/3DNA/</a>.
     <dt>Xfit/XtalView
     <dd> General crystallographic model building, map fitting, and 
 	analysis program by Duncan McRee, available in both academic and 
@@ -303,10 +333,7 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	<a href="http://www.scripps.edu/pub/dem-web/index.html">
 	http://www.scripps.edu/pub/dem-web/index.html</a>
 </dl>
-
-The avs2ps utility for direct production of black &amp; white PostScript images
-is now included in the Raster3D distribution. It replaces earlier
-machine-dependent programs in the viewtools kit.<p>
+<br>
 
 Several auxiliary programs are available from the ftp site above which may be
 useful, though they have not been kept up to date with the current Raster3D
@@ -314,7 +341,7 @@ version. These include two attempts to aid in the composition of Raster3D
 images (atoms, preras3d) and tools for conversion to half-toned monochrome
 images and annotation and display of the images (viewtools). Most of the code
 was written specifically for SGI workstations, and may not transport well to
-other platforms.<p>
+other platforms.
 
 <h4>
 <a name="authors">AUTHORS </a></h4>
@@ -331,13 +358,13 @@ most recent version of the package is Merritt &amp; Bacon (1997) as given below.
 Bacon, D.J., &amp; Anderson, W.F. (1988) ``A Fast Algorithm for Rendering
 Space-Filling Molecule Pictures''. (abstract of paper presented at the Seventh
 Annual Meeting of the Molecular Graphics Society). J. Molec. Graphics 6,
-219-220. <p>
+219-220. <br>
 Kraulis, P.J. (1991) ``MOLSCRIPT: a program to produce both detailed and
-schematic plots of protein structures''. J. Appl. Cryst. 24, 946-950.<p>
+schematic plots of protein structures''. J. Appl. Cryst. 24, 946-950.<br>
 Merritt, E.A. &amp; Murphy, M.E.P. (1994) ``Raster3D Version 2.0 - A Program
-for Photorealistic Molecular Graphics''. Acta Cryst. D50, 869-873.<p>
+for Photorealistic Molecular Graphics''. Acta Cryst. D50, 869-873.<br>
 Merritt, E.A. &amp; Bacon, D.J. (1997) ``Raster3D 
-Photorealistic Molecular Graphics''. Methods in Enzymology 277, 505-524.<p>
+Photorealistic Molecular Graphics''. Methods in Enzymology 277, 505-524.<br>
 
 <hr>
 <a href="raster3d.html">

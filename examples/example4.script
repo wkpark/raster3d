@@ -12,4 +12,4 @@
 cp header4.r3d header.r3d
 molscript -r < example3.mol | render -tiff example4.tiff
 display example4.tiff
-rm -f header.r3d example4.tiff
+rm -rf header.r3d

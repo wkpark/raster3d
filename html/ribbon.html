@@ -15,15 +15,15 @@ backbone for the
 <a href="raster3d.html">Raster3D</a>
 molecular graphics package.<p>
 
-<listing>
+<pre>
 ribbon [-h] [-d[0123456]] pdbfile
-</listing>
+</pre>
 or
 (to take PDB records from stdin)
 
-<listing>
+<pre>
 ribbon [-h] -d[0123456] -
-</listing>
+</pre>
 Ribbon
 reads a PDB coordinate file and produces a stream of Raster3D
 object descriptor records on stdout describing
@@ -35,17 +35,17 @@ it may be combined with descriptor files produced by other Raster3D utilities.
 To describe a the entire protein chain as a single ribbon colored smoothly from
 blue at the N-terminus to red at the C-terminus:
 
-<listing>
+<pre>
 ribbon -d2 protein.pdb | render &gt; chain_picture.avs
-</listing>
+</pre>
 To
 color a multi-chain protein with specified colors for each chain:
 
-<listing>
+<pre>
 cat chaincolors.pdb protein.pdb | ribbon -d5 - &gt; chains.r3d
-</listing>
+</pre>
+<H4>OPTIONS</H4>
 <dl>
-<dt><H4>OPTIONS</H4></dl><dl>
 <dt><i>-h</i><dd>Suppress header records in output. By default ribbon will
 produce an output file which starts with header records containing a default
 set of scaling and processing options. The -h flag will suppress these header

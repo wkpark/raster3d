@@ -9,3 +9,22 @@ tested.
 The msms home page is
 
     http://www.scripps.edu/pub/olson-web/people/sanner/html/msms_home.html
+
+Files provided here:
+
+    msms2r3d.c		C source for a conversion program
+    msms2r3d.pl		perl source for a conversion program
+    example.script	example script that runs msms and converts the
+    			output for use in Raster3D
+
+Notes:
+
+The -density option to msms is particularly useful in producing high
+quality figures.  A larger value causes the molecular surface to be 
+tesselated more finely, which makes the rendered surface smoother.  
+Caution: finer tesselation yields a *big* surface description file,
+and you may have to increase the value of MAXOBJ in parameters.incl
+so that render can handle that many triangular facets.
+
+The example script assumes that msms and pdb_to_xyzr have already
+been installed.

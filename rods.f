@@ -47,7 +47,7 @@ c	Matrix is applied before finding translation, center, and scale.
 c	Afterwards the input matrix to RENDER is therefore the identity matrix.
 C                                                     
 	common /matrix/ matrix, coords
-	real*4		matrix(3,3), coords(3)
+	real		matrix(3,3), coords(3)
 C
 C     Default to CPK colors and VDW radii
       character*60 defcol(7)
@@ -153,8 +153,8 @@ c
      &                     'MAXCOL and recompile.'
             STOP 10
           ENDIF
-          READ(CARD,'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
-     &          (RGB(I,NCOL),I=1,3),VDW(NCOL)
+          READ(CARD,'(6X,A24,3F8.3,F6.2)',ERR=49) 
+     &	       MASK(NCOL), (RGB(I,NCOL),I=1,3),VDW(NCOL)
         ELSEIF (CARD(1:4).EQ.'ATOM'.OR.CARD(1:4).EQ.'HETA') THEN
           NATM = NATM + 1
           IF (NATM.GT.MAXATM) THEN
@@ -167,6 +167,10 @@ c
           GO TO 50
         ENDIF
         GO TO 10
+*     Problems reading input record
+49	continue
+	write(noise,*) 'rods: Cannot parse input record ',CARD
+	call exit(-1)
 *     Come here when EOF or 'END' record is reached
 50    CONTINUE
       IF (NATM.EQ.0) THEN
@@ -197,9 +201,9 @@ c
         TEST = CARD(7:30)
         DO 80 ICOL=1,NCOL
           IF (MATCH(TEST,MASK(ICOL))) THEN
-c           READ(CARD,'(30X,3F8.3)') X,Y,Z
+c           READ(CARD,'(30X,3F8.3)',err=49) X,Y,Z
 c EAM Oct88
-            READ(CARD,'(30X,3F8.3,6X,F8.2)') coords, Biso
+            READ(CARD,'(30X,3F8.3,6X,F8.2)',err=49) coords, Biso
 		x = coords(1)*matrix(1,1) + coords(2)*matrix(2,1) 
      1  	  + coords(3)*matrix(3,1)
 		y = coords(1)*matrix(1,2) + coords(2)*matrix(2,2) 
@@ -331,6 +335,15 @@ c
      1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
      2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
      3         RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL)
+     	  else if (bcflag) then
+	    write(output,140)
+     1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
+     2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
+     3         RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL)
+     	    write(output,141)
+     1	       RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL),
+     2	       RGB(1,JCOL),RGB(2,JCOL),RGB(3,JCOL),
+     3         0, 0, 0
 	  ELSE
 	    DO 136 K=1,3
 136	    CEN(K) = (SPAM(K,IATM)+SPAM(K,JATM))/2
@@ -347,6 +360,7 @@ c
 
 C140   FORMAT(1H3,/,11f8.3)
 140   FORMAT(1H3,/,2(1X,F8.3,1X,F8.3,1X,F8.3,1X,F7.3),3F7.3)
+141   format(2H17,/3(1X,3F6.3))
 150   CONTINUE
 160   CONTINUE
 C
@@ -372,9 +386,9 @@ C
 	subroutine view_matrix
 c
 	common /matrix/ matrix, coords
-	real*4		matrix(3,3), coords(3)
+	real		matrix(3,3), coords(3)
 c
-	real*4		phiX, phiY, phiZ
+	real		phiX, phiY, phiZ
 	integer    noise
 	parameter (noise = 0)
 	parameter (R2D = 180./3.1415927)

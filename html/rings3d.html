@@ -11,9 +11,9 @@ rings3d
 searches through a PDB file looking for residues containing 5- or 6-membered
 rings, then produces a Raster3D output file of ring-filling triangles.
 
-<listing>
+<pre>
 rings3d [-bases] [-protein] [-sugars]  &lt; infile.pdb &gt; outfile.r3d
-</listing>
+</pre>
 
 rings3d matches residue types from an internal list of residue and atom names.
 It will fail to find residues not in its list, and fail to recognize atoms with
@@ -24,13 +24,13 @@ non-standard names.
 <h4>EXAMPLES</h4>
 render a DNA molecule with the bases filled in:
 
-<listing>
+<pre>
  cat $R3D_LIB/dna.colours dna.pdb | rods -radius 0.05 > temp.1
  rings3d -bases < dna.pdb > temp.2
  cat temp.1 temp.2 | render -tiff dna.tiff
-</listing>
+</pre>
 
-<dl><dt><h4>OPTIONS</h4></dl>
+<h4>OPTIONS</h4>
 <dl>
 <dt><i>-bases</i>
     <dd>Fills in purine and pyrimidine rings from A C G T U residues.

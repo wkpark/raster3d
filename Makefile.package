@@ -1,0 +1,20 @@
+TARFILE := $(shell echo Raster3D_$(VERSION).tar.gz)
+
+tar:	../$(TARFILE)
+../$(TARFILE):
+	@echo making ../$(TARFILE)
+	(cd ..; gtar -czvf $(TARFILE) Raster3D_$(VERSION))
+
+#
+# Build an RPM package
+#
+rpm:		FFLAGS = -O -Munroll -tp px
+rpm:		rpm_setup install ../$(TARFILE) rpm_build
+rpm_setup:	clean
+rpm_build:
+	cp ../Raster3D_$(VERSION).tar.gz /usr/src/RPM/SOURCES/
+	cp BUGS CHANGELOG INSTALL README VERSION /usr/src/RPM/BUILD/
+	cp doc/R3D_manual.pdf /usr/src/RPM/BUILD/
+	cp Raster3D.csh Raster3D.sh /etc/profile.d
+	rpm -ba --target=i586 raster3d-2.6.2.spec
+

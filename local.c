@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.5
+ * Raster3D V2.6
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL.
@@ -108,6 +108,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
   int		quality;
  
   static time_t	start_time, end_time;
+  static char program_name[20] = "Raster3D         G";
   
   /* For -original output mode only */
   static int header[8] = { 3, 1, 1, 0, 0, 0, 0, 0 };
@@ -147,6 +148,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 /****************************************************************/
 if (*option == 0) 
     {
+    strncpy( &program_name[9], VERSION, strlen(VERSION)+1 );
     
     if (strncmp( (char *)buffer1, "-invert", 7) ==0)
       {
@@ -214,7 +216,7 @@ if (*option == 0)
       }
     else if (strncmp( (char *)buffer1, "  ", 2) != 0)
       {
-	fprintf(stderr, "\nRaster3D Version %s",VERSION);
+	fprintf(stderr, "\n%s",program_name);
       	if (strncmp( (char *)buffer1, "-help", 5) != 0)
 	    fprintf(stderr, "\n Unfamiliar switch: %12.12s", buffer1);
 	fprintf(stderr, "\n\n Usage:");
@@ -239,8 +241,10 @@ if (*option == 0)
 	fprintf(stderr,"\n    -fontscale FF         multiplier for PostScript font size");
 	fprintf(stderr,"\n    -labels               write labels to PostScript file label3d.ps");
 	fprintf(stderr,"\n    -invert               invert y axis");
+	fprintf(stderr,"\n    -[no]shadow           enable or disable shadowing");
 	fprintf(stderr,"\n    -size HHHxVVV         specify size of output image in pixels");
 	fprintf(stderr,"\n    -transparent          same as -alpha (SCHEME 0)");
+	fprintf(stderr,"\n    -zoom ZZ[%%]           rescale image by ZZ      ");
 	fprintf(stderr,"\n");
 	exit(-1);
       }
@@ -315,7 +319,7 @@ else if (*option == 1)
 	    ofile = "render.tif";
 	tfile=TIFFOpen(ofile,"w");
 	TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	TIFFSetField(tfile,TIFFTAG_SOFTWARE,VERSION);
+	TIFFSetField(tfile,TIFFTAG_SOFTWARE,program_name);
 	TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
 	TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
@@ -595,7 +599,7 @@ else if (*option == 4)
 #ifdef JPEG_SUPPORT
     if (mode == 4)
 	{
-	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char*)VERSION,strlen(VERSION));
+	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char*)program_name,strlen(program_name));
 	jpeg_write_marker(&cinfo,JPEG_COM,"\n",2);
 	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char *)buffer1,80);
 	}

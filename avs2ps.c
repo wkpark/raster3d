@@ -63,8 +63,12 @@ time_t	date;
 	}
 
 /* Read in size of image from first two words on input stream */
-    xsize = getw( stdin );
-    ysize = getw( stdin );
+	xsize = getw( stdin );
+	ysize = getw( stdin );
+#ifdef NETWORKBYTEORDER
+	xsize = htonl(xsize);
+	ysize = htonl(ysize);
+#endif
 
 /* Allocate input buffers accordingly */
     inbuf1 = (float *)calloc( xsize, sizeof(float) );

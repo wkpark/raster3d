@@ -1,0 +1,68 @@
+*     $$$$$$$$$$$$$   ARRAY SIZE LIMITS START HERE   $$$$$$$$$$$$$$
+*
+*     Maximum number of tiles
+      INTEGER    MAXNTX,       MAXNTY
+      PARAMETER (MAXNTX = 256, MAXNTY = 256)
+*
+*     Number of shadow tiles
+***   (One of these can fail to be enough when the aspect ratio is
+***   extreme or when the model is far from being "centred" near z=0.
+***   Keep them well ahead of MAXNTX, MAXNTY to be on the safe side)
+***   EAM - Allow soft failure and monitor required values in NSXMAX,NSYMAX
+      INTEGER    NSX,       NSY
+      PARAMETER (NSX = 360, NSY = 360)
+*
+*     Maximum number of pixels per tile
+      INTEGER    MAXNPX,      MAXNPY
+      PARAMETER (MAXNPX = 32, MAXNPY = 32)
+*
+*     Maximum number of objects
+***   PARAMETER (MAXOBJ =   7500)
+      INTEGER    MAXOBJ
+      PARAMETER (MAXOBJ = 275000)
+*
+*     Array elements available for object details 
+*     Should be roughly 10*MAXOBJ
+      INTEGER    MAXDET,             MAXSDT
+***   PARAMETER (MAXDET =   150 000, MAXSDT =   150 000)
+***   PARAMETER (MAXDET = 2 000 000, MAXSDT = 2 000 000)
+      PARAMETER (MAXDET = 4 000 000, MAXSDT = 4 000 000)
+*
+*     Array elements available for sorted lists ("short" lists)
+*     Increased requirements as more objects are stacked behind each other
+      INTEGER    MAXSHR,             MAXSSL
+***   PARAMETER (MAXSHR =   150 000, MAXSSL =   150 000)
+      PARAMETER (MAXSHR = 1 000 000, MAXSSL = 1 000 000)
+*
+*     Maximum number of MATERIAL definitions (object type 8)
+      INTEGER    MAXMAT
+      PARAMETER (MAXMAT = 250)
+*
+*     Maximum number of stacked transparent objects at any single pixel
+*     (any further further stacking is ignored)
+      INTEGER    MAXTRANSP
+      PARAMETER (MAXTRANSP=10)
+*
+*     Maximum number of non-shadowing lights (object type 13)
+      INTEGER    MAXGLOWS
+      PARAMETER (MAXGLOWS = 10)
+*
+*     Maximum levels of file indirection in input stream
+      INTEGER    MAXLEV
+      PARAMETER (MAXLEV = 10)
+*
+*     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
+*
+*     Other possibly platform-dependent stuff
+      REAL  	HUGE
+      PARAMETER (HUGE = 1.0e37)
+*     Slop is related to the accuracy (in pixels) to which we must predict
+*     shadow edges. Too low a value causes whole triangles to be spuriously
+*     in shadow; too high a value may cause shadows to be missed altogether.
+*     Perfect accuracy in floating point calculations would allow SLOP << 1.
+      REAL       SLOP
+      PARAMETER (SLOP= 0.35)
+*     Edgeslop is similarly a kludge for dealing with triangles whose explicit
+*     normals describe wrapping around from front-facing to back-facing.
+      REAL       EDGESLOP
+      PARAMETER (EDGESLOP = 0.25)

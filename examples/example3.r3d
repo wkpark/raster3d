@@ -1,7 +1,7 @@
 Galactose binding site in E coli heat-labile enterotoxin (Molscript V2.02)
 64 64     tiles in x,y
 12 12     pixels (x,y) per tile
-4         3x3 virtual pixels -> 2x2 pixels
+4         anti-aliasing option
 0 0 0     black background colour
 F         no shadows cast
 25        Phong power

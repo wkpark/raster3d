@@ -92,6 +92,11 @@ quality (compression level) of the output image.
 Allowable values 1 - 100 (default 90).
 
 .TP 5
+.B "-[no]shadow"
+
+Turn shadowing on or off.
+
+.TP 5
 .B "-size HHHxVVV"
 
 Override the image size parameters (NTX,NTY,NPX,NPY) in file header
@@ -121,6 +126,11 @@ file instead of writing to stdout.
 Force output of transparency information (SCHEME 0). This only works
 if the output image format supports an alpha channel (AVS, TIFF, but
 not JPEG). Note that this turns off anti-aliasing.
+
+.TP 5
+.B "-zoom ZZ[%]
+
+Rescale image by factor ZZ (ZZ% if the % sign is present).
 
 .SH HEADER RECORDS
 .TP 5 

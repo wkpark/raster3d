@@ -22,6 +22,8 @@
 *			fancy2	equatorial planes only
 *			fancy3  equatorial planes + transparent ellipsoid
 *			fancy4  longest principle axis only
+*			fancy5	for ORTEP lovers - one octant missing
+*			fancy6  same as fancy5, with missing octant colored grey
 *			========================================================
 *	-tabulate [file]instead of creating a Raster3D input file, 
 *			list all atoms with principle axes and anisotropy.
@@ -60,6 +62,9 @@
 * EAM Jun 2000	- additional error reporting
 * EAM Jul 2000	- apply Bcolor to bonds as well as atoms
 * EAM Sep 2000	- Suv similarity test
+* EAM Apr 2001	- V2.6 
+*		  ORTEP_LIKE ellipsoids (one octant missing)
+*		  error count
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -107,6 +112,7 @@ c
       real	Biso(MAXATM), sum_b, sum_b2, sum_ab
       integer	nanis, niso, nhyd, nonpos
       logical	hwhacky
+      integer	nerrors
 c
       character*2 atomtype
       integer     natype
@@ -170,6 +176,7 @@ c
 	fancy    = 0
 	prob     = 0.50
 	radius   = 0.10
+	nerrors  = 0
 	narg = iargc()
 	i = 1
     5	continue
@@ -221,6 +228,10 @@ c
 		    fancy = 3
 		else if (flags(7:7).eq.'4') then
 		    fancy = 4
+		else if (flags(7:7).eq.'5') then
+		    fancy = 5
+		else if (flags(7:7).eq.'6') then
+		    fancy = 6
 		else
 		    fancy = 1
 		endif
@@ -290,7 +301,7 @@ c
   	write (noise,'(A)')
      &	'rastep	[-h] [-iso] [-Bcolor Bmin Bmax] [-prob Plevel]'
 	write (noise,'(A)')
-     &  '	[-fancy[0-3]] [-radius R] [-auto]'
+     &  '	[-fancy[0-6]] [-radius R] [-auto]'
 	write (noise,'(A,A)')
      &  '	[-nohydrogens] [-suv [suv_limit]]'
 	write (noise,'(A,A)')
@@ -309,7 +320,7 @@ c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
      &                  VERSION
-	write (noise,*) 'E A Merritt - 19 Sep 2000'
+	write (noise,*) 'E A Merritt -  6 Jun 2001'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -461,8 +472,10 @@ c
         TEST = CARD(7:30)
         DO 80 ICOL=1,NCOL
           IF (MATCH(TEST,MASK(ICOL))) THEN
-            READ(CARD,'(30X,3F8.3,6X,F8.2)') X,Y,Z, Biso(IATM)
+            READ(CARD,'(30X,3F8.3,6X,F6.2)',end=82,err=82) 
+     &	        X,Y,Z, Biso(IATM)
 	    IF (Biso(IATM).LE.0.0) THEN
+	    	nerrors = nerrors + 1
 	    	write(noise,*) '*** Illegal Biso ',Biso(IATM),' - ',
      &				atom(iatm+1)(13:27)
 		Biso(IATM) = 0.0
@@ -495,6 +508,10 @@ c	    else
         WRITE(NOISE,*) 'No colour table mask matches this atom:'
         WRITE(NOISE,*) ATOM(IATM)
         STOP 90
+82	continue
+	write(noise,*) 'Input format problem in record'
+	write(noise,*) CARD
+	STOP 90
 100   CONTINUE
       XMID = (XMAX+XMIN)/2.
       YMID = (YMAX+YMIN)/2.
@@ -686,12 +703,14 @@ c
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:27)
 		nonpos = nonpos + 1
+	    	nerrors = nerrors + 1
      		Biso(iatm) = 0.0
 		goto 138
 	    endif
 	    goto 132
   131	    write(noise,*) '*** Format problem - ',
      &				atom(iatm+1)(13:70)
+	    nerrors = nerrors + 1
      	    goto 138
   132	    continue
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
@@ -890,6 +909,7 @@ c	through the center of our ellipsoid
      &                       QP(1,3),QP(1,4),QP(2,4),QP(3,4),QP(4,4)
 	  enddo
 	endif
+c
       endif
       ENDIF
   138 continue
@@ -925,6 +945,7 @@ c
 	   write(noise,*)
      &	                 'You seem to have anisotropic hydrogens',
      &                   ' - is this some kind of joke?'
+     	   nerrors = nerrors + 1
 	end if
 
 	write (hislun,'(A)') '# Anisotropy  Fraction   Number'
@@ -1087,6 +1108,7 @@ c
 	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:26)
+     		nerrors = nerrors + 1
      		Biso(iatm) = 0.0
 		red   = 1.0
 		green = 0.0
@@ -1103,6 +1125,17 @@ c
 	      green = green*green
 	      blue  = blue*blue
 	    endif
+	    if (fancy.eq.5 .or. fancy.eq.6) then
+	      write (output,'(I2,/,A,I2,/,A)') 8,
+     &		    ' -1.0 -1.0  -1.0 -1.0 -1.0  0.0  0 0 0',
+     &	            fancy-1, 'ORTEP_LIKE'
+     	      if (fancy.eq.6) write (output,171) 0.5, 0.5, 0.5
+  	      write (output,172) 0, x,y,z, (evecs(i,1),i=1,3)
+  	      write (output,172) 0, x,y,z, (evecs(i,2),i=1,3)
+  	      write (output,172) 0, x,y,z, (evecs(i,3),i=1,3)
+  171	      format('BOUNDING_COLOR ',3F6.3)
+  172	      format('BOUNDING_PLANE ',I2,6F10.4)
+	    endif
 	    write (output,151) 14, x,y,z,radlim,red,green,blue
 	    write (output,152) (quadric(i),i=1,10)
 	ELSE
@@ -1113,14 +1146,19 @@ c
 	ENDIF
       goto 154
   153 continue
-      if (fancy.eq.0) write(noise,*) '*** Format problem - ',
-     &				atom(iatm+1)(13:70)
+      if (fancy.eq.0) then
+      	write(noise,*) '*** Format problem - ',atom(iatm+1)(13:70)
+     	nerrors = nerrors + 1
+      endif
       ENDIF
   154 continue
       IATM = IATM + 1
       IF (IATM.LE.NATM) GOTO 150
       IF (fancy.eq.1 .or. fancy.eq.3) then
 	write (output,'(A)') '9 end transparent ellipsoids'
+      endif
+      IF (fancy.eq.5 .or. fancy.eq.6) then
+	write (output,'(A)') '9 end ortep ellipsoids'
       endif
   160 continue
 c
@@ -1129,6 +1167,8 @@ c closer to each other than 0.6 * sum of VDW radii.
 C If two atoms of different colors are bonded, make half-bond
 C cylinders with each color.
 C
+      if (nerrors.eq.0) write(noise,*) 
+     &	 '... no errors found in input file'
       if (radius.eq.0.0 .and. .not.suvflag) goto 210
       if (suvflag) then
          write (suvlun,'(A,A,F5.3,A)') 
@@ -1174,7 +1214,7 @@ c	  Checking for bonded atoms with dissimilar Uij
      &	            ATOM(JATM)(13:17),ATOM(JATM)(18:27),
      &		    similarity
      		suvbad = suvbad + 1
-  161	    format(1X,A5,1X,A10,8X,A5,1X,A10,4X,F10.4)
+  161	    format(1X,A5,1X,A10,8X,A5,1X,A10,4X,'Suv = ',F8.4)
 	    endif
 	    if (tflag) goto 201
 	  endif
@@ -1192,7 +1232,7 @@ c	  Atoms coloured by B value
 	     call U2RGB( SPAM(4,IATM), Umin, Umax, RED1, GREEN1, BLUE1 )
 	     call U2RGB( SPAM(4,JATM), Umin, Umax, RED2, GREEN2, BLUE2 )
 	     write(output,212)
-     1		RED1,GREEN1,BLUE1, RED2,GREEN2,BLUE2, 0, 0, 0
+     1		RED1,GREEN1,BLUE1, RED2,GREEN2,BLUE2, 0., 0., 0.
 c	  Same color atoms
 	  elseif (RGB(1,ICOL) .EQ. RGB(1,JCOL) .AND.
      1       RGB(2,ICOL) .EQ. RGB(2,JCOL) .AND.
@@ -1218,7 +1258,8 @@ c	  Same color atoms
   202 CONTINUE
   210 CONTINUE
 
-211   FORMAT(1H3,/,11f8.3)
+C211  FORMAT(1H3,/,11(f8.3))
+211   FORMAT(1H3,/,3(1x,f8.3),f7.3,3(1x,f8.3),f7.3,3(f6.3))
 212   FORMAT(2H17,/,9f8.3)
 c
 	if (suvflag) then

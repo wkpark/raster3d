@@ -1,0 +1,32 @@
+#!/bin/csh
+#
+# Calculate molecular surface of a galactose molecule using MSMS
+#
+ln -s ../examples/sugarG.pdb protein.pdb
+cat protein.pdb | pdb_to_xyzr > surf.dat
+msms -if surf.dat -of surf -probe_radius 1.4 -density 5.0
+#
+#
+# Convert the msms output into a Raster3D description of the surface
+#
+./msms2r3d.pl surf.face surf.vert > surf.r3d
+#
+#
+# Use rastep to make an auto-centered ball+stick view of the molecule
+#
+rastep -rad 0.20 -prob 0.10 < protein.pdb > protein.r3d
+#
+# Combine the ball+stick figure with a transparent material 
+# description from the Raster3D library 
+# applied to the molecular surface generated in MSMS
+# Save the combined picture as a TIFF file
+#
+render -size 300x300 -zoom 75% -tiff picture.tiff << EOF
+@protein.r3d
+@translucent
+@surf.r3d
+EOF
+#
+rm -f protein.pdb msms_surf.dat.log
+rm -f surf.dat surf.face surf.vert
+rm -f surf.r3d

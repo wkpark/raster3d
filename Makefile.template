@@ -1,0 +1,65 @@
+#
+# makefile template for Raster3D distribution 2.6
+#
+# You may want to edit some of the lines below to select
+# options or directories appropriate to your local installation.
+#
+include VERSION
+#
+# Where to install the program, data files, and manuals
+#
+prefix  = /usr/local
+bindir  = $(prefix)/bin
+datadir = $(prefix)/share/Raster3D/materials
+mandir  = $(prefix)/man/manl
+htmldir = $(prefix)/share/Raster3D/html
+examdir = $(prefix)/share/Raster3D/examples
+
+INCDIRS  =	-I/usr/include -I/usr/local/include
+LIBDIRS  =	-L/usr/local/lib
+
+#
+# TIFF support (enabled by default)
+#     add -DTIFF_SUPPORT to the DEFINES statement.
+#     add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
+#
+  TLIBS =	-ltiff
+  TDEFS =	-DTIFF_SUPPORT -DTIFF_INVERT
+# TDEFS =	-DTIFF_SUPPORT
+
+#
+# JPEG support (enabled by default)
+#     add -DJPEG_SUPPORT to the DEFINES statement.
+#     add -ljpeg to the LIBS definition.
+  JLIBS =	-ljpeg
+  JDEFS =	-DJPEG_SUPPORT
+
+#
+# Everybody (I think) needs these
+#
+  CLIBS =	-lm 
+  
+#
+# Auto conversion of output using ImageMagick (enabled by default)
+#
+  IDEFS =	-DIMAGEPIPE
+
+#
+# Support for on-the-fly decompression of input files using gunzip
+# (may not work on all systems)
+  GDEFS =	-DGUNZIP
+
+#
+# Support for SGI imagetools library (-sgi output option to render)
+# This probably makes sense only on an Irix workstation, and only
+# if you have installed the libimage library.
+# Commented out by default. 
+# SLIBS =	-limage
+# SDEFS =	-DLIBIMAGE_SUPPORT
+
+#
+# Any stuff you see below this comment was added by the "make OS" command.
+# You can edit it if you like, but it will be lost if you "make OS" again.
+#

@@ -11,9 +11,9 @@
 rods is a preprocessor for ball-and-stick figures in the 
 <a href="raster3d.html">Raster3D</a> molecular graphics package.<p>
 
-<listing>
+<pre>
 rods [-h] [-b] [-radius R] [-Bcolor Bmin Bmax]
-</listing>
+</pre>
 rods
 reads a PDB coordinate file, including COLOUR records as
 described below, 
@@ -24,17 +24,17 @@ descriptor files produced by other Raster3D utilities.
 <a name="RTFToC26">EXAMPLES</a></h4>
 To describe a simple bonds-only model coloured by residue type:
 
-<listing>
+<pre>
 cat mycolours.pdb protein.pdb | rods | render &gt; mypicture.avs
-</listing>
+</pre>
 To
 render the same molecule as ball-and-stick:
 
-<listing>
+<pre>
 cat mycolours.pdb protein.pdb | rods -b | render &gt; mypicture.avs
-</listing>
+</pre>
+<H4>OPTIONS</H4>
 <dl>
-<dt><H4>OPTIONS</H4></dl><dl>
 <dt><i>-h</i><dd>Suppress header records in output. By default rods will
 produce an output file which starts with header records containing a default
 set of scaling and processing options. The -h flag will suppress these header

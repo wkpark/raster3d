@@ -1,12 +1,12 @@
 	subroutine parse
-c	Version 2.5f
+c	Version 2.6a
 c
-	common /options/ nscheme, nax, nay, invert, otmode, quality
-     &                 , lflag, fontscale
-	integer          nscheme
-	integer*2        nax, nay, otmode, quality
-	logical          invert, lflag
-	real             fontscale
+      COMMON /OPTIONS/ FONTSCALE, ZOOM, NSCHEME, SHADOWFLAG, 
+     &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
+      REAL             FONTSCALE, ZOOM
+      INTEGER          NSCHEME, SHADOWFLAG
+      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      LOGICAL*2        INVERT, LFLAG
 c
 	common /asscom/  assout, verbose
 	integer          assout
@@ -26,8 +26,10 @@ c
 	nax = -1
 	nay = -1
 	nscheme = -1
+	shadowflag = -1
 	quality = 95
 	lflag = .false.
+	zoom = 0.
 c
 c	Default font scale is 3.0 (appropriate for 300 dpi printers)
 c	This is superseded by the environmental variable FONTSCALE
@@ -67,8 +69,10 @@ c
 	    else if (option(1:5).eq.'-size') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
+		kbrk = 2
 		do k = 15,2,-1
 		    if (option(k:k).eq.'x') kbrk = k
+		    if (option(k:k).eq.'X') kbrk = k
 		end do
 		read (option(1:kbrk-1),*,err=10,end=10) nax
 		read (option(kbrk+1:15),*,err=10,end=10) nay
@@ -86,7 +90,21 @@ c
 	        iarg = iarg + 1
 		call getarg( iarg, option )
 		read (option,*,err=10,end=10) fontscale
-		if (fontscale.le.0) then fontscale = 3.0
+		if (fontscale.le.0) fontscale = 3.0
+	    else if (option(1:5).eq.'-zoom') then
+	    	iarg = iarg + 1
+		call getarg( iarg, option )
+		kbrk = 15
+		do k = 15,2,-1
+		    if (option(k:k).eq.'%') kbrk = k
+		end do
+		read (option(1:kbrk-1),*,err=10,end=10) zoom
+		if (zoom.le.0.) zoom = 0.
+		if (option(kbrk:kbrk).eq.'%') zoom = -zoom
+	    else if (option(1:7).eq.'-shadow') then
+	    	shadowflag = 1
+	    else if (option(1:9).eq.'-noshadow') then
+	    	shadowflag = 0
 	    else 
 	    	larg = larg + 1
 		args(larg) = option
@@ -110,9 +128,12 @@ c
 
 	subroutine autotile( nax, nay )
 c
+	implicit NONE
+c
+	include 'parameters.incl'
+c
 	common /raster/  ntx,nty,npx,npy
 	integer          ntx,nty,npx,npy
-	PARAMETER (MAXNTX=256,MAXNTY=256)
 c
 	common /asscom/  assout, verbose
 	integer          assout
@@ -140,6 +161,10 @@ c
 	    if (npx.lt.6 .and. ( mod(ntx,2).eq.0
      &	        .or. mod(ntx,3).eq.0 .or. mod(ntx,5).eq.0))
      &		goto 21
+	    if (npx.gt.MAXNPX) then
+		npx = MAXNPX
+		ntx = (nax + MAXNPX - 1) / MAXNPX
+	    endif
 	endif
 	if (nay .gt. 0) then
 	    npy = 2
@@ -161,6 +186,10 @@ c
 	    if (npy.lt.6 .and. ( mod(nty,2).eq.0
      &	        .or. mod(nty,3).eq.0 .or. mod(nty,5).eq.0))
      &		goto 31
+	    if (npy.gt.MAXNPY) then
+		npy = MAXNPY
+		nty = (nay + MAXNPY - 1) / MAXNPY
+	    endif
 	endif
 	if (verbose .and. (nax.gt.0 .or. nay.gt.0)) then
 	    write(0,32) 'X',ntx,npx,ntx*npx

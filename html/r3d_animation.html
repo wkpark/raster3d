@@ -22,7 +22,7 @@ rotation of a scene described by Molscript and rendered in Raster3D.
      images.  Also add a single line "@frame_rotation.mol" at the end of the 
      coordinate transformation section of the Molscript input, 
      as in the following example:
-     <listing>
+     <pre>
     !
     ! File  "animate.mol"
     ! MOLSCRIPT V1.4 description file for an animation
@@ -51,7 +51,7 @@ rotation of a scene described by Molscript and rendered in Raster3D.
 	helix  from A13  to A19  ;	coil from A19  to A41  ;
 	
     [and so on and so forth]
-    </listing>
+    </pre>
     <p>
 
 <li> Remember to create a file "header.r3d" that contains the 
@@ -71,7 +71,7 @@ rotation of a scene described by Molscript and rendered in Raster3D.
      repeatedly, with a different rotation in the file rotation.mol each time.
      Here is a perl script that does a complete 360 degree rotation in 
      increments of 3 degrees.  
-     <listing>
+     <pre>
     #!/usr/local/bin/perl
     #
     #
@@ -92,7 +92,7 @@ rotation of a scene described by Molscript and rendered in Raster3D.
 	system "/bin/csh", "-c", "$command" ;
 
 	}
-     </listing>
+     </pre>
     <p>
 
 <li> You now should have a series of rendered frames called
@@ -102,9 +102,9 @@ rotation of a scene described by Molscript and rendered in Raster3D.
 
 <li> You can convert the entire series of frames into an animated GIF
      file using the ImageMagick convert command:
-     <listing>
+     <pre>
      convert -delay 15 -loop 0 frame_*.jpeg movie.gif
-     </listing>
+     </pre>
      The <i>-delay</i> parameter sets a minimum display time per frame in
      0.01 seconds. The <i>-loop 0</i> sets a flag requesting a display
      program to loop over the frames repeatedly.
@@ -114,9 +114,9 @@ rotation of a scene described by Molscript and rendered in Raster3D.
      animation.  This process is rather arcane (and <i>I</i> certainly
      don't understand it very well), but the command will look something
      like this:
-     <listing>
+     <pre>
      mpeg_encode mpeg_encoding.dat
-     </listing>
+     </pre>
      The mpeg_encode program is available from the
      <a href="http://bmrc.berkeley.edu/projects/mpeg/">
      Berkeley Multimedia Research Center</a>.
@@ -124,7 +124,7 @@ rotation of a scene described by Molscript and rendered in Raster3D.
      output file name, etc, etc, is all specified in the *.dat file.
      Here is one that worked for me, but I don't guarantee that the 
      parameters are at all optimal!
-     <listing>
+     <pre>
     #
     # file "mpeg_encoding.dat"
     #
@@ -147,14 +147,14 @@ rotation of a scene described by Molscript and rendered in Raster3D.
       REFERENCE_FRAME DECODED
       PSEARCH_ALG     LOGARITHMIC
       BSEARCH_ALG     CROSS2
-    </listing>
+    </pre>
     <p>
 
 <li> Depending on which method of animation you chose, 
     the command to play back your new movie is either
-    <listing> animate movie.gif </listing>
+    <pre> animate movie.gif </pre>
     or
-    <listing> mpeg_play -quiet -dither color movie.mpeg </listing>
+    <pre> mpeg_play -quiet -dither color movie.mpeg </pre>
     Netscape is capable of displaying animated GIF files also, but the
     performance is much slower than the ImageMagick animate command.
     (Actually the animate command also is slow during the first couple of
@@ -181,10 +181,10 @@ rotation of a scene described by Molscript and rendered in Raster3D.
     This approach works nicely with file indirection in the render input file.
     One could, for example, fade a surface in or out by gradually changing 
     its degree of transparency.  To do this you would describe the surface
-    in the main input file as <listing>
+    in the main input file as <pre>
     @transparent.r3d
     @surface.r3d
-    9 End transparent</listing>
+    9 End transparent</pre>
     And successive iterations of the animation script would overwrite the
     degree of transparency sepecified in "transparent.r3d" in much the same
     way that the rotation angle was changed in the example listed above.

@@ -18,16 +18,17 @@ molecular graphics image and the associated labels.
 <p>
 <b>label3d</b> can accept input either from a file or from <i>stdin</i>.
 
-<listing>
+<pre>
 label3d render_input_file.r3d; display label3d.tiff
-</listing>
+</pre>
 or
-<listing>
+<pre>
 cat list-of-files | label3d -
-</listing>
+</pre>
 
+<p>
 Unfortunately, the Raster3D render program cannot process labels.
-To overcome this lack, earlier Raster3D distributions includes an 
+To overcome this lack, earlier Raster3D distributions included an 
 auxilliary program <a href="r3dtops.html">r3dtops</a> that
 complements render in that it can process the labels but not the
 graphics objects. The r3dtops code is now part of the render 
@@ -68,18 +69,18 @@ The intermediate files listed above are created each time the script is run.
 Any exiting files by these names will be destroyed.
 
 <h4>BUGS</h4>
-<dl>
-<dd>
+<ul>
+<li>
 The whole nature of label handling in Raster3D is not yet settled.
 It would be much nicer if all the label processing were taken
 care of by the render program itself.<p>
-<dd>
+<li>
 The script assumes that the image is being prepared for printing
 at 300 dpi (r3dtops is called with <i>-fontscale 3.0</i>).<p>
-<dd>
+<li>
 Labels always appear on top of the molecular graphics image,
 even labels which should be occluded by a foreground object.<p>
-</dl>
+</ul>
 
 <h4>AUTHORS</h4>
 Ethan A Merritt.

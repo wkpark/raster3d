@@ -1,0 +1,59 @@
+most recent change:	   8-Jul-2001
+
+The file Raster3D_2.6b.tar.gz contains the full source distribution for
+version 2.6b of Raster3D.
+
+- Version 2.6b is the first general release of the Raster3D package version 2.6
+  See CHANGELOG for a history of changes to the package.
+
+- The installation procedure for version 2.6 differs from earlier versions.
+  In a nutshell, the necessary steps are:
+
+  	1)  Review the contents of Makefile.template
+	2)  make help            (prints a list of OS names)
+	3)  make OS              (where OS is your operating system name)
+	4)  make all		 (builds the programs)
+	5)  make install         (copies files to system directories)
+	6)  modify user login environment to include R3D_LIB 
+		e.g. setenv R3D_LIB /usr/local/share/Raster3D/materials
+
+	7)  (optional)
+	    modify ImageMagick delegates file so that ImageMagick recognizes
+	    *.r3d files by default.  On my systems this file is in
+	    	/usr/lib/ImageMagick/modules/coders/delegates.mgk
+	    Add the following 2 lines at the end of the file
+		r3d=>
+	            render -tiff %o < %i
+
+- Changes in Version 2.6 compared to earlier versions
+	+   User changeable array limits are in a separate file parameters.incl
+	+   V2.6 supports bounding planes as part of a material description
+	    (see examples XXX)
+	+   the limit of 2 layers of transparency is removed; 
+	    render can now handle any number of occluding transparent objects
+	+   render accepts command line options -shadow and -noshadow
+	+   the label3d script has been changed for compatibility with
+	    ImageMagick 5.3.2 (hopefully still works with older versions?)
+
+This distribution has been tested on the following platforms:
+
+	Alpha / OSF 4.0 / Tru64 5.1
+	SGI / Irix 6.2 6.5
+	IBM RS6000 / AIX
+	SUNOS (g77/gcc)
+	Intel Pentium / linux (Redhat 6.1, Mandrake 8.0)  (g77/pgf77)
+
+Previous versions have been tested under Irix 5.3 and the Cygwin
+environment for Windows.  If you run into installation problems, please let
+me know, particularly if you can also tell me what you did to fix it!
+
+For optimal use of Raster3D you should also obtain 
+John Cristy's ImageMagick package for image manipulation and viewing 
+	(source distribution available from www.ImageMagick.org)
+Some version of a TIFF library, ideally one that allows LZW compression
+Some version of a JPEG library
+Version 2.0 of Molscript (http://www.avatar.se/molscript)
+
+
+				Ethan A Merritt
+				merritt@u.washington.edu

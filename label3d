@@ -1,13 +1,14 @@
 #!/bin/csh -f
 #
-#	Raster3D labeling script label3d V2.5
+#	Raster3D labeling script label3d V2.6
 #
 # Notes:
-#	- Assumes label support in render (in previous version
-#	  label support was from separate program r3dtops).
 #	- This version uses sed to find image size 
 #	  (previous versions used awk/nawk).
 #	- Requires ghostscript and ImageMagick.
+#	  ImageMagick behavior is version-dependent (fooey on them!)
+#	    so you may have to edit this script if you update ImageMagick
+#	    currently known to work for V2.4.9 and V5.3.2
 #	- Depending on what size images you typically produce, 
 #	  you might want to change the FONTSCALE definition below
 #
@@ -27,11 +28,22 @@ if (! -e label3d.ps) then
    exit(0)
 endif
 setenv IMAGESIZE `identify render.tiff | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
-alias gs3d gs -sDEVICE=ppm -dNOPAUSE -q -sOutputFile=label3d.ppm
+alias gs3d gs -sDEVICE=png256 -dNOPAUSE -q -sOutputFile=label3d.png
 gs3d -g$IMAGESIZE label3d.ps -c quit || echo "GhostScript error" && goto cleanup 
-combine -compose over render.tiff label3d.ppm label3d.tiff
+#
+# This works with ImageMagick 4.2.9 and many (most?) other older versions
+if (-x "`which combine`") then
+   convert -draw "matte 0,0 replace" label3d.png label3d.miff
+   combine -compose over render.tiff label3d.miff label3d.tiff
+#
+# This works with ImageMagick 5.3.2
+else
+   echo "using composite instead of compose"
+   convert -draw "matte 0,0 replace" label3d.png label3d.miff
+   composite -compose over label3d.miff render.tiff label3d.tiff
+endif
 #
 cleanup:
 rm -f label3d.ps 
-rm -f label3d.tmp label3d.ppm render.tiff
+rm -f label3d.tmp label3d.png label3d.miff render.tiff
 #

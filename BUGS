@@ -1,5 +1,16 @@
 All platforms
 =============
+
+      ==> The removal of LZW compression from recent versions of the TIFF
+      	  library makes TIFF generation in render fail.  You can find an
+	  older version of the TIFF library that still supports LZW compression
+	  or you can live with the much larger uncompressed files.
+
+	  I am undecided what the long term fix should be --
+	  live with ridiculously large TIFF files? require people to find
+	  an old version of libtiff with LZW support? switch entirely to
+	  PNG images?
+
 	- ISOLATE (object code 15) not yet implemented for quadric surfaces
 	- Linear depth-cueing code (FOG 0) is not correct for parts of the 
 	  scene behind a transparent object. This problem arises because a 
@@ -13,11 +24,18 @@ All platforms
 	- General quadric surfaces (other than ellipsoids) may cast spurious
 	  shadows, and always fail to shadow themselves.
 	- Explicit vertex colors take precedence over material colors;
-	  I'm not sure whether that's good or bad.
+	  (That's a feature, not a bug)
 	- Labels with TeX-like escape sequences are always treated as Left-Align.
 	- Angstrom symbol only loaded into Times/Helvetica fonts.
 	- the calls in local.c to time() behave very oddly under linux and DU;
 	  the first call always returns 0, so two in a row are needed
+	- ribbon coloring scheme 6 doesn't work
+
+Tru64 unix 5.1
+==============
+	- The new fortran compiler is not fully compatible with older
+	  Compaq f77 compilers.  I think I have worked around this in the code,
+	  but I may have missed something.
 
 AIX 
 ===
@@ -35,17 +53,23 @@ linux (g77 compiler)
 	The g77 compiler does not support file open options 
 	CARRIAGECONTROL='LIST' or DISPOSE='DELETE'.
 	Work-around :
-		Makefile.redhat deletes these specifications from the source
+		'make linux' deletes these specifications from the source
 		files; unfortunately, this means that temporary files do not
 		automatically get deleted from the system temp directory.
 
 	Optimization bug in quadric.f can cause render to fail on certain
 	input.  g77 -w -malign-double quadric.f   seems to fix this.
+	Separate optimization bug, also in quadric.f, can cause the
+	impingement test in qinp() to give different result than the one
+	in render(). This causes render to exit with an error message.
+
+	g77 on top of gcc-2.96 (Mandrake 8.0) has been reported to produce 
+	incorrect code in render;  the same report says that gcc-2.95 is OK.   
+	I still recommend using a real Fortran compiler, rather than g77.
 
 Windows
 =======
 	I am relying entirely on instructions kindly provided by 
 	Suhaib Siddiqi, and have not tested the installation procedure at all.
-	In particular I haven't done anything about adding the label-handling 
-	code to the Makefile.
+	In particular the Makefile is probably out of date.
 

@@ -15,9 +15,9 @@ stereo3d is a shell script that renders a single
 input file as a side-by-side stereo pair.
 The resulting image is placed in file <b>stereo.tiff</b>.
 
-<listing>
+<pre>
 stereo3d [-border] render_input_file.r3d
-</listing>
+</pre>
 
 stereo3d uses the Raster3D utilities
 <a href="label3d.html">label3d</a>,
@@ -38,14 +38,14 @@ side-by-side stereo pair stereo.tiff.
 
 <h4>EXAMPLES</h4>
 If the following line would render and display a single image:
-<listing>
+<pre>
 	render -tiff single.tiff < input.r3d;  display single.tiff
-</listing>
+</pre>
 then the following line would render and display the same scene
 as a stereo pair instead:
-<listing>
+<pre>
 	stereo3d input.r3d; display stereo.tiff
-</listing>
+</pre>
 <b>NB</b>: The output image is always called stereo.tiff; there is no
 provision at present to specify some other name.
 

@@ -57,7 +57,7 @@ dark blue; atoms with B >= Bmax will be colored light red; atoms with
 Bmin < B < Bmax will be assigned colors shading smoothly through the
 spectrum from blue to red.
 
-.B "-fancy[0-3]"
+.B "-fancy[0-6]"
 .PP
 The \fI-fancy\fP option selects increasingly complex representations of
 the rendered ellipsoids.
@@ -65,6 +65,9 @@ the rendered ellipsoids.
   -fancy1 = principal axes of ellipsoid, with transparent bounding surface
   -fancy2 = colored equatorial planes of the ellipsoid
   -fancy3 = colored equatorial planes with transparent bounding surface
+  -fancy4 = transparent bounding surface containing longest principle axis
+  -fancy5 = for ORTEP lovers, a solid ellipsoid with one octant missing
+  -fancy6 = for ORTEP lovers who want the missing octant in a separate color
 
 .B "-h"
 .PP
