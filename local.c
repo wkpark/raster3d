@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.3(alpha)
+ * Raster3D V2.4(alpha)
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -28,12 +28,19 @@
  * manipulated using various other utilities provided under
  * 4DGifts/iristools/imgtools.
  *
- * V2.3(alpha)  These are for debugging, not intended for general use
+ * Note on conditional code for Linux (redhat):
+ * On my redhat 4.2 installation, TIFFClose dumps core on a __cfree_()
+ * deallocation error after successfully closing the TIFF file.
+ * Don't ask me why.  But since the program is in the process of exiting
+ * anyway we can safely ignore the error and continue to exit cleanly.
+ *
+ * V2.4(alpha)  These are for debugging, not intended for general use
  *	command line options
  *		-debug  passes flag back to render
- *		-alpha  emit alpha channel
  *		-aaN, 	where N=(0,1,2,3,4) forces anti-aliasing option
  *		-invert	invert y coordinate axis
+ * additional parameter passed in mode 1 calls to inform local() of options
+ * set in render code (e.g. alpha channel)
  */
 
 #include	<stdio.h>
@@ -47,12 +54,19 @@
 #ifdef TIFF_SUPPORT
 #include        <tiff.h>
 #include        <tiffio.h>
-#endif
+#ifdef LINUX
+#include	<signal.h>
+#endif LINUX
+#endif TIFF_SUPPORT
 
 /* Define bits in returned status */
 #define		ANTIALIAS	007
 #define		INVERT		010
 #define		DEBUGGING	020
+
+/* Define bits passed in 3rd parameter of mode 1 */
+/* (New in version 2.4a)                         */
+#define		ALPHACHANNEL	040
 
 /* HPUX lacks Fortran intrinsic functions AND and OR for some reason, */
 /* so I put a copy here. On the other hand HPUX has an unusually sane */
@@ -77,6 +91,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
   static char	*ofile;
   int		status = 0;
   int		invert = 0;
+  int		bits;
   
   /* For -original output mode only */
   static int header[8] = { 3, 1, 1, 0, 0, 0, 0, 0 };
@@ -103,13 +118,6 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
   
   if (*option == 0) {
     
-    if (strncmp( (char *)buffer1, "-alpha", 6) ==0)
-      {
-      fprintf(stderr,"\nAlpha channel on output\n");
-      alpha_channel = 1;
-      buffer1 = buffer2;   buffer2 = buffer3;
-      }
-
     if (strncmp( (char *)buffer1, "-debug", 6) ==0)
       {
       fprintf(stderr,"\nDebugging mode selected\n");
@@ -202,6 +210,9 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
       
       xsize = *buffer1;
       ysize = *buffer2;
+      bits  = *buffer3;
+
+      if (bits & ALPHACHANNEL) alpha_channel = 1;
       
 #ifdef TIFF_SUPPORT
       if (mode == 3)   /* tiff */
@@ -212,7 +223,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 	    ofile = "render.tif";
 	  tfile=TIFFOpen(ofile,"w");
 	  TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.3alpha");
+	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.4alpha");
 	  TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
 	  TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
@@ -228,9 +239,13 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 #endif
 	  TIFFSetField(tfile,TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
 	  TIFFSetField(tfile,TIFFTAG_COMPRESSION,COMPRESSION_LZW);
+#ifdef	OLD_CODE
 	  rows_per_strip=8192/TIFFScanlineSize(tfile);
 	  if (rows_per_strip == 0)
 	    rows_per_strip=1;
+#else
+	  rows_per_strip = ysize;
+#endif
 	  TIFFSetField(tfile,TIFFTAG_ROWSPERSTRIP,rows_per_strip);
 	  if (alpha_channel)
 	    {
@@ -272,8 +287,13 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
       
 	  else        /* avs */
 	    {
+#ifdef NETWORKBYTEORDER
+	      putw( htonl(xsize), stdout );
+	      putw( htonl(ysize), stdout );
+#else
 	      putw( xsize, stdout );
 	      putw( ysize, stdout );
+#endif
 	    }
       
       break;
@@ -346,6 +366,9 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
       if (mode == 3)
 	{
 	  (void) TIFFFlushData(tfile);
+#ifdef LINUX
+	  signal( SIGSEGV, SIG_IGN );
+#endif LINUX
 	  (void) TIFFClose(tfile);
 	}
 #endif

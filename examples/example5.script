@@ -1,0 +1,4 @@
+# E A Merritt April 1994
+# Illustration of material properties and file indirection
+#
+render < example5.r3d | display avs:-

@@ -1,3 +1,21 @@
+ 1-Jan-98	V2.4b
+23-Dec-97	Verify installation under DU4.0, Redhat4.2, Irix5.3, Irix6.4
+		add patch to work around I/O glitch in AIX
+26-Nov-97	Add object type 17 (VERTEXRGB) and subroutine CHKRGB
+		Allow # to denote comments in input stream to render
+21-Oct-97	Fix bug preventing normal3d from handling CYLFLAT objects
+15-Oct-97	Oops, forgot to remove the -alpha flag to enable ISCHEME=0
+22-Sep-97	Fix major bug in BACKFACE flag set condition
+15-Sep-97	in local.c: change TIFFTAG_ROWSPERSTRIP to be same as ysize
+15-Sep-97	default to anti-aliasing scheme 4 in balls, ribbon, rods
+11-Sep-97	default colors and -Bcolor option added to rods
+ 4-Sep-97	Fix normals of flat cylinder ends (thanks to Takaaki Fukami)
+13-Aug-97	To please stupid Fortran compilers, including f2c, remove
+		READONLY from OPEN statements
+ 2-Jul-97	New object type for quadric surfaces, and rastep utility to
+		generate ellipsoids from ANISOU records in PDB file.
+		Also new object type NOTRANS to render subsequent objects
+		independently from TMAT in header.
  4-Aug-97	V2.3d
 		ribbon option -d6 to use COLOUR templates for ribbon color
 		include a copy of local_jpeg.c in distribution

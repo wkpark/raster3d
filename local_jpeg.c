@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.4(alpha)
+ * Raster3D V2.4b
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -37,7 +37,7 @@ int or(i,j)  int *i,*j; {return (*i | *j);}
 #endif
 
 int		alpha_channel = 0;
-char *version = "Raster3D V2.4a\n" ;
+char *version = "Raster3D V2.4b\n" ;
 
 /* JPEG data structures */
   struct jpeg_compress_struct	cinfo;
@@ -95,7 +95,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 
     if (strncmp( (char *)buffer1, "-quality", 8) == 0)
       {
-      i = sscanf(buffer2,"%d",&quality);
+      i = sscanf((char *)buffer2,"%d",&quality);
       if (i != 1 || quality <= 0 || quality > 100) {
 	fprintf(stderr,"\n JPEG quality must be an integer from 1 to 100\n");
 	exit(-1);

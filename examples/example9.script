@@ -1,0 +1,32 @@
+#!/bin/csh
+#
+# Thermal ellipsoid representations
+# GM1-pentasaccharide from a complex with the cholera toxin B-pentamer
+# refined with anisotropic displacement parameters at 1.25A resolution 
+#
+rm -rf setup.angles setup.matrix temp.tmp
+#
+rods                   < sugarG.pdb | render -tiff ex9a.tiff
+display -geometry 50%x50%+0+0   -title GM1-OS ex9a.tiff &
+rastep                 < sugarG.pdb | render -tiff ex9b.tiff
+display -geometry 50%x50%+350+0 -title "50% probability" ex9b.tiff &
+rastep -fancy2 -prob 30< sugarG.pdb | render -tiff ex9c.tiff
+display -geometry 50%x50%+700+0 -title "fancy2 30% probability" ex9c.tiff &
+rastep -fancy3         < sugarG.pdb | render -tiff ex9d.tiff
+display -geometry 50%x50%+0+350 -title "fancy3" ex9d.tiff &
+rastep -Bcolor 10. 40. < sugarG.pdb | render -tiff ex9e.tiff
+display -geometry 50%x50%+350+350 -title "colored by B value" ex9e.tiff &
+#
+#
+#
+echo "=========== EXAMPLE 9 COMPLETE ==========="
+echo "                                          "
+echo " At this point you should have five views "
+echo " of the GM1-OS molecule displayed on the  "
+echo " screen.                                  "
+echo "=========================================="
+#
+# Clean up
+#
+wait
+rm -f ex9*.tiff

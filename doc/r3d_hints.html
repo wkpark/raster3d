@@ -60,8 +60,11 @@ sending it to a film recorder or high performance color printer. For example, a
 typical film recorder can produce slides with a resolution of roughly 4000x3000
 pixels (much larger than can be displayed on a workstation screen). The number
 of pixels in your rendered image is controlled by the parameters (NTX,NTY) and
-(NPX,NPY) in the 2nd and 3rd header records input to the render program. You
-should also be aware that color balance and particularly the appropriate
+(NPX,NPY) in the 2nd and 3rd header records input to the render program. 
+If you need to convert your image to PostScript so that you can send it to a
+PostScript printer (the <i>only</i> time you should ever convert to PostScript!)
+then read the section on <a href="#PostScript">PostScript conversion</a> below.
+You should also be aware that color balance and particularly the appropriate
 ``gamma correction'' varies from one device to another. Raster3D itself applies
 no gamma correction; if you need one you will have to apply it to the generated
 image files afterwards. This is a standard image processing procedure, and may
@@ -87,9 +90,8 @@ hindrance than a help. Since the virtual camera is centered it will ``see'' the
 right hand object slightly from the left, and the left hand object slightly
 from the right. This results in different effective viewpoints for paired
 objects which would otherwise be identical. To overcome this effect you may
-wish to set EYEPOS to some large value, which will generate an image with
-effectively no parallax. The same considerations apply for the production of
-stereo pairs.<p>
+wish to set EYEPOS to 0.0, which disables all perspective and parallax.
+The same considerations apply for the production of stereo pairs.<p>
 
 <a name="stereo2">
 <b><i>Stereo pairs and Molscript:</i></b></a>
@@ -113,11 +115,11 @@ create a side-by-side stereo pair. Here is an example:
 #
 # Use molscript to generate a Raster3D input file
 #
-molscript -r < image.mol > image.r3d
+molscript -r &lt; image.mol &gt; image.r3d
 #
 # Render image once to check that it's what we want
 #
-render -tiff mono.tiff < image.r3d
+render -tiff mono.tiff &lt; image.r3d
 #
 # Render it again, this time as a stereo pair
 # Note: the output file is always called stereo.tiff
@@ -255,6 +257,48 @@ AVS-format image, including the default output stream from
 <b><i>render</i></b>, directly into a dithered black &amp; white PostScript
 image. As of this writing the <b><i>avs2ps</i></b> program is included with the
 Raster3D distribution.<p>
+
+<a name="PostScript">
+<b><i>Conversion to PostScript:</i></b></a>
+Do <i>not</i> convert your raster image to PostScript unless you really, 
+really have to. This should only happen if you want to send the image to
+a printer that understands nothing but PostScript. The raster image consists of
+a certain number of pixels on X and on Y, and the size of each dot depends
+entirely on the physical resolution of the device the image is displayed on.
+To produce a Raster3D figure of a given size on a PostScript printer, you must
+know the physical resolution of the printer.
+A true PostScript figure would be scalable and device-independent; 
+this will not be true for a raster image forced into a PostScript file.  
+Here are the required steps:
+<ol>
+<li>Calculate the required number of pixels in your Raster3D image. For example,
+    if you want to end up with a figure that is 4" by 3" when printed on a 
+    300 dpi (dots-per-inch) PostScript printer, then your raster image must
+    be 1200x900 pixels.  Edit the values of NTX,NTY,NPX,NPY and ISCHEME in the
+    header records accordingly and run your image description through the 
+    Raster3D render program. This will be easiest if you set ISCHEME to 1 or
+    4. In that case you need to choose values such that NTX*NPX=1200 and
+    NTY*NPY=900 (for our hypothetical 4"by3" figure).
+<li>Confirm that the rendered image is the correct size; 1200x900 in this case.
+    The ImageMagick utility <b>identify</b> will do this for you.
+<li>Convert the rendered image to a PostScript file using the ImageMagick
+    <a href="http:/man/ImageMagick/convert.html">convert</a>
+    utility.  You must explicitly specify
+    <ul>
+    <li>the physical resolution of the printer (e.g. -density 300)
+    <li>the input image size
+    <li>the PostScript "page" size (exactly equal to the image size)
+    </ul>
+    Here is a suitable command for this example:
+
+    <listing>
+    convert -density 300 -geometry 1200x900 -page 1200x900 image.tiff image.ps
+    </listing>
+<li>Send the converted image to your PostScript printer.  If it does not come
+    out the size you expected, then probably the printer has a different
+    resolution than you thought.  You will have to go back to the beginning 
+    and try again.
+</ol>
 
 
 <hr>

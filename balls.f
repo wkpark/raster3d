@@ -53,8 +53,8 @@ c
       if (.not. hflag) then
 	WRITE(OUTPUT,'(A)') 'A colour molecule picture'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
-	WRITE(OUTPUT,'(A)') '12 12     pixels (x,y) per tile'
-	WRITE(OUTPUT,'(A)') '3         3x3 virtual pixels -> 2x2 pixels'
+	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
+	WRITE(OUTPUT,'(A)') '4         anti-aliasing 3x3 -> 2x2 pixels'
 	WRITE(OUTPUT,'(A)') '0 0 0     black background'
 	WRITE(OUTPUT,'(A)') 'T         yes, I LIKE shadows!'
 	WRITE(OUTPUT,'(A)') '25        Phong power'

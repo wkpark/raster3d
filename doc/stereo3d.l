@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH AVS2PS 1 " 4 March 1997" "Raster3D V2.3"
+.TH STEREO3D 1 " 9 September 1997" "Raster3D V2.3"
 .SH NAME
 
 stereo3d - render a Raster3D scene as a side-by-side stereo pair

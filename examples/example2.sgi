@@ -5,6 +5,8 @@
 # figure consists of E. coli enterotoxin (protein as spheres)
 # binding to GM1 pentasaccharide (sugars represented as rods)
 # protruding from cell membrane (plane)
+#
+rm -rf temp.tmp setup.matrix
 # 
 # Attach atom colouring to front of PDB file
 #

@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH NORMAL3D 1 " 19 March 1997" "Raster3D V2.3"
+.TH NORMAL3D 1 " 29 December 1997" "Raster3D V2.4b"
 .SH NAME
 
 normal3d - apply transformation matrix in Raster3D input file

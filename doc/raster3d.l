@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH Raster3D 1 "19 March 1997" "Raster3D V2.3"
+.TH Raster3D 1 "29 December 1997" "Raster3D V2.4b"
 .SH NAME
 .PP
 Raster3D molecular graphics package
@@ -9,18 +9,19 @@ Raster3D molecular graphics package
 The \fIRaster3D\fP molecular graphics package consists of a core
 program \fIrender\fP 
 and a number of ancillary programs 
-(\fIballs\fP, \fIrods\fP, \fIribbon\fP)
+(\fIballs\fP, \fIrastep\fP, \fIrods\fP, \fIribbon\fP)
 which produce input files for
 rendering from Brookhaven PDB files of atomic coordinates.
 \fIRaster3D\fP can also render images composed using version 1.4 of
 \fIMOLSCRIPT\fP [Per Kraulis (1991), J. Appl. Cryst. 24, 946-950].
 
 \fIRaster3D\fP is freely available. If you use the package to prepare
-figures for publication, please give proper credit to the authors:
+figures for publication, please give proper credit to the authors.
+The proper citation for the current version is Merritt & Bacon (1997).
 
      Bacon & Anderson (1988) J. Molec. Graphics 6, 219-220.
      Merritt & Murphy (1994) Acta Cryst. D50, 869-873.
-     Merritt & Bacon  (in press) Meth. Enzymol. 277.
+     Merritt & Bacon  (1997) Meth. Enzymol. 277, 505-524.
 
 .SH DESCRIPTION
 .PP
@@ -57,12 +58,20 @@ of surface reflectance properties specific to individual objects.
 Version 2.2 added support for transparent objects, including transparent 
 molecular surfaces.
 
-Version 2.3: The \fIrender\fP program now supports file indirection, additional
+Version 2.3 added support for file indirection, additional
 anti-aliasing options, a separate alpha blend (matte) channel in the rendered
 image, internal light sources, and some additional properties for 
 special materials. There is now an option to specify an explicit bond radius 
 to \fIrods\fP. There is a new shell script \fIstereo3d\fP that can 
 automatically generate a side-by-side stereo pair from a Raster3D input file.
+
+Version 2.4 - The render program now supports generalized quadric surfaces
+(ellipsoids, cones, etc). There is a new utility program \fIrastep\fP which
+generates "thermal ellipsoid" representations of atoms based on the Biso
+or Uij entries in a PDB file (ANISOU cards). The option of colouring
+based on B values has been added here and elsewhere. Triangles now may be 
+colored by interpolation of colors assigned to the three vertices. Input lines
+beginning with '#' are treated as comments.
 
 .SH EXAMPLES
 

@@ -26,6 +26,7 @@ also render images composed using version 1.4 of
 	<li><a href="avs2ps.html">avs2ps</a>
 	<li><a href="balls.html">balls</a>
 	<li><a href="normal3d.html">normal3d</a>
+	<li><a href="rastep.html">rastep</a>
 	<li><a href="render.html">render</a> 
 	<li><a href="ribbon.html">ribbon</a>
 	<li><a href="rods.html">rods</a>
@@ -48,7 +49,9 @@ Raster3D does not depend on graphics hardware for operation. Four image output
 formats are supported: AVS, TIFF, SGI libimage, and a private format which is
 backwards-compatible with earlier versions of Raster3D. To actually view or
 manipulate the images produced, you must also have installed an image viewing
-package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).<p>
+package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).
+An alternate version of the rendering may be built which directly outputs
+JPEG images [only].<p>
 
 Ancillary programs are provided for the generation of object
 descriptions based on atomic coordinates stored in Brookhaven PDB format.
@@ -60,9 +63,11 @@ intended for, but may produce odd results if used for very different types of
 image.
 <p>
 
-Raster3D currently supports rendering five object types: spheres,
-triangles, planes, smooth-ended cylinders, and round-ended cylinders.
+Raster3D currently supports rendering six object types: spheres,
+triangles, planes, smooth-ended cylinders, round-ended cylinders,
+and quadric surfaces.
 <p>
+
 Version 2.1 added support for two additional "object types" which are
 really modifiers for characteristic properties of existing objects. One
 of these allows specification of explicit surface normals at triangle
@@ -74,18 +79,23 @@ Version 2.2 added support for transparent objects, including transparent
 molecular surfaces.
 <p>
 
-<b>Version 2.3</b>:
-The <a href="render.html"> render</a> program
-now supports file indirection, additional anti-aliasing options, internal
+Version 2.3 added support for
+file indirection, additional anti-aliasing options, internal
 light sources, a separate alpha blend (matte) channel in the rendered image, 
 and some additional properties for special materials. 
-There is now an option to specify an explicit bond radius to the 
-<a href="rods.html">rods</a> program.
-There is a new shell script, 
-<a href="stereo3d.html">stereo3d</a>
+There is a new shell script, <a href="stereo3d.html">stereo3d</a>
 to automatically generate a side-by-side stereo pair from a Raster3D input file.
+<p>
 
-
+<b>Version 2.4</b>
+The <a href="render.html"> render</a> program
+now supports generalized quadric surfaces (ellipsoids, cones, etc).
+There is a new utility program <a href="rastep.html">rastep</a>
+which generates "thermal ellipsoid" representations of atoms based on the
+Biso or Uij entries in a PDB file (ANISOU cards). The option of colouring 
+based on B values has been added here and elsewhere. Triangles now may be
+colored by interpolation of colors assigned to the three vertices. Input
+lines beginning with '#' are treated as comments.
 
 <h4>
 <a name="examples">EXAMPLES</a></h4>
@@ -112,23 +122,27 @@ grep ``FE'' protein.pdb | cat colorfile - | balls -h &gt; irons.r3d
 # 
 cat ribbon.r3d irons.r3d | render &gt; picture.x
 </listing>
-One
-can alternatively use Molscript Version 1.4 to produce a Raster3D input file by
-using the -r switch. Raster3D is not able, however, to render any labels
-specified by the Molscript input. Integrated use of
+One can alternatively use Molscript Version 1.4 to produce a Raster3D 
+input file by using the -r switch. Raster3D is not able, however, to 
+render any labels specified by the Molscript input. Integrated use of
 Molscript/Raster3D/ImageMagick allows one to describe, render, and view 3D
 representations of existing Molscript figures. 
 
 <listing>
-molscript -r infile.dat | render | display avs:-
+molscript -r &lt; infile.dat | render | display avs:-
 </listing>
-A
-similar example using xv as an image viewer, and assuming that TIFF support has
-been built into the render program:
+A similar example using xv as an image viewer, and assuming that 
+TIFF support has been built into the render program:
 
 <listing>
-molscript -r infile.dat | render -tiff image.tif 
+molscript -r &lt; infile.dat | render -tiff image.tif 
 xv image.tif
+</listing>
+The same image rendered as a side-by-side stereo pair:
+
+<listing>
+molscript -r &lt; infile.dat > input.r3d; stereo3d input.r3d; xv stereo.tiff
+
 </listing>
 The
 Raster3D distribution also includes a filter utility which will convert the
@@ -210,8 +224,10 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	2.0 are supported by Moslcript version 1.4 (with a couple of additional
 	patches that come in the Raster3D distribution).  To obtain Molscript
 	please contact Per Kraulis directly (Email:
-	<a href="mailto:per.kraulis@sto.pharmacia.se">
-	per.kraulis@sto.pharmacia.se</a>).
+	<a href="mailto:pjk@avatar.se">pjk@avatar.se</a>). There is now a
+	Molscript web page at 
+	<a href="http://www.avatar.se/molscript">
+	http://www.avatar.se/molscript</a>.
     <dt>TkRaster3D
     <dd> an X11-based front-end (GUI) for the Raster3D programs developed by 
 	Hillary Gilson at NIST, 
@@ -249,9 +265,9 @@ by Mark Israel, Stephen Samuel, Michael Murphy, Albert Berghuis, and Ethan A
 Merritt. Extensions, revisions, and modifications by Ethan A Merritt.
 
 <h4><a name="cite">CITING THE PROGRAM</a></h4>
-If you use the package to prepare figures for
-publication, please give proper credit to the authors: (Bacon and Anderson,
-1988; Merritt and Murphy, 1994).
+If you use the package to prepare figures for publication, 
+<i>please</i> give proper credit to the authors; the proper citation for the
+most recent version of the package is Merritt &amp; Bacon (1997) as given below.
 
 <h4><a name="refs">REFERENCES</a></h4>
 Bacon, D.J., &amp; Anderson, W.F. (1988) ``A Fast Algorithm for Rendering
@@ -262,8 +278,8 @@ Kraulis, P.J. (1991) ``MOLSCRIPT: a program to produce both detailed and
 schematic plots of protein structures''. J. Appl. Cryst. 24, 946-950.<p>
 Merritt, E.A. &amp; Murphy, M.E.P. (1994) ``Raster3D Version 2.0 - A Program
 for Photorealistic Molecular Graphics''. Acta Cryst. D50, 869-873.<p>
-Merritt, E.A. &amp; Bacon, D.J. (in press) ``Raster3D 
-Photorealistic Molecular Graphics''. Methods in Enzymology 277.<p>
+Merritt, E.A. &amp; Bacon, D.J. (1997) ``Raster3D 
+Photorealistic Molecular Graphics''. Methods in Enzymology 277, 505-524.<p>
 
 <hr>
 <a href="raster3d.html">

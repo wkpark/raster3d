@@ -4,14 +4,14 @@
 </head>
 <body>
 
-<h1 align=center>
-<a name="RTFToC25">RODS</a></h1>
-SYNOPSIS<p>
+<h1 align=center> RODS </h1>
+
+<h4>SYNOPSIS</h4>
 rods is a preprocessor for ball-and-stick figures in the 
 <a href="raster3d.html">Raster3D</a> molecular graphics package.<p>
 
 <listing>
-rods [-h] [-b] [-radius R]
+rods [-h] [-b] [-radius R] [-Bcolor Bmin Bmax]
 </listing>
 rods
 reads a file describing atom colours and/or a Brookhaven PDB coordinate file
@@ -45,6 +45,11 @@ ball-and-stick representation.
 <dt><i>-radius R</i>
 <dd>By default rods will draw bonds with a 0.2 &Aring cylindrical radius.
 The radius option allows you to change the cylindrical radius.
+<dt><i>-Bcolor Bmin Bmax</i>
+<dd>Assign colors based on B values rather than from atom or residue types.
+    Atoms with B <= Bmin will be colored dark blue; atoms with B >= Bmax
+    will be colored light red; atoms with Bmin < B < Bmax will be assigned
+    colors shading smoothly through the spectrum from blue to red.
 </dl><h4>
 <a name="RTFToC27">DESCRIPTION</a></h4>
 The input to rods consists of a single text file containing colour information
@@ -60,8 +65,12 @@ render program. The header is constructed to include a TMAT matrix
 corresponding to the transformation matrix contained in file setup.matrix (if
 it exists), or to the Eulerian angles contained in file setup.angles (if it
 exists). Header records may be suppressed using the -h option.<p>
+
 Colours are assigned to atoms using a matching process, using COLOUR records
-prepended to the input PDB file. Raster3D uses a pseudo-PDB record type with
+prepended to the input PDB file. 
+If no COLOUR records are present in the input file, atoms will receive 
+default CPK colors (C=grey, O=red, N=blue, S=yellow, P=green, other=magenta).
+Raster3D uses a pseudo-PDB record type with
 the same basic layout as the above but with COLO in the first 4 columns:
 <dl>
 <dt><b><i></i></b><dd>Columns		Contents

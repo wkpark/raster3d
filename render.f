@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.3d (7 Aug 1997)
+*     Version 2.4b (18 Dec 1997)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -41,8 +41,15 @@
 *		  OPT(4) = continuation lines for more material properties
 * EAM Mar 1997	- Make SLOP larger, and dependent on tile size
 * 		- GLOW light source specified by object type 13
-* EAM May 1997	- V2.3c allow multiple glow lights, make cyl1 a function
-*		  remove DATA statement to make Sun compiler happy
+* EAM May 1997	- V2.3c allow multiple glow lights; make cyl1 a function;
+*		  V2.3d remove DATA statements; more terse output; 
+*		  BACKFACE material option; EYEPOS = 0.0 disables perspective
+* EAM Jul 1997	- add commons LISTS MATRICES NICETIES RASTER
+* 		- D_LINES code for quadric surfaces, ISOLATE 
+* EAM Sep 1997	- fix normals of flat cylinder ends (thanks to Takaaki Fukami)
+* EAM Nov 1997	- add VERTEXRGB object type to extend triangle descriptions,
+*		  allow # as comment delimiter in input stream
+* EAM Dec 1997	- Release V2.4b
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -96,10 +103,9 @@
 *     - STRAIT   straight-on (2ndary) light component (e.g., 0.1)
 *     - AMBIEN   ambient light component (e.g., 0.05)
 *     - SPECLR   specular reflection component (e.g., 0.30)
-*     - EYEPOS   eye position (e.g., 4)
+*     - EYEPOS   eye position along +z coordinate (e.g., 4)
 *       - relative to 1=narrow dimension of screen
-*       - used for perspective
-*       - don't put it in the transformation matrix yourself
+*       - used for perspective, EYEPOS = 0.0 disables perspective
 *     - SOURCE   main light source position (x,y,z components)
 *       - vector length ignored, point source is at infinity
 *     - TMAT     global transformation on input objects
@@ -137,6 +143,11 @@
 *         - type  9: end previous material
 *         - type 10: font selection (ignored in render)
 *         - type 11: label (ignored other than to count them)
+*         - type 12: (reserved for additional label processing)
+*         - type 13: glow light source
+*	  - type 14: quadric surface (usually an ellipsoid)
+*	  - type 15: disable coordinate transformation of subseqent objects
+*	  - type 17: RGB triple for each vertex of preceding triangle
 *         - type  0: no more objects (equivalent to eof)
 *
 *-----------------------------------------------------------------------------
@@ -154,7 +165,9 @@
 *			  (values <0 cause highlights to match object colour)
 *           CLRITY	- 0.0 (opaque) => 1.0 (transparent)
 *	    CLROPT	- [reserved] suboption for transparency handling
-*	    OTHER(3)	- [reserved] three more fields for future expansion
+*	    OTHER1	- [reserved]
+*	    OTHER2	- [reserved]
+*	    OTHER3	- # of additional modifier records immediately following
 *	These material properties remain in effect for subsequent objects 
 *	until object type 9 appears to terminate the effect.
 *
@@ -163,7 +176,7 @@
 *	may be inserted to delineate meta-objects or act as comments.
 *
 *-----------------------------------------------------------------------------
-* EAM Jan 1997
+* V2.3
 *	Object types 10 and 11 are used for specifying labels.
 *	Label object types are
 *	  - type 10: Font_Name size alignment
@@ -175,13 +188,25 @@
 *	Object type 12 is reserved to go with this, as I have a nagging
 *	suspicion more information may turn out to be necessary.
 *-----------------------------------------------------------------------------
-* EAM Mar 1997  >>> Still under development <<<
 *	Object type 13 specifies a "glow" light source; i.e. a non-shadowing
 *	light source with finite origin GLOWSRC and illumination range GLOWRAD.
 *	Specular highlights for this source specified by GLOWCOL and GPHONG.
 *	0.0 < GLOW < 1.0   = contribution of glow to total lighting model.
 *	13
 *	 GLOWSRC(3)  GLOWRAD  GLOW  GOPT GPHONG  GLOWCOL(3)
+*-----------------------------------------------------------------------------
+* V2.4
+*	Object type 14 specifies a quadric surface
+*	    QQ = Ax^2 + By^2 + Cz^2 + 2Dxy + 2Eyz + 2Fxz + 2Gx + 2Hy + 2Iz + J
+*	centered at XC,YC,ZC and truncated at bounding radius RC. Supporting
+*	code is in file quadric.f
+*	14
+*	  XC YC ZC RC  RED GRN BLU
+*	  A B C D E F G H I J
+*
+*	Object type 15 is a single line signaling that subsequent objects are
+*	not to be transformed by the TMAT matrix in the header. This isolation
+*	from TMAT is terminated by an end material record (object type 9).
 *-----------------------------------------------------------------------------
 *
 *     Object space convention:
@@ -210,7 +235,6 @@
 *
 *     Bugs:
 *
-*     - too much use of double precision (should use explicit dcls)
 *     - perspective is applied to raw objects, giving wrong lighting
 *     - perspective unity factor is always at z=0 in object space
 *     - shadow box doesn't necessarily enclose entire view prism
@@ -224,7 +248,6 @@
 *
 *     - z-buffer in and/or out (less than useful?)
 *     - superior pixel averaging (you should use another pass?)
-*     - other object types (this program is messy enough already!)
 *     - print out array memory use stats
 *     - print out analysis of input transformation TMAT
 *     - better assignment of triangles to tiles (do clipping?)
@@ -303,9 +326,9 @@
       PARAMETER (SLOP= 0.35)
       REAL      ZSLOP
 *
-*     Codes for triangle, sphere, truncated cone, and string of pearls
+*     Descriptor codes for the various object types
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
-      INTEGER PLANE, MXTYPE
+      INTEGER PLANE, QUADRIC, MXTYPE
       PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
       PARAMETER (CYLIND = 3, CYLFLAT= 5)
       PARAMETER (PLANE    = 6)
@@ -314,18 +337,26 @@
       PARAMETER (MATEND   = 9)
       PARAMETER (FONT     = 10, LABEL = 11)
       PARAMETER (GLOWLIGHT= 13)
-      PARAMETER (MXTYPE   = 13)
+      PARAMETER (QUADRIC  = 14)
+      PARAMETER (NOTRANS  = 15)
+      PARAMETER (VERTEXRGB= 17)
+      PARAMETER (MXTYPE   = 17)
 *
 *     Bit definitions for FLAG array
       INTEGER    FLAT,      RIBBON,    SURFACE,   PROPS
       PARAMETER (FLAT=2,    RIBBON=4,  SURFACE=8, PROPS=16)
       INTEGER    TRANSP,    HIDDEN,    INSIDE,    MOPT1
       PARAMETER (TRANSP=32, HIDDEN=64, INSIDE=128,MOPT1=256)
+      INTEGER	 VCOLS
+      PARAMETER	(VCOLS=512)
 *
 *     Bit definitions for status word returned by local(0,...)
       INTEGER   OTMODE
       INTEGER    AAMODE,    INVERT,    DEBUGGING
       PARAMETER (AAMODE=7,  INVERT=8,  DEBUGGING=16)
+*     More bit definitions, these ones passed to local(1,...)
+      INTEGER    ALPHACHANNEL
+      PARAMETER (ALPHACHANNEL=32)
 *
 *     $$$$$$$$$$$$$   ARRAY SIZE LIMITS START HERE   $$$$$$$$$$$$$$
 *
@@ -379,8 +410,8 @@
       CHARACTER*80 TITLE
 *
 *     Number of tiles, pixels per tile
-      INTEGER NTX, NTY
-      INTEGER NPX, NPY
+      COMMON /RASTER/ NTX,NTY,NPX,NPY
+      INTEGER         NTX,NTY,NPX,NPY
 *     Total image size in pixels (MUST BE INTEGER*2!)
       INTEGER*2 NX,  NY
 *
@@ -411,14 +442,20 @@
 *     Specular reflection component
       REAL   SPECLR
 *
-*     Distance (in +z) of viewing eye
-      REAL   EYEPOS
-*
 *     Primary light source position
       REAL   SOURCE(3)
 *
 *     Input transformation
-      REAL   TMAT(4,4)
+      COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+      REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
+*     Transformation matrix, inverse, and transponsed inverse
+      REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
+*     Shortest rotation from light source to +z axis
+      REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+*
+*     Distance (in +z) of viewing eye
+      REAL   EYEPOS
 *
 *     Input mode
       INTEGER INMODE
@@ -431,9 +468,6 @@
 *
 *     Free-format input flag
       LOGICAL INFLGS(MXTYPE),INFLG
-*
-*     Shortest rotation from light source to +z axis
-      REAL   SROT(3,3)
 *
 *     Stuff for shading
       REAL   NL(3),NORMAL(3),LDOTN
@@ -452,7 +486,7 @@
 *     Keep a separate list of special materials
 *     and remember any special props of current material on input
       INTEGER MLIST(MAXMAT)
-      LOGICAL MATCOL
+      LOGICAL MATCOL, BACKFACE, ISOLATE
       REAL    RGBMAT(3)
 *
 *     Object details, shadow object details
@@ -462,8 +496,9 @@
       REAL   BUF(100)
 *
 *     Number of objects in each tile's short list (m... are for shadows)
+      COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
       INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
-      INTEGER TTRANS(MAXNTX,MAXNTY)
+      INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
 *     Pointer to where each tile's objects start
       INTEGER KSTART(MAXNTX,MAXNTY), MSTART(NSX,NSY)
@@ -480,9 +515,18 @@
 *     Where the permutation representing the sort is stored
       INTEGER ZINDEX(MAXOBJ)
 *
+*     The number of "details" each object type is supposed to have
+*     :       input,        object,       shadow
+      INTEGER IDET(MXTYPE), KDET(MXTYPE), SDET(MXTYPE)
+*
 *     Support for cylinders
       EXTERNAL CYL1
       LOGICAL  CYL1, ISCYL
+*
+*     Support for quadrics
+      REAL     QNORM(3)
+      EXTERNAL QTEST
+      LOGICAL  QTEST, ISQUAD
 *
 *     Support for transparency
       COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
@@ -492,7 +536,7 @@
       REAL    NORMTP(3), NORM2D(3), NORM3D(3)
       REAL    RGBLND(3), RGBLN1(3)
       REAL    BLEND0, BLEND1, SBLEND
-      PARAMETER (EDGESLOP = 0.1)
+      PARAMETER (EDGESLOP = 0.25)
 *
 * Support for a "glow" light source 
       REAL 	GLOWSRC(3), GLOWCOL(3), GDIST(3), GLOWRAD, GLOW, GLOWMAX
@@ -500,7 +544,7 @@
       PARAMETER (MAXGLOWS = 10)
       INTEGER	GLOWLIST(MAXGLOWS), NGLOW
 *
-* There is not intended to be Z-clipping in back, but maybe in the future...
+* Z-clipping has never been user-controlled, but maybe in the future...
       REAL  	BACKCLIP
 *
 *     Output buffer
@@ -512,16 +556,14 @@
 *
 *     Copy of NOISE for ASSERT to see
       INTEGER ASSOUT
-      COMMON /ASSCOM/ ASSOUT
+      LOGICAL VERBOSE
+      COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
 *
-*     The number of "details" each object type is supposed to have
-*     :       input,  object, shadow
-      INTEGER IDET(MXTYPE),KDET(MXTYPE),SDET(MXTYPE)
+*     Keep track of actual coordinate limits
+      COMMON /NICETIES/ TRULIM
+      REAL              TRULIM(3,2)
 *
-*     Keep track of actual coordinate limits (for information only)
-      REAL   TRULIM(3,2)
-c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
       TRULIM (3,1) = HUGE
@@ -538,31 +580,35 @@ c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
       IDET(NORMS ) = 9
       IDET(MATERIAL) = 10
       IDET(GLOWLIGHT)= 10
+      IDET(QUADRIC)  = 17
+      IDET(VERTEXRGB)= 9
 *
       KDET(TRIANG) = 16
       KDET(SPHERE) = 7
       KDET(CYLIND) = 11
       KDET(PLANE)  = 7
       KDET(NORMS ) = 9
-      KDET(MATERIAL) = 10
+      KDET(MATERIAL) = 15
       KDET(GLOWLIGHT)= 10
+      KDET(QUADRIC)  = 17
+      KDET(VERTEXRGB)= 9
 *
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
       SDET(CYLIND) = 8
-*     A plane really has no shadow details, 
+      SDET(QUADRIC)= 14
+*     These object types really have no shadow details, 
 *     but indexing seems to require a nonzero value
       SDET(PLANE)  = 1
-*     Ditto for normals, which aren't really separate objects at all
       SDET(NORMS ) = 1
-*     Double ditto for material properties, etc
       SDET(MATERIAL) = 1
       SDET(GLOWLIGHT)= 1
+      SDET(VERTEXRGB)= 1
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
-      WRITE (NOISE,*) 'Raster3D V2.3d - 7 Aug 1997'
+      WRITE (NOISE,*) 'Raster3D V2.4b 18 Dec 1997'
 *
 *     Initialize to level 0 of file indirection
       INPUT = INPUT0
@@ -570,8 +616,15 @@ c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
 *     Initialize to no special material properties
       MSTATE  = 0
       MATCOL  = .FALSE.
+      ISOLATE = .FALSE.
       CLRITY  = 0.0
       GLOWMAX = 0.0
+*
+*     Initialize to no perspective. EYEPOS > 0 will add perspective
+      PFAC  = 1.0
+      PFAC1 = 1.0
+      PFAC2 = 1.0
+      PFAC3 = 1.0
 *
 * !!! N.B. If, on your system, unit-file associations are not made
 *     externally, put statements something like this in:
@@ -587,21 +640,22 @@ c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
       WRITE (NOISE,*) 'title=',TITLE
 *
 *     Get number of tiles
-      READ (INPUT,*) NTX,NTY
-      WRITE (NOISE,*) 'ntx=',NTX,' nty=',NTY
+      READ (INPUT,*,ERR=101,END=101) NTX,NTY
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
+      GOTO 102
+101   CALL ASSERT(.FALSE.,
+     &           '>>> This doesnt look like a Raster3D input file! <<<')
+102   CONTINUE
 *
 *     Get number of pixels per tile
       READ (INPUT,*) NPX,NPY
-      WRITE (NOISE,*) 'npx=',NPX,' npy=',NPY
       CALL ASSERT (NPX.GT.0, 'npx.le.0')
       CALL ASSERT (NPY.GT.0, 'npy.le.0')
       ZSLOP = SLOP * MAX(NPX,NPY)
 *
 *     Get pixel averaging scheme
       READ (INPUT,*) SCHEME
-      WRITE (NOISE,*) 'scheme=',SCHEME
       CALL ASSERT (SCHEME.GE.0 .AND. SCHEME.LE.4, 'bad scheme')
       IF (SCHEME.LE.1) THEN
         NOX = NPX
@@ -633,12 +687,10 @@ c     DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
       CALL ASSERT (NPX.LE.MAXNPX,'npx>maxnpx')
       CALL ASSERT (NPY.LE.MAXNPY,'npy>maxnpy')
 *
-C     WRITE (NOISE,*) 'nox=',NOX,' noy=',NOY
       CALL ASSERT (OUTSIZ.GE.NOY*NOX*NTX,'outsiz too small')
 *
       NX = NOX*NTX
       NY = NOY*NTY
-      WRITE (NOISE,*) 'nx= ',NX,' ny= ',NY
 *
 *	EAM Nov 1993 - optional command line args passed to local
 	arg1 = ' '
@@ -649,8 +701,21 @@ C     WRITE (NOISE,*) 'nox=',NOX,' noy=',NOY
 	if (iargc() .gt. 2) call getarg( 3, arg3 )
 	otmode = local(0, arg1, arg2, arg3)
 C
+      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+	VERBOSE = .TRUE.
+	WRITE (NOISE,*) 'ntx=',NTX,' nty=',NTY
+	WRITE (NOISE,*) 'npx=',NPX,' npy=',NPY
+	WRITE (NOISE,*) 'scheme=',SCHEME
+	WRITE (NOISE,*) 'nox=',NOX,' noy=',NOY
+	WRITE (NOISE,*) 'nx= ',NX,' ny= ',NY
+      ELSE
+	VERBOSE = .FALSE.
+      END IF
+      WRITE (NOISE,*) 'Output raster size =',NX,' x',NY
+C
 C	Header records and picture title
-      IERR = LOCAL(1, NX, NY)
+      IF (SCHEME.EQ.0) OTMODE = OR(OTMODE,ALPHACHANNEL)
+      IERR = LOCAL(1, NX, NY, OTMODE)
       IERR = LOCAL(4, TITLE)
 *
 *     Some derived parameters
@@ -664,7 +729,9 @@ C	Header records and picture title
 *
 *     Get background colour
       READ (INPUT,*) BKGND
-      WRITE (NOISE,*) 'bkgnd=',BKGND
+      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      	WRITE (NOISE,*) 'bkgnd=',BKGND
+      END IF
       CALL ASSERT (BKGND(1).GE.0., 'bkgnd(1) < 0')
       CALL ASSERT (BKGND(2).GE.0., 'bkgnd(2) < 0')
       CALL ASSERT (BKGND(3).GE.0., 'bkgnd(3) < 0')
@@ -674,11 +741,12 @@ C	Header records and picture title
 *
 *     Get "shadows" flag
       READ (INPUT,*) SHADOW
-      WRITE (NOISE,*) 'shadow=',SHADOW
+      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      	WRITE (NOISE,*) 'shadow=',SHADOW
+      END IF
 *
 *     Get Phong power
       READ (INPUT,*) IPHONG
-C     WRITE (NOISE,*) 'iphong=',IPHONG
       CALL ASSERT (IPHONG.GE.0, 'iphong < 0')
 *     A derived constant for numerical purposes in applying the
 *     Phong power in the shading algorithm.
@@ -689,7 +757,6 @@ C     WRITE (NOISE,*) 'iphong=',IPHONG
 *
 *     Get contribution of straight-on (secondary) light source
       READ (INPUT,*) STRAIT
-C     WRITE (NOISE,*) 'strait=',STRAIT
       CALL ASSERT (STRAIT.GE.0., 'strait < 0')
       CALL ASSERT (STRAIT.LE.1., 'strait > 1')
 *
@@ -698,18 +765,18 @@ C     WRITE (NOISE,*) 'strait=',STRAIT
 *
 *     Get contribution of ambient light
       READ (INPUT,*) AMBIEN
-C     WRITE (NOISE,*) 'ambien=',AMBIEN
       CALL ASSERT (AMBIEN.GE.0., 'ambien < 0')
       CALL ASSERT (AMBIEN.LE.1., 'ambien > 1')
 *
 *     Get component of specular reflection
       READ (INPUT,*) SPECLR
-C     WRITE (NOISE,*) 'speclr=',SPECLR
       CALL ASSERT (SPECLR.GE.0., 'speclr < 0')
       CALL ASSERT (SPECLR.LE.1., 'speclr > 1')
 *
-      WRITE (NOISE,*) 'iphong=',IPHONG,'   strait=',STRAIT,
+      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+     	WRITE (NOISE,*) 'iphong=',IPHONG,'   strait=',STRAIT,
      &                '   ambien=',AMBIEN,'   speclr=',SPECLR
+      END IF
 *
 *     Derive component of diffuse reflection
       CALL ASSERT (AMBIEN+SPECLR.LE.1., 'ambien+speclr > 1')
@@ -717,28 +784,30 @@ C     WRITE (NOISE,*) 'speclr=',SPECLR
 *
 *     Get distance of viewing eye
       READ (INPUT,*) EYEPOS
-      WRITE (NOISE,*) 'eyepos=',EYEPOS
-      CALL ASSERT (EYEPOS.GT.0., 'eyepos.le.0')
+      CALL ASSERT (EYEPOS.GE.0., 'eyepos.lt.0')
 *
 *     Get position of primary light source
       READ (INPUT,*) SOURCE
-      WRITE (NOISE,*) 'source=',SOURCE
       SMAG = SQRT(SOURCE(1)**2 + SOURCE(2)**2 + SOURCE(3)**2)
       SOURCE(1) = SOURCE(1) / SMAG
       SOURCE(2) = SOURCE(2) / SMAG
       SOURCE(3) = SOURCE(3) / SMAG
-      WRITE (NOISE,*) 'normalized source=',SOURCE
+      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+     	WRITE (NOISE,*) 'eyepos=',EYEPOS
+     	WRITE (NOISE,*) 'source=',SOURCE
+     	WRITE (NOISE,*) 'normalized source=',SOURCE
+      END IF
 *
 *     Get input transformation
-      WRITE (NOISE,*) 'tmat (v'' = v * tmat):'
-      DO 1 I=1,4
+      DO I=1,4
         READ (INPUT,*) (TMAT(I,J),J=1,4)
-        WRITE (NOISE,*) (TMAT(I,J),J=1,4)
-1     CONTINUE
-***   I should really check for orthonormal vectors in the rotation
-***   part of TMAT, and no perspective, and print an "analysis"
-***   describing the rotation, translation, and overall scaling.
-C	call matanal( TMAT )
+      END DO
+      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+     	WRITE (NOISE,*) 'tmat (v'' = v * tmat):'
+     	DO I=1,4
+            WRITE (NOISE,*) (TMAT(I,J),J=1,4)
+     	END DO
+      END IF
 *
 *     EAM - The original output mode was "upside down" compared
 *     to what most graphics programs expect to see.  It is messy 
@@ -753,6 +822,39 @@ C	call matanal( TMAT )
 	ENDDO
 	SOURCE(2) = -SOURCE(2)
       ENDIF
+*
+*     Compute the rotation matrix which takes the light
+*     source to the +z axis (i.e., to the viewpoint).
+*     first make p = source cross z (and normalize p)
+      P1 = SOURCE(2)
+      P2 = -SOURCE(1)
+*     p3 = 0
+      PLEN = SQRT(P1**2 + P2**2)
+      IF (PLEN .GT. 0.0) P1 = P1 / PLEN
+      IF (PLEN .GT. 0.0) P2 = P2 / PLEN
+*     phi is the angle between source and z (shortest route)
+      COSPHI = SOURCE(3)
+      SINPHI = PLEN
+      SROT(1,1) = P1**2 + (1.-P1**2)*COSPHI
+      SROT(1,2) = P1*P2*(1.-COSPHI)
+      SROT(1,3) = P2*SINPHI
+      SROT(2,1) = SROT(1,2)
+      SROT(2,2) = P2**2 + (1.-P2**2)*COSPHI
+      SROT(2,3) = -P1*SINPHI
+      SROT(3,1) = -SROT(1,3)
+      SROT(3,2) = -SROT(2,3)
+      SROT(3,3) = COSPHI
+      SROT(1,4) = 0.0
+      SROT(2,4) = 0.0
+      SROT(3,4) = 0.0
+      SROT(4,1) = 0.0
+      SROT(4,2) = 0.0
+      SROT(4,3) = 0.0
+      SROT(4,4) = 1.0
+*
+*     Quadrics will require the inverse matrix also (and its transpose)
+*     This is also a convenient place to check legality of TMAT
+      CALL QSETUP
 *
 *     Get input mode
       READ (INPUT,*) INMODE
@@ -795,12 +897,15 @@ C         WRITE (NOISE,*) INFMTS(I)
             INFLGS(I) = .FALSE.
           ENDIF
 4       CONTINUE
-	INFLGS(PLANE) = INFLGS(TRIANG)
-	INFMTS(PLANE) = INFMTS(TRIANG)
-	INFLGS(NORMS) = INFLGS(TRIANG)
-	INFMTS(NORMS) = INFMTS(TRIANG)
+	INFLGS(PLANE)     = INFLGS(TRIANG)
+	INFMTS(PLANE)     = INFMTS(TRIANG)
+	INFLGS(NORMS)     = INFLGS(TRIANG)
+	INFMTS(NORMS)     = INFMTS(TRIANG)
+	INFLGS(VERTEXRGB) = INFLGS(TRIANG)
+	INFMTS(VERTEXRGB) = INFMTS(TRIANG)
 	INFLGS(MATERIAL)  = .TRUE.
 	INFLGS(GLOWLIGHT) = .TRUE.
+	INFLGS(QUADRIC)   = .TRUE.
       ELSE
         CALL ASSERT (.FALSE.,'crash 4')
       ENDIF
@@ -811,10 +916,8 @@ C         WRITE (NOISE,*) INFMTS(I)
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
       WRITE (NOISE,*) '% If you publish figures generated by this ',
      &                'program please cite %'
-      WRITE (NOISE,*) '%   Bacon & Anderson (1988) ',
-     &                'J. Molec. Graphics 6, 219-220 and  %'
-      WRITE (NOISE,*) '%   Merritt & Murphy (1994) ',
-     &                'Acta Cryst. D50, 869-873.','          %'
+      WRITE (NOISE,*) '%   Merritt & Bacon (1997)  ',
+     &                'Meth. Enzymol. 277, 505-524.','       %'
       WRITE (NOISE,*) '%            -------------------------',
      &                '-------------            %'
       WRITE (NOISE,*) '%                  Raster3D distribution site',
@@ -827,33 +930,12 @@ C         WRITE (NOISE,*) INFMTS(I)
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
       WRITE (NOISE,'(/)')
 *
-*     Compute the rotation matrix which takes the light
-*     source to the +z axis (i.e., to the viewpoint).
-*     first make p = source cross z (and normalize p)
-      P1 = SOURCE(2)
-      P2 = -SOURCE(1)
-*     p3 = 0
-      PLEN = SQRT(P1**2 + P2**2)
-      IF (PLEN .GT. 0.0) P1 = P1 / PLEN
-      IF (PLEN .GT. 0.0) P2 = P2 / PLEN
-*     phi is the angle between source and z (shortest route)
-      COSPHI = SOURCE(3)
-      SINPHI = PLEN
-      SROT(1,1) = P1**2 + (1.-P1**2)*COSPHI
-      SROT(1,2) = P1*P2*(1.-COSPHI)
-      SROT(1,3) = P2*SINPHI
-      SROT(2,1) = SROT(1,2)
-      SROT(2,2) = P2**2 + (1.-P2**2)*COSPHI
-      SROT(2,3) = -P1*SINPHI
-      SROT(3,1) = -SROT(1,3)
-      SROT(3,2) = -SROT(2,3)
-      SROT(3,3) = COSPHI
 *
 *     Initialize counters
       DO 5 J=1,NTY
       DO 5 I=1,NTX
         KOUNT(I,J) = 0
- 	TTRANS(I,J) = 0
+	TTRANS(I,J) = 0
 5     CONTINUE
       DO 6 J=1,NSY
       DO 6 I=1,NSX
@@ -874,6 +956,7 @@ c
       mstate  = 0
       nlabels = 0
       nglows  = 0
+      nquads  = 0
 c
 c     Objects in, and count up objects that may impinge on each tile
       NDET = 0
@@ -886,19 +969,21 @@ c     Read in next object
         INTYPE = INMODE
 	GOTO 8
       ENDIF
-c     May 1996 - allow file indirection
+C
 C     READ (INPUT,*,END=50) INTYPE
       READ (INPUT,'(A)',END=50) LINE
-      IF (LINE(1:1) .NE. '@') THEN
-	READ (LINE,*) INTYPE
-      ELSE
+c     Nov 1997 - allow # comments
+      IF (LINE(1:1) .EQ. '#') THEN
+      	GOTO 7
+c     May 1996 - allow file indirection
+      ELSE IF (LINE(1:1) .EQ. '@') THEN
 	DO I=80,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
 	  IF (LINE(I:I).EQ.' ') LINE(I:I) = CHAR(0)
 	ENDDO
 C f90	OPEN (UNIT=INPUT+1,ERR=71,STATUS='OLD',ACTION='READ',
 C f90         FILE=LINE(J:80))
-	OPEN (UNIT=INPUT+1,ERR=71,STATUS='OLD',READONLY,FILE=LINE(J:80))
+	OPEN (UNIT=INPUT+1,ERR=71,STATUS='OLD',FILE=LINE(J:80))
 	WRITE (NOISE,'(A,A)') '  + Opening input file ',LINE(2:80)
 	INPUT = INPUT + 1
 	CALL ASSERT(INPUT-INPUT0.LE.MAXLEV, 
@@ -906,6 +991,8 @@ C f90         FILE=LINE(J:80))
 	GOTO 7
    71	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(2:80)
 	GOTO 7
+      ELSE
+	READ (LINE,*) INTYPE
       ENDIF
       IF (INTYPE.EQ.0) GO TO 50
       IF (INTYPE .EQ. CYLFLAT) THEN
@@ -915,7 +1002,8 @@ C f90         FILE=LINE(J:80))
 	MSTATE = 0
 	CLRITY = 0
 	CLROPT = 0
-	MATCOL = .FALSE.
+	MATCOL  = .FALSE.
+	ISOLATE = .FALSE.
 	GOTO 7
       ELSEIF (INTYPE .EQ. FONT) THEN
         READ (INPUT,'(A)',END=50) LINE
@@ -924,6 +1012,9 @@ C f90         FILE=LINE(J:80))
 	NLABELS = NLABELS + 1
         READ (INPUT,'(A)',END=50) LINE
         READ (INPUT,'(A)',END=50) LINE
+	GOTO 7
+      ELSEIF (INTYPE .EQ. NOTRANS) THEN
+	ISOLATE = .TRUE.
 	GOTO 7
  
       ENDIF
@@ -977,12 +1068,7 @@ C     20-Feb-1997 Save both object type and material type
         RED = BUF(10)
         GRN = BUF(11)
         BLU = BUF(12)
-        CALL ASSERT (RED.GE.0., 'red < 0 in triangle')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in triangle')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in triangle')
-        CALL ASSERT (RED.LE.1., 'red > 1 in triangle')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in triangle')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in triangle')
+	CALL CHKRGB( RED,GRN,BLU,'invalid triangle color' )
         CALL ASSERT (IDET(INTYPE).EQ.12,'idet(1).ne.12')
 	IF (MSTATE.EQ.MATERIAL) THEN
 	  FLAG(N) = OR(FLAG(N),PROPS)
@@ -991,7 +1077,7 @@ C     20-Feb-1997 Save both object type and material type
 	    FLAG(N) = OR(FLAG(N),TRANSP)
 	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
- 	    ISTRANS = 1
+	    ISTRANS = 1
 	  ENDIF
 	  IF (MATCOL) THEN
 	    RED = RGBMAT(1)
@@ -999,21 +1085,32 @@ C     20-Feb-1997 Save both object type and material type
 	    BLU = RGBMAT(3)
 	  ENDIF
 	ENDIF
+*	Isolated objects not transformed by TMAT, but still subject to inversion
+	IF (ISOLATE) THEN
+	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	    Y1A = -Y1A
+	    Y2A = -Y2A
+	    Y3A = -Y3A
+	  ENDIF
+	ELSE
 *	update true coordinate limits
-	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
-	TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A,X3A)
-	TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A,Y3A)
-	TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A,Y3A)
-	TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A,Z3A)
-	TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A,Z3A)
+	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
+	  TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A,X3A)
+	  TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A,Y3A)
+	  TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A,Y3A)
+	  TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A,Z3A)
+	  TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A,Z3A)
 *       modify the input, so to speak
-        CALL TRANSF (X1A,Y1A,Z1A, TMAT)
-        CALL TRANSF (X2A,Y2A,Z2A, TMAT)
-        CALL TRANSF (X3A,Y3A,Z3A, TMAT)
+	  CALL TRANSF (X1A,Y1A,Z1A, TMAT)
+	  CALL TRANSF (X2A,Y2A,Z2A, TMAT)
+	  CALL TRANSF (X3A,Y3A,Z3A, TMAT)
+	ENDIF
 *       perspective factor for each corner
-        PFAC1 = 1./(1.-Z1A/EYEPOS)
-        PFAC2 = 1./(1.-Z2A/EYEPOS)
-        PFAC3 = 1./(1.-Z3A/EYEPOS)
+	IF (EYEPOS.GT.0) THEN
+          PFAC1 = 1./(1.-Z1A/EYEPOS)
+          PFAC2 = 1./(1.-Z2A/EYEPOS)
+          PFAC3 = 1./(1.-Z3A/EYEPOS)
+	END IF
 *       apply perspective
         X1B = X1A * PFAC1
         Y1B = Y1A * PFAC1
@@ -1054,7 +1151,7 @@ C     20-Feb-1997 Save both object type and material type
 	    DO IY = 1,NTY
 	    DO IX = 1,NTX
 		KOUNT(IX,IY) = KOUNT(IX,IY) + 1
- 		TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
+		TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 	    ENDDO
 	    ENDDO
 	    IF (SHADOW) THEN
@@ -1097,7 +1194,7 @@ C     20-Feb-1997 Save both object type and material type
         DO 10 IY=IYLO,IYHI
         DO 10 IX=IXLO,IXHI
           KOUNT(IX,IY) = KOUNT(IX,IY) + 1
- 	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
+	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 10      CONTINUE
 11      CONTINUE
 *       repeat for shadow buffer if necessary
@@ -1170,12 +1267,7 @@ C     20-Feb-1997 Save both object type and material type
         RED = BUF(5)
         GRN = BUF(6)
         BLU = BUF(7)
-        CALL ASSERT (RED.GE.0., 'red < 0 in sphere')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in sphere')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in sphere')
-        CALL ASSERT (RED.LE.1., 'red > 1 in sphere')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in sphere')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in sphere')
+	CALL CHKRGB (RED,GRN,BLU,'invalid sphere color')
         CALL ASSERT (IDET(INTYPE).EQ.7,'idet(2).ne.7')
 	IF (MSTATE.EQ.MATERIAL) THEN
 	  FLAG(N) = OR(FLAG(N),PROPS)
@@ -1184,7 +1276,7 @@ C     20-Feb-1997 Save both object type and material type
 	    FLAG(N) = OR(FLAG(N),TRANSP)
 	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
- 	    ISTRANS = 1
+	    ISTRANS = 1
 	  ENDIF
 	  IF (MATCOL) THEN
 	    RED = RGBMAT(1)
@@ -1192,18 +1284,25 @@ C     20-Feb-1997 Save both object type and material type
 	    BLU = RGBMAT(3)
 	  ENDIF
 	ENDIF
+*	Isolated objects not transformed by TMAT, but still subject to inversion
+	IF (ISOLATE) THEN
+	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	    YA = -YA
+	  ENDIF
+	ELSE
 *	update true coordinate limits
-	TRULIM(1,1) = MIN( TRULIM(1,1), XA )
-	TRULIM(1,2) = MAX( TRULIM(1,2), XA )
-	TRULIM(2,1) = MIN( TRULIM(2,1), YA )
-	TRULIM(2,2) = MAX( TRULIM(2,2), YA )
-	TRULIM(3,1) = MIN( TRULIM(3,1), ZA )
-	TRULIM(3,2) = MAX( TRULIM(3,2), ZA )
+	  TRULIM(1,1) = MIN( TRULIM(1,1), XA )
+	  TRULIM(1,2) = MAX( TRULIM(1,2), XA )
+	  TRULIM(2,1) = MIN( TRULIM(2,1), YA )
+	  TRULIM(2,2) = MAX( TRULIM(2,2), YA )
+	  TRULIM(3,1) = MIN( TRULIM(3,1), ZA )
+	  TRULIM(3,2) = MAX( TRULIM(3,2), ZA )
 *       modify the input, as it were
-        CALL TRANSF (XA,YA,ZA, TMAT)
-        RA = RA / TMAT(4,4)
+          CALL TRANSF (XA,YA,ZA, TMAT)
+          RA = RA / TMAT(4,4)
+	ENDIF
 *       perspective
-        PFAC = 1./(1.-ZA/EYEPOS)
+	IF (EYEPOS.GT.0) PFAC = 1./(1.-ZA/EYEPOS)
         XB = XA * PFAC
         YB = YA * PFAC
         ZB = ZA * PFAC
@@ -1240,7 +1339,7 @@ C     20-Feb-1997 Save both object type and material type
         DO 20 IY=IYLO,IYHI
         DO 20 IX=IXLO,IXHI
           KOUNT(IX,IY) = KOUNT(IX,IY) + 1
- 	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
+	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 20      CONTINUE
 21      CONTINUE
 *       repeat for shadow buffer if necessary
@@ -1294,24 +1393,19 @@ C     20-Feb-1997 Save both object type and material type
         RED = BUF(9)
         GRN = BUF(10)
         BLU = BUF(11)
-        CALL ASSERT (RED.GE.0., 'red < 0 in cylinder')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in cylinder')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in cylinder')
-        CALL ASSERT (RED.LE.1., 'red > 1 in cylinder')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in cylinder')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in cylinder')
+	CALL CHKRGB (RED,GRN,BLU,'invalid cylinder color')
         CALL ASSERT (IDET(INTYPE).EQ.11,'idet(1).ne.11')
 *	Zero length cylinder is better treated as sphere
 *	EAM 22-Nov-96
- 	IF ((AND(FLAG(N),FLAT).EQ.0) .AND.
+	IF ((AND(FLAG(N),FLAT).EQ.0) .AND.
      &	    (X1A.EQ.X2A).AND.(Y1A.EQ.Y2A).AND.(Z1A.EQ.Z2A)) THEN
- 		BUF(5) = BUF(9)
- 		BUF(6) = BUF(10)
- 		BUF(7) = BUF(11)
- 		INTYPE = SPHERE
- 		N = N-1
- 		GOTO 9
- 	ENDIF
+		BUF(5) = BUF(9)
+		BUF(6) = BUF(10)
+		BUF(7) = BUF(11)
+		INTYPE = SPHERE
+		N = N-1
+		GOTO 9
+	ENDIF
 	IF (MSTATE.EQ.MATERIAL) THEN
 	  FLAG(N) = OR(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
@@ -1319,7 +1413,7 @@ C     20-Feb-1997 Save both object type and material type
 	    FLAG(N) = OR(FLAG(N),TRANSP)
 	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
- 	    ISTRANS = 1
+	    ISTRANS = 1
 	  ENDIF
 	  IF (MATCOL) THEN
 	    RED = RGBMAT(1)
@@ -1327,21 +1421,31 @@ C     20-Feb-1997 Save both object type and material type
 	    BLU = RGBMAT(3)
 	  ENDIF
 	ENDIF
+*	Isolated objects not transformed by TMAT, but still subject to inversion
+	IF (ISOLATE) THEN
+	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	    Y1A = -Y1A
+	    Y2A = -Y2A
+	  ENDIF
+	ELSE
 *	update true coordinate limits
-	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
-	TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A)
-	TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A)
-	TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A)
-	TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A)
-	TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A)
+	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
+	  TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A)
+	  TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A)
+	  TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A)
+	  TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A)
+	  TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A)
 *       modify the input, so to speak
-        CALL TRANSF (X1A,Y1A,Z1A, TMAT)
-        CALL TRANSF (X2A,Y2A,Z2A, TMAT)
-        R1A = R1A / TMAT(4,4)
-        R2A = R2A / TMAT(4,4)
+          CALL TRANSF (X1A,Y1A,Z1A, TMAT)
+          CALL TRANSF (X2A,Y2A,Z2A, TMAT)
+          R1A = R1A / TMAT(4,4)
+          R2A = R2A / TMAT(4,4)
+	ENDIF
 *       perspective factor for each corner
-        PFAC1 = 1./(1.-Z1A/EYEPOS)
-        PFAC2 = 1./(1.-Z2A/EYEPOS)
+	IF (EYEPOS.GT.0) THEN
+          PFAC1 = 1./(1.-Z1A/EYEPOS)
+          PFAC2 = 1./(1.-Z2A/EYEPOS)
+	END IF
 *       apply perspective
         X1B = X1A * PFAC1
         Y1B = Y1A * PFAC1
@@ -1392,7 +1496,7 @@ C     20-Feb-1997 Save both object type and material type
         DO 710 IY=IYLO,IYHI
         DO 710 IX=IXLO,IXHI
           KOUNT(IX,IY) = KOUNT(IX,IY) + 1
- 	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
+	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 710     CONTINUE
 711     CONTINUE
 *       repeat for shadow buffer if necessary
@@ -1446,7 +1550,9 @@ C     20-Feb-1997 Save both object type and material type
 *
       ELSEIF (INTYPE.EQ.NORMS) THEN
 *	vertex normals as given (these belong to previous triangle)
-	CALL ASSERT (TYPE(N-1).EQ.TRIANG,'orphan normals')
+	IPREV = N - 1
+	IF (TYPE(IPREV).EQ.VERTEXRGB) IPREV = IPREV - 1
+	CALL ASSERT (TYPE(IPREV).EQ.TRIANG,'orphan normals')
         X1A = BUF(1)
         Y1A = BUF(2)
         Z1A = BUF(3)
@@ -1456,42 +1562,43 @@ C     20-Feb-1997 Save both object type and material type
         X3A = BUF(7)
         Y3A = BUF(8)
         Z3A = BUF(9)
+*	Isolated objects not transformed by TMAT, but still subject to inversion
+	IF (ISOLATE) THEN
+	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	    Y1B = -Y1B
+	    Y2B = -Y2B
+	    Y3B = -Y3B
+	  ENDIF
+	ELSE
 *	Apply rotation matrix, but not translation components
-	X1B = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
-	Y1B = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
-	Z1B = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
-	X2B = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
-	Y2B = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
-	Z2B = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
-	X3B = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
-	Y3B = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
-	Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+	  X1B = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
+	  Y1B = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
+	  Z1B = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
+	  X2B = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
+	  Y2B = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
+	  Z2B = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
+	  X3B = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
+	  Y3B = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
+	  Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+	ENDIF
 C
 C	If all 3 Z components are negative, it's facing away from us.
 C	Default treatment: assume we are to render the other face instead
 C	Optional INMODE 4: assume it is the back surface of something, and
 C			   hence is hidden; should probably be an additional
 C			   distinction between solid and transparent materials
+C	11-May-1997 - this code is now redundant, as BACKFACE materials are
+C	treated as a general case.  Leave it in for the moment, though.
 C
- 	IF (Z1B.GE.0 .AND. Z2B.GE.0 .AND. Z3B.GE.0) GOTO 718
+	IF (Z1B.GE.0 .AND. Z2B.GE.0 .AND. Z3B.GE.0) GOTO 718
 717	CONTINUE
- 	IF (Z1B.LE.0 .AND. Z2B.LE.0 .AND. Z3B.LE.0) THEN
+	IF (Z1B.LE.0 .AND. Z2B.LE.0 .AND. Z3B.LE.0) THEN
 	    IF (INMODE.EQ.4) THEN
- 		NHIDDEN = NHIDDEN + 1
- 		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
-C	    ELSE IF (AND(FLAG(N-1),TRANSP).NE.0) THEN
+		NHIDDEN = NHIDDEN + 1
+		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
 	    ELSE
- 		NINSIDE = NINSIDE + 1
- 		FLAG(N-1) = OR( FLAG(N-1), INSIDE )
-		X1B = -X1B
-		Y1B = -Y1B
-		Z1B = -Z1B
-		X2B = -X2B
-		Y2B = -Y2B
-		Z2B = -Z2B
-		X3B = -X3B
-		Y3B = -Y3B
-		Z3B = -Z3B
+		NINSIDE = NINSIDE + 1
+		FLAG(N-1) = OR( FLAG(N-1), INSIDE )
 	    ENDIF
 	    GOTO 718
 	ENDIF
@@ -1535,6 +1642,31 @@ C
 	  MDET = MDET + SDET(INTYPE)
 	ENDIF
 *
+*	Nov 1997 - allow specification of RGB triple for each vertex of
+*		   preceding triangle. We don't store this separately, just
+*		   extend KDET record for the triangle
+      ELSEIF (INTYPE .EQ. VERTEXRGB) THEN
+	IPREV = N - 1
+	IF (TYPE(IPREV).EQ.NORMS) IPREV = IPREV - 1
+	CALL ASSERT (TYPE(IPREV).eq.TRIANG,'orphan vertex colours')
+	FLAG(IPREV) = OR( FLAG(IPREV), VCOLS )
+	CALL CHKRGB(BUF(1),BUF(2),BUF(3),'invalid vertex color')
+	CALL CHKRGB(BUF(4),BUF(5),BUF(6),'invalid vertex color')
+	CALL CHKRGB(BUF(7),BUF(8),BUF(9),'invalid vertex color')
+	DETAIL(NDET+1) = BUF(1)
+	DETAIL(NDET+2) = BUF(2)
+	DETAIL(NDET+3) = BUF(3)
+	DETAIL(NDET+4) = BUF(4)
+	DETAIL(NDET+5) = BUF(5)
+	DETAIL(NDET+6) = BUF(6)
+	DETAIL(NDET+7) = BUF(7)
+	DETAIL(NDET+8) = BUF(8)
+	DETAIL(NDET+9) = BUF(9)
+	NDET = NDET + KDET(INTYPE)
+	IF (SHADOW) THEN
+	  MDET = MDET + SDET(INTYPE)
+	ENDIF
+*
 *	Material properties are saved after enforcing legality
 *
       ELSEIF (INTYPE .EQ. MATERIAL) THEN
@@ -1559,21 +1691,35 @@ C
 *	possible approximations may be useful; allow a choice among them
 	CLROPT = BUF(7)
 	DETAIL(NDET+7) = BUF(7)
-*	Three remaining fields are reserved for future expansion
- 	DETAIL(NDET+8) = BUF(8)
- 	DETAIL(NDET+9) = BUF(9)
-C	DETAIL(NDET+10)= BUF(10)
+*	A few remaining fields are reserved for future expansion
+	DETAIL(NDET+8) = BUF(8)
+	DETAIL(NDET+9) = BUF(9)
+*	Additional properties may continue on extra lines
 	IF (BUF(10).GT.0) THEN
-	  DO I = 1,BUF(10)
+	  DO I = 1,INT(BUF(10))
 	  READ (INPUT,'(A)',END=50) LINE
 	  IF (LINE(1:5).EQ.'SOLID') THEN
-	    READ (LINE(7:72),*) RGBMAT(1),RGBMAT(2),RGBMAT(3)
 	    MATCOL = .TRUE.
+	    READ (LINE(7:72),*,END=720) RGBMAT(1),RGBMAT(2),RGBMAT(3)
+	  ELSE IF (LINE(1:8).EQ.'BACKFACE') THEN
+	    FLAG(N) = OR(FLAG(N),INSIDE)
+	    READ (LINE(10:72),*,END=720) RED, GRN, BLU, PHONGM, SPECM
+	    IF (PHONGM.LT.0) PHONGM = IPHONG
+	    IF (SPECM.LT.0.OR.SPECM.GT.1.) SPECM  = SPECLR
+	    DETAIL(NDET+11) = RED
+	    DETAIL(NDET+12) = GRN
+	    DETAIL(NDET+13) = BLU
+	    DETAIL(NDET+14) = PHONGM
+	    DETAIL(NDET+15) = SPECM
 	  ELSE IF (LINE(1:7).EQ.'BUMPMAP') THEN
 	    WRITE(NOISE,*) 'Sorry, no bumpmaps (dont you wish!)'
 	  ELSE
-	    WRITE(NOISE,'(A,A)') 'Unrecognized MATERIAL option ',LINE
+	    GOTO 720
 	  ENDIF
+	  GOTO 721
+720	  WRITE(NOISE,'(A,A)') 
+     &          'Unrecognized or incomplete MATERIAL option ',LINE
+721	  CONTINUE
 	  ENDDO
 	ENDIF
 *
@@ -1603,26 +1749,52 @@ C	DETAIL(NDET+10)= BUF(10)
 	CALL ASSERT (GLOW.GE.0,'illegal glow value')
 	CALL ASSERT (GLOW.LE.1,'illegal glow value')
 	IF (GLOW.GT.GLOWMAX) GLOWMAX = GLOW
-        CALL ASSERT (RED.GE.0., 'red < 0 in glow light')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in glow light')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in glow light')
-        CALL ASSERT (RED.LE.1., 'red > 1 in glow light')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in glow light')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in glow light')
+	CALL CHKRGB (RED,GRN,BLU,'invalid glow light color')
+*	Isolated objects not transformed by TMAT, but still subject to inversion
+	IF (ISOLATE) THEN
+	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	    GLOWSRC(2) = -GLOWSRC(2)
+	  ENDIF
+	ELSE
 *	transform coordinates and radius of glow source
-	CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
-	PFAC = 1.0 / (1.0 - GLOWSRC(3)/EYEPOS)
+	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
+	  GLOWRAD = GLOWRAD / TMAT(4,4)
+	ENDIF
+	IF (EYEPOS.GT.0) PFAC = 1.0 / (1.0 - GLOWSRC(3)/EYEPOS)
 *	save for rendering
 	DETAIL(NDET+1)  = GLOWSRC(1) * PFAC * SCALE + XCENT
 	DETAIL(NDET+2)  = GLOWSRC(2) * PFAC * SCALE + YCENT
 	DETAIL(NDET+3)  = GLOWSRC(3) * PFAC * SCALE
-	DETAIL(NDET+4)  = (GLOWRAD/TMAT(4,4)) * PFAC * SCALE
+	DETAIL(NDET+4)  = GLOWRAD    * PFAC * SCALE
 	DETAIL(NDET+5)  = GLOW
 	DETAIL(NDET+6)  = GOPT
 	DETAIL(NDET+7)  = GPHONG
 	DETAIL(NDET+8)  = RED
 	DETAIL(NDET+9)  = GRN
 	DETAIL(NDET+10) = BLU
+	NDET = NDET + KDET(INTYPE)
+	IF (SHADOW) THEN
+	  MDET = MDET + SDET(INTYPE)
+	ENDIF
+
+      ELSEIF (INTYPE.EQ.QUADRIC) THEN
+	NQUADS = NQUADS + 1
+	IF (MSTATE.EQ.MATERIAL) THEN
+	  FLAG(N) = OR(FLAG(N),PROPS)
+	  NPROPS  = NPROPS + 1
+	  IF (CLRITY.GT.0) THEN
+	    FLAG(N) = OR(FLAG(N),TRANSP)
+	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
+	    NTRANSP = NTRANSP + 1
+  	    ISTRANS = 1
+	  ENDIF
+	  IF (MATCOL) THEN
+	    BUF(5) = RGBMAT(1)
+	    BUF(6) = RGBMAT(2)
+	    BUF(7) = RGBMAT(3)
+	  ENDIF
+	ENDIF
+	CALL QINP( BUF(1), DETAIL(NDET+1), SHADOW, SDTAIL(MDET+1) )
 	NDET = NDET + KDET(INTYPE)
 	IF (SHADOW) THEN
 	  MDET = MDET + SDET(INTYPE)
@@ -1708,22 +1880,24 @@ C
       AMBIEN = AMBIEN * (1. + GLOWMAX)
 *
       WRITE(NOISE,*)'-------------------------------'
-      IF (NSPHERE.NE.0) WRITE(NOISE,*) 'spheres           =',NSPHERE
-      IF (NCYLIND.NE.0) WRITE(NOISE,*) 'cylinders         =',NCYLIND
+      IF (NSPHERE.NE.0) WRITE(NOISE,57) 'spheres           =',NSPHERE
+      IF (NCYLIND.NE.0) WRITE(NOISE,57) 'cylinders         =',NCYLIND
       NTRI = NTRI - (NRIB + NSUR)
-      IF (NPLANES.NE.0) WRITE(NOISE,*) 'planes            =',NPLANES
-      IF (NTRI.NE.0) WRITE(NOISE,*)    'plain triangles   =',NTRI
-      IF (NRIB.NE.0) WRITE(NOISE,*)    'ribbon triangles  =',NRIB
-      IF (NSUR.NE.0) WRITE(NOISE,*)    'surface triangles =',NSUR
-      IF (NPROPM.NE.0) WRITE(NOISE,*)  'special materials =',NPROPM
-      IF (NTRANSP.NE.0) WRITE(NOISE,*) 'transparent objs  =',NTRANSP
-      IF (NHIDDEN.NE.0) WRITE(NOISE,*) 'hidden surfaces   =',NHIDDEN
-      IF (NINSIDE.NE.0) WRITE(NOISE,*) 'inside surfaces   =',NINSIDE
-      WRITE(NOISE,*)                   'total objects     =',N
+      IF (NPLANES.NE.0) WRITE(NOISE,57) 'planes            =',NPLANES
+      IF (NTRI.NE.0) WRITE(NOISE,57)    'plain triangles   =',NTRI
+      IF (NRIB.NE.0) WRITE(NOISE,57)    'ribbon triangles  =',NRIB
+      IF (NSUR.NE.0) WRITE(NOISE,57)    'surface triangles =',NSUR
+      IF (NQUADS.NE.0) WRITE(NOISE,57)  'quadratic surfaces=',NQUADS
+      IF (NPROPM.NE.0) WRITE(NOISE,57)  'special materials =',NPROPM
+      IF (NTRANSP.NE.0) WRITE(NOISE,57) 'transparent objs  =',NTRANSP
+      IF (NHIDDEN.NE.0) WRITE(NOISE,57) 'hidden surfaces   =',NHIDDEN
+      IF (NINSIDE.NE.0) WRITE(NOISE,57) 'inside surfaces   =',NINSIDE
+      WRITE(NOISE,57)                   'total objects     =',N
       WRITE(NOISE,*)'-------------------------------'
-      IF (NGLOWS.GT.0)  WRITE(NOISE,*) 'glow lights       =',NGLOWS
-      IF (NLABELS.NE.0) WRITE(NOISE,*) 'labels (ignored)  =',NLABELS
+      IF (NGLOWS.GT.0)  WRITE(NOISE,57) 'glow lights       =',NGLOWS
+      IF (NLABELS.NE.0) WRITE(NOISE,57) 'labels (ignored)  =',NLABELS
       IF (NLABELS.NE.0) WRITE(NOISE,*)'-------------------------------'
+57    FORMAT(2X,A,I8)
 *
       WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
       IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',MAXSDT
@@ -1757,11 +1931,16 @@ C
 	ELSEIF (TYPE(I).EQ.PLANE) THEN
 *	  EAM Mar 1993 (but not sure it's necessary)
 	  ZTEMP(I) = SCALE + 1.0
-	ELSEIF (TYPE(I).EQ.NORMS .OR. TYPE(I).EQ.MATERIAL) THEN
+	ELSEIF (TYPE(I).EQ.NORMS .OR. TYPE(I).EQ.MATERIAL
+     &     .OR. TYPE(I).EQ.VERTEXRGB) THEN
 *	  EAM Mar 1994 (not sure this is needed either)
 	  ZTEMP(I) = SCALE + 1.0
 	ELSEIF (TYPE(I).EQ.GLOWLIGHT) THEN
 	  ZTEMP(I) = SCALE + 1.0
+        ELSEIF (TYPE(I).EQ.QUADRIC) THEN
+          Z = DETAIL(K+3)
+          R = DETAIL(K+4)
+          ZTEMP(I) = Z + R
         ELSE
           CALL ASSERT(.FALSE.,'crash 60')
         ENDIF
@@ -1833,10 +2012,21 @@ C
 	  IYHI = NTY
         ELSEIF (TYPE(IND).EQ.NORMS) THEN
 	  GOTO 81
+        ELSEIF (TYPE(IND).EQ.VERTEXRGB) THEN
+	  GOTO 81
         ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
 	  GOTO 81
         ELSEIF (TYPE(IND).EQ.GLOWLIGHT) THEN
 	  GOTO 81
+	ELSEIF (TYPE(IND).EQ.QUADRIC) THEN
+          X = DETAIL(K+1)
+          Y = DETAIL(K+2)
+          Z = DETAIL(K+3)
+          R = DETAIL(K+4)
+          IXLO = (X-R)/NPX + 1
+          IXHI = (X+R)/NPX + 1
+          IYLO = (Y-R)/NPY + 1
+          IYHI = (Y+R)/NPY + 1
 	ELSE
           CALL ASSERT(.FALSE.,'crash 80')
         ENDIF
@@ -1894,6 +2084,10 @@ C
 *	    or surface properties
 	  ELSEIF (TYPE(I).EQ.GLOWLIGHT) THEN
 *	    you want a shadow on a light source???
+          ELSEIF (TYPE(I).EQ.QUADRIC) THEN
+            Z = SDTAIL(K+3)
+            R = SDTAIL(K+4)
+            ZTEMP(I) = Z + R
           ELSE
             CALL ASSERT(.FALSE.,'crash 160')
           ENDIF
@@ -1960,13 +2154,22 @@ C
             IYHI = MAX(Y1+R1,Y2+R2) / NPY + 1
 	  ELSEIF (TYPE(IND).EQ.PLANE) THEN
 *           no shadows for plane surface
- 	    GOTO 181
+	    GOTO 181
           ELSEIF (TYPE(IND).EQ.NORMS) THEN
 	    GOTO 181
           ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
 	    GOTO 181
           ELSEIF (TYPE(IND).EQ.GLOWLIGHT) THEN
 	    GOTO 181
+          ELSEIF (TYPE(IND).EQ.QUADRIC) THEN
+            X = SDTAIL(K+1)
+            Y = SDTAIL(K+2)
+            Z = SDTAIL(K+3)
+            R = SDTAIL(K+4)
+            IXLO = (X-R)/NPX + 1
+            IXHI = (X+R)/NPX + 1
+            IYLO = (Y-R)/NPY + 1
+            IYHI = (Y+R)/NPY + 1
           ELSE
             CALL ASSERT(.FALSE.,'crash 180')
           ENDIF
@@ -2014,9 +2217,9 @@ C
 200     CONTINUE
 *       test for no objects in tile
         IF (KOUNT(ITILE,JTILE).EQ.0) GO TO 400
- 	NTRANSP = TTRANS(ITILE,JTILE)
- 	IJSTART = KSTART(ITILE,JTILE)
- 	IJSTOP  = KSTOP(ITILE,JTILE)
+	NTRANSP = TTRANS(ITILE,JTILE)
+	IJSTART = KSTART(ITILE,JTILE)
+	IJSTOP  = KSTOP(ITILE,JTILE)
 *       process non-empty tile
         DO 300 J = 1, NPY
         DO 300 I = 1, NPX
@@ -2076,11 +2279,17 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               IF ( (S.LT.0. .OR. T.LT.0. .OR. U.LT.0.) .AND.
      &             (S.GT.0. .OR. T.GT.0. .OR. U.GT.0.) ) GO TO 240
 *	      Use Phong shading for surface and ribbon triangles.
-	      IF (AND(FLAG(IND),SURFACE).NE.0) THEN
+	      IF (AND(FLAG(IND),OR(SURFACE,VCOLS)).NE.0) THEN
 		V = (Y3-Y1)*(X2-X1) - (X3-X1)*(Y2-Y1)
 		W = (XP-X1)*(Y3-Y1) - (YP-Y1)*(X3-X1)
 		ALPHA = W / V
 		BETA  = S / V
+	      ENDIF
+	      IF (AND(FLAG(IND),VCOLS).NE.0) THEN
+		DETAIL(14 + LIST(IND)) = ALPHA
+		DETAIL(15 + LIST(IND)) = BETA
+	      ENDIF
+	      IF (AND(FLAG(IND),SURFACE).NE.0) THEN
 		CALL ASSERT(TYPE(IND+1).EQ.NORMS,'lost normals')
 		A1 = DETAIL(1 + LIST(IND+1))
 		B1 = DETAIL(2 + LIST(IND+1))
@@ -2211,6 +2420,37 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 		ZHIGH  = ZP
 		INDTOP = IND
 	      ENDIF
+	    ELSEIF (TYPE(IND).EQ.QUADRIC) THEN
+*	      First do cheap checks against projection of limiting sphere
+		X = DETAIL(K+1)
+		Y = DETAIL(K+2)
+		Z = DETAIL(K+3)
+		R = DETAIL(K+4)
+		IF (Z+R.LE.ZHIGH) GO TO 250
+		DX = XP-X
+		DY = YP-Y
+		R2 = R**2
+		IF (DX**2 + DY**2 .GE. R2) GO TO 240
+*	      Now find Z coord (ZP) in pixel space of point on quadric surface
+*	      with these X and Y coords
+		ISQUAD = QTEST( DETAIL(K+1), DETAIL(K+8), 
+     &                          XP, YP, ZP, QNORM, .FALSE. )
+		IF (.NOT.ISQUAD) GO TO 240
+		IF (ZP.LE.ZHIGH) GO TO 240
+*	      Check against limiting sphere in 3D also
+		DZ = ZP-Z
+		DZ2 = DZ**2
+  		IF (DX2+DY2+DZ2 .GT. R2) GO TO 240
+		NORMAL(1) = QNORM(1)
+		NORMAL(2) = QNORM(2)
+		NORMAL(3) = QNORM(3)
+*             update values for object having highest z here yet
+		IF (NTRANSP.GT.0) THEN
+		  ZHIGH = RANK( IND, ZP, NORMAL, FLAG )
+		ELSE
+		  ZHIGH  = ZP
+		  INDTOP = IND
+		ENDIF
             ELSE
               CALL ASSERT(.FALSE.,'crash 240')
             ENDIF
@@ -2259,16 +2499,16 @@ C           CALL ASSERT (ISTILE.GE.1,'istile<1')
 C           CALL ASSERT (ISTILE.LE.NSX,'istile>nsx')
 C           CALL ASSERT (JSTILE.GE.1,'jstile<1')
 C           CALL ASSERT (JSTILE.LE.NSY,'jstile>nsy')
- 	    IF (JSTILE.GE.NSY) THEN
- 	      NSYMAX = MAX(JSTILE,NSYMAX)
+	    IF (JSTILE.GE.NSY) THEN
+	      NSYMAX = MAX(JSTILE,NSYMAX)
               INDSTP = 0
- 	      GOTO 270
- 	    END IF
- 	    IF (ISTILE.GE.NSX) THEN
- 	      NSXMAX = MAX(ISTILE,NSXMAX)
+	      GOTO 270
+	    END IF
+	    IF (ISTILE.GE.NSX) THEN
+	      NSXMAX = MAX(ISTILE,NSXMAX)
               INDSTP = 0
- 	      GOTO 270
- 	    END IF
+	      GOTO 270
+	    END IF
 *           starting value of "highest shadow space z so far"
             ZSTOP = 2.0*BACKCLIP
 *           the index of the object that has it
@@ -2351,9 +2591,30 @@ C 		EAM Mar 97 - maybe should allow ZSLOP here also?
 		IF (MAX( Z1+R1, Z2+R2 ) .LT. ZSTOP) GOTO 270
 *	        Now find Z coord (ZTEST) in pixel space of point on
 *	        surface of cylinder with these X and Y coords
- 		ISCYL = CYL1( FLAG(IND),
+		ISCYL = CYL1( FLAG(IND),
      &			   X1,Y1,Z1, X2,Y2,Z2, XS,YS,ZTEST, R1, XA,YA,ZA )
 		IF (.NOT.ISCYL) GO TO 260
+*               skip object if z not a new high
+                IF (ZTEST.LE.ZSTOP) GO TO 260
+*               update values for object having highest z here yet
+                ZSTOP = ZTEST
+                INDSTP = IND
+	      ELSEIF (TYPE(IND).EQ.QUADRIC) THEN
+                X = SDTAIL(K+1)
+                Y = SDTAIL(K+2)
+                Z = SDTAIL(K+3)
+                R = SDTAIL(K+4)
+*               cheap check against limiting sphere
+                IF (Z+R.LT.ZSTOP) GO TO 270
+                DX = XS-X
+                DY = YS-Y
+                R2 = R**2
+	        IF (DX**2 + DY**2 .GE. R2) GO TO 260
+*	        Now find Z coord (ZTEST) in shadow pixel space of point on
+*	        surface with these X and Y coords
+		ISQUAD = QTEST( SDTAIL(K+1), SDTAIL(K+5), 
+     &                          XS, YS, ZTEST, QNORM, .TRUE. )
+		IF (.NOT.ISQUAD) GO TO 260
 *               skip object if z not a new high
                 IF (ZTEST.LE.ZSTOP) GO TO 260
 *               update values for object having highest z here yet
@@ -2384,9 +2645,27 @@ C         CALL ASSERT (INDTOP.GT.0,'indtop<=0')
 C         CALL ASSERT (K.GE.0,'k<0')
 C         CALL ASSERT (K.LT.NDET,'k>=ndet')
           IF (TYPE(INDTOP).EQ.TRIANG) THEN
-            RGBCUR(1) = DETAIL(K+14)
-            RGBCUR(2) = DETAIL(K+15)
-            RGBCUR(3) = DETAIL(K+16)
+	    IF (AND(FLAG(INDTOP),VCOLS).NE.0) THEN
+	      ALPHA = DETAIL(K+14)
+	      BETA  = DETAIL(K+15)
+	      INEXT = INDTOP + 1
+	      IF (TYPE(INEXT).EQ.NORMS) INEXT = INEXT + 1
+	      K = LIST(INEXT)
+	      CALL ASSERT (TYPE(INEXT).EQ.VERTEXRGB,'lost vertex colors')
+	      RGBCUR(1) = DETAIL(K+1) 
+     &			+ ALPHA*(DETAIL(K+4)-DETAIL(K+1))     
+     &			+  BETA*(DETAIL(K+7)-DETAIL(K+1))     
+	      RGBCUR(2) = DETAIL(K+2) 
+     &			+ ALPHA*(DETAIL(K+5)-DETAIL(K+2))     
+     &			+  BETA*(DETAIL(K+8)-DETAIL(K+2))     
+	      RGBCUR(3) = DETAIL(K+3) 
+     &			+ ALPHA*(DETAIL(K+6)-DETAIL(K+3))     
+     &			+  BETA*(DETAIL(K+9)-DETAIL(K+3))     
+	    ELSE
+              RGBCUR(1) = DETAIL(K+14)
+              RGBCUR(2) = DETAIL(K+15)
+              RGBCUR(3) = DETAIL(K+16)
+	    ENDIF
           ELSEIF (TYPE(INDTOP).EQ.SPHERE) THEN
             RGBCUR(1) = DETAIL(K+5)
             RGBCUR(2) = DETAIL(K+6)
@@ -2402,57 +2681,74 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 	    RGBCUR(1) = FADE * DETAIL(K+5)
 	    RGBCUR(2) = FADE * DETAIL(K+6)
 	    RGBCUR(3) = FADE * DETAIL(K+7)
+	  ELSEIF (TYPE(INDTOP).EQ.QUADRIC) THEN
+            RGBCUR(1) = DETAIL(K+5)
+            RGBCUR(2) = DETAIL(K+6)
+            RGBCUR(3) = DETAIL(K+7)
           ELSE
             CALL ASSERT(.FALSE.,'crash 270')
           ENDIF
 *
-*         Get shading components.
+*       Get shading components.
 *
-*         In this system, a surface whose normal vector has
-*         a negative z component is considered to point away
-*         from the viewer and is therefore black.
+
 *
+*         11-May-1997 As of now, treat negative normal(3) as indicating the
+*	  back side of a material.  Default is to shrug and invert the normal.
+*	  Some material have explicit BACKFACE proterties, however.
+*
+	  BACKFACE = .FALSE.
           IF (NORMAL(3).LE.0) THEN
-            SDIFF = 0.
+            NORMAL(1) = -NORMAL(1)
+            NORMAL(2) = -NORMAL(2)
+            NORMAL(3) = -NORMAL(3)
+	    BACKFACE = .TRUE.
+	    IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
+		K = NPROPM + 1
+271		K = K - 1
+		IF (MLIST(K).GT.INDTOP) GOTO 271
+		CALL ASSERT(K.GT.0,'lost material definition')
+		IF (AND(FLAG(MLIST(K)),INSIDE).NE.0) THEN
+		  K = LIST(MLIST(K))
+		  RGBCUR(1) = DETAIL(K+11)
+		  RGBCUR(2) = DETAIL(K+12)
+		  RGBCUR(3) = DETAIL(K+13)
+		END IF
+	    END IF
+	  END IF
+*
+          ABSN = SQRT(NORMAL(1)**2 + NORMAL(2)**2 + NORMAL(3)**2)
+          NL(1) = NORMAL(1) / ABSN
+          NL(2) = NORMAL(2) / ABSN
+          NL(3) = NORMAL(3) / ABSN
+          SDIFF = NL(3) * STRAIT*DIFFUS
+          SSP = 2.*NL(3)**2 - 1.
+*         We do the value check like this to avoid floating-point underflows 
+*	  in the Phonging.  We also save calculation time this way, because
+*	  the 0 case will occur often for reasonably high Phong powers.
+*	  Note that PHOBND**IPHONG should evaluate to the cutoff value
+*         between significant and insignificant specular contribution. 
+*         The contributions that are actually computed here
+*         can be smaller by a factor of STRAIT*SPECLR:
+	  IF (SSP.LT.PHOBND .OR. IPHONG.EQ.0) THEN
             SSPEC = 0.
+          ELSE
+            SSPEC = SSP**IPHONG * STRAIT*SPECLR
+          ENDIF
+          LDOTN = SOURCE(1)*NL(1)+SOURCE(2)*NL(2)+SOURCE(3)*NL(3)
+          IF (LDOTN.LE.0.) THEN
             PDIFF = 0.
             PSPEC = 0.
           ELSE
-            ABSN = SQRT(NORMAL(1)**2 + NORMAL(2)**2 + NORMAL(3)**2)
-            NL(1) = NORMAL(1) / ABSN
-            NL(2) = NORMAL(2) / ABSN
-            NL(3) = NORMAL(3) / ABSN
-            SDIFF = NL(3) * STRAIT*DIFFUS
-            SSP = 2.*NL(3)**2 - 1.
-*           We do the value check like this to avoid
-*           floating-point underflows in the Phonging.
-*           We also save calculation time this way, because
-*           the 0 case will occur often for reasonably
-*           high Phong powers.  Note that PHOBND**IPHONG
-*           should evaluate to the cutoff value between
-*           significant and insignificant specular contribution.
-*           The contributions that are actually computed here
-*           can be smaller by a factor of STRAIT*SPECLR:
-	    IF (SSP.LT.PHOBND .OR. IPHONG.EQ.0) THEN
-              SSPEC = 0.
-            ELSE
-              SSPEC = SSP**IPHONG * STRAIT*SPECLR
-            ENDIF
-            LDOTN = SOURCE(1)*NL(1)+SOURCE(2)*NL(2)+SOURCE(3)*NL(3)
-            IF (LDOTN.LE.0.) THEN
-              PDIFF = 0.
+            PDIFF = LDOTN * PRIMAR*DIFFUS
+            PSP = 2.*LDOTN*NL(3) - SOURCE(3)
+*           Comments as for SSPEC apply, but substitute PRIMAR for STRAIT:
+	    IF (PSP.LT.PHOBND .OR. IPHONG.EQ.0) THEN
               PSPEC = 0.
             ELSE
-              PDIFF = LDOTN * PRIMAR*DIFFUS
-              PSP = 2.*LDOTN*NL(3) - SOURCE(3)
-*             Comments as for SSPEC apply, but substitute PRIMAR
-*             for STRAIT:
-	      IF (PSP.LT.PHOBND .OR. IPHONG.EQ.0) THEN
-                PSPEC = 0.
-              ELSE
-                PSPEC = PSP**IPHONG * PRIMAR*SPECLR
-              ENDIF
+              PSPEC = PSP**IPHONG * PRIMAR*SPECLR
             ENDIF
+          ENDIF
 *
 *         experience has shown the "spots" on dark objects to be rather
 *         overpowering, especially by comparison to those on brighter
@@ -2463,12 +2759,11 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 *         colour seems to come through more clearly, and they don't
 *         appear more specular than the brighter objects.
 *         the funny coefficients are ntsc:
-            BRIGHT = 0.2 + 0.8 * SQRT(0.299*RGBCUR(1) +
-     &                                0.587*RGBCUR(2) +
-     &                                0.114*RGBCUR(3))
-            SSPEC = SSPEC * BRIGHT
-            PSPEC = PSPEC * BRIGHT
-          ENDIF
+          BRIGHT = 0.2 + 0.8 * SQRT(0.299*RGBCUR(1) +
+     &                              0.587*RGBCUR(2) +
+     &                              0.114*RGBCUR(3))
+          SSPEC = SSPEC * BRIGHT
+          PSPEC = PSPEC * BRIGHT
 *
 *	  Extra properties make specular highlighting calculation a
 *	  bit more complex. First we have to find the MATERIAL description.
@@ -2478,9 +2773,15 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 272         K = K - 1
 	    IF (MLIST(K).GT.INDTOP) GOTO 272
 	    CALL ASSERT(K.GT.0,'lost material definition')
-	    K = LIST(MLIST(K))
-	    PHONGM    = DETAIL(K+1)
-	    SPECM     = DETAIL(K+2)
+	    IF (AND(FLAG(MLIST(K)),INSIDE).NE.0) THEN
+	      K = LIST(MLIST(K))
+	      PHONGM  = DETAIL(K+14)
+	      SPECM   = DETAIL(K+15)
+	    ELSE
+	      K = LIST(MLIST(K))
+	      PHONGM  = DETAIL(K+1)
+	      SPECM   = DETAIL(K+2)
+	    ENDIF
 	    SPECOL(1) = DETAIL(K+3)
 	    SPECOL(2) = DETAIL(K+4)
 	    SPECOL(3) = DETAIL(K+5)
@@ -2488,7 +2789,9 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 	    IF (SPECOL(2).LT.0) SPECOL(2) = RGBCUR(2)
 	    IF (SPECOL(3).LT.0) SPECOL(3) = RGBCUR(3)
 	    CLRITY    = DETAIL(K+6)
-	    ICLEAR    = DETAIL(K+7) + 0.1
+*	    not currently used, as MOPT(1)=1 already marked in FLAG,
+*	    but future interpretations of MOPT(1) might need it
+	    CLROPT    = DETAIL(K+7)
 C
 C	EAM February 1996
 C	This is the only computationally intensive code (as opposed to mere
@@ -2513,7 +2816,7 @@ C-ALT		BLEND1 = (1. - CLRITY*ABS(NL(3)))**2
 	    ENDIF
 	    DIFFM     = 1. - (SPECM + AMBIEN)
 	    SDIFF     = SDIFF * DIFFM / DIFFUS
- 	    PDIFF     = PDIFF * DIFFM / DIFFUS
+	    PDIFF     = PDIFF * DIFFM / DIFFUS
 	    SSPEC     = 0.0
 	    PSPEC     = 0.0
 	    IF (SSP .GE. PHOBND) 
@@ -2521,6 +2824,7 @@ C-ALT		BLEND1 = (1. - CLRITY*ABS(NL(3)))**2
 	    IF ((PSP .GE. PHOBND) .AND. (LDOTN.GT.0))
      &          PSPEC = PSP**PHONGM * PRIMAR*SPECM
 *	    de-emphasize highlights from inside surface of transparent objects
+*	    Could use BACKFACE flag instead of INSIDE to catch non-triangles
 	    IF (AND(FLAG(INDTOP),INSIDE).NE.0) THEN
 		SSPEC = SSPEC * (1.-SPECM)
 		PSPEC = PSPEC * (1.-SPECM)
@@ -2547,10 +2851,10 @@ C-ALT		BLEND1 = (1. - CLRITY*ABS(NL(3)))**2
 C EAM March 1997 - Support additional non-shadowing light sources
 C which lie within figure and have a finite range of illumination.
 	  IF (NGLOWS.GT.0) THEN
- 	    DO KC = 1,3
- 	        RGBSHD(KC) = (1.-GLOWMAX)*RGBSHD(KC)
- 	        RGBFUL(KC) = (1.-GLOWMAX)*RGBFUL(KC)
- 	    ENDDO
+	    DO KC = 1,3
+	        RGBSHD(KC) = (1.-GLOWMAX)*RGBSHD(KC)
+	        RGBFUL(KC) = (1.-GLOWMAX)*RGBFUL(KC)
+	    ENDDO
 *	  Recover glow light parameters
 	  DO NG = 1, NGLOWS
               IG = LIST(GLOWLIST(NG))
@@ -2565,45 +2869,45 @@ C which lie within figure and have a finite range of illumination.
 	      GLOWCOL(2) = DETAIL(IG+9)
 	      GLOWCOL(3) = DETAIL(IG+10)
 *
- 	      GDIST(1) = GLOWSRC(1) - XP
- 	      GDIST(2) = GLOWSRC(2) - YP
- 	      GDIST(3) = GLOWSRC(3) - ZP
- 	      ABSN = SQRT(GDIST(1)**2 + GDIST(2)**2 + GDIST(3)**2)
- 	      GDIST(1) = GDIST(1) / ABSN
- 	      GDIST(2) = GDIST(2) / ABSN
- 	      GDIST(3) = GDIST(3) / ABSN
- 	      LDOTN = GDIST(1)*NL(1) + GDIST(2)*NL(2) + GDIST(3)*NL(3) 
- 	      IF (LDOTN.LE.0) THEN
- 	        GDIFF = 0.
- 	        GSPEC = 0.
- 	      ELSE
+	      GDIST(1) = GLOWSRC(1) - XP
+	      GDIST(2) = GLOWSRC(2) - YP
+	      GDIST(3) = GLOWSRC(3) - ZP
+	      ABSN = SQRT(GDIST(1)**2 + GDIST(2)**2 + GDIST(3)**2)
+	      GDIST(1) = GDIST(1) / ABSN
+	      GDIST(2) = GDIST(2) / ABSN
+	      GDIST(3) = GDIST(3) / ABSN
+	      LDOTN = GDIST(1)*NL(1) + GDIST(2)*NL(2) + GDIST(3)*NL(3) 
+	      IF (LDOTN.LE.0) THEN
+	        GDIFF = 0.
+	        GSPEC = 0.
+	      ELSE
 C 		Might want separate diffuse param for glow; (always 1.0?)
 C 	        GDIFF = LDOTN * DIFFUS
- 	        GDIFF = LDOTN
- 	        GSP   = 2.*LDOTN*NL(3) - GDIST(3)
- 	        IF (GSP.LT.PHOBND .OR. GPHONG.EQ.0) THEN
- 		    GSPEC = 0.
- 	        ELSE
- 		    GSPEC = GSP**GPHONG * SPECLR
- 	        ENDIF
- 	      ENDIF
+	        GDIFF = LDOTN
+	        GSP   = 2.*LDOTN*NL(3) - GDIST(3)
+	        IF (GSP.LT.PHOBND .OR. GPHONG.EQ.0) THEN
+		    GSPEC = 0.
+	        ELSE
+		    GSPEC = GSP**GPHONG * SPECLR
+	        ENDIF
+	      ENDIF
 C 	    Limit glow effect by some function of ABSN, GLOWRAD 
- 	      IF (GOPT.EQ.3) THEN
- 		GFADE = MAX( 0., 1. - ABSN/GLOWRAD )
- 	      ELSE IF (GOPT.EQ.2) THEN
- 		GFADE = 1./(ABSN/GLOWRAD + 1.)
- 	      ELSE IF (GOPT.EQ.1) THEN
- 		GFADE = 1./(ABSN/GLOWRAD + 1.)**2
- 	      ELSE
- 		GFADE = MIN( 1., 1./(ABSN/GLOWRAD)**2 )
- 	      ENDIF
- 	      DO KC = 1,3
+	      IF (GOPT.EQ.3) THEN
+		GFADE = MAX( 0., 1. - ABSN/GLOWRAD )
+	      ELSE IF (GOPT.EQ.2) THEN
+		GFADE = 1./(ABSN/GLOWRAD + 1.)
+	      ELSE IF (GOPT.EQ.1) THEN
+		GFADE = 1./(ABSN/GLOWRAD + 1.)**2
+	      ELSE
+		GFADE = MIN( 1., 1./(ABSN/GLOWRAD)**2 )
+	      ENDIF
+	      DO KC = 1,3
 C 		This isn't right for transparent surfaces
- 	        CGLO = SBLEND*RGBCUR(KC)*GDIFF + GSPEC
- 		CGLO = GFADE * GLOWCOL(KC) * CGLO
- 	        RGBSHD(KC) = RGBSHD(KC) + CGLO
- 	        RGBFUL(KC) = RGBFUL(KC) + CGLO
- 	      ENDDO
+	        CGLO = SBLEND*RGBCUR(KC)*GDIFF + GSPEC
+		CGLO = GFADE * GLOWCOL(KC) * CGLO
+	        RGBSHD(KC) = RGBSHD(KC) + CGLO
+	        RGBFUL(KC) = RGBFUL(KC) + CGLO
+	      ENDDO
 *	    End of this glow light
 	    ENDDO
           ENDIF
@@ -2916,7 +3220,8 @@ C
       LOGICAL LOGIC
       CHARACTER*(*) DAMMIT
       INTEGER ASSOUT
-      COMMON /ASSCOM/ ASSOUT
+      LOGICAL VERBOSE
+      COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
       IF (LOGIC) RETURN
       WRITE (ASSOUT,*) '*** ',DAMMIT
@@ -3006,7 +3311,7 @@ c
 c	point is either on end cap, or missed entirely
 c
   100	continue
-	if (p1 .gt. 1.0) then
+	if (p1 .ge. 1.0) then
 		xa = x2
 		ya = y2
 		za = z2
@@ -3045,9 +3350,15 @@ C		    zb = -99999.
 		    cyl1 = .false.
 		    return
 		endif
-		xa = xb - (x1 - x2)
-		ya = yb - (y1 - y2)
-		za = zb - (z1 - z2)
+		if (p1 .ge. 1.0) then
+		    xa = xb - (x2 - x1)
+		    ya = yb - (y2 - y1)
+		    za = zb - (z2 - z1)
+		else if (p1 .le. 0.0) then
+		    xa = xb - (x1 - x2)
+		    ya = yb - (y1 - y2)
+		    za = zb - (z1 - z2)
+		endif
 	end if
 c
 	cyl1 = .true.
@@ -3065,7 +3376,7 @@ C
 	IMPLICIT REAL   (A-H, O-Z)
 	INTEGER  IND
 	REAL     ZP, NORMAL(3)
-	INTEGER  FLAG(1)
+	INTEGER*4  FLAG(1)
 *
 *     Support for transparency
       COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
@@ -3085,7 +3396,7 @@ C
 *	   flag set will only have the front surface rendered. I.e.
 *	   even if multiple objects made of the material overlap in
 *	   space, you will only see the net outer surface.
- 	IF (AND(FLAG(IND),MOPT1).NE.0) GOTO 200
+	IF (AND(FLAG(IND),MOPT1).NE.0) GOTO 200
 *
 	IF (ZP.GT.ZTOP) THEN
 	    IF (AND(FLAG(IND2ND),TRANSP).EQ.0) THEN
@@ -3138,7 +3449,7 @@ C
 	M2ND = FLAG(IND2ND) / 65536
 *
 	IF (ZP.GT.ZTOP) THEN
- 	  IF (MIND.NE.MTOP) THEN
+	  IF (MIND.NE.MTOP) THEN
 	    IF (AND(FLAG(IND2ND),TRANSP).EQ.0) THEN
 	      Z3RD   = Z2ND
 	      IND3RD = IND2ND
@@ -3151,14 +3462,14 @@ C
 	    NORM2D(1) = NORMTP(1)
 	    NORM2D(2) = NORMTP(2)
 	    NORM2D(3) = NORMTP(3)
- 	  ENDIF
+	  ENDIF
             ZTOP = ZP
             INDTOP = IND
 	    NORMTP(1) = NORMAL(1)
 	    NORMTP(2) = NORMAL(2)
 	    NORMTP(3) = NORMAL(3)
 	ELSE IF (ZP.GT.Z2ND) THEN
- 	  IF (MIND.NE.M2ND) THEN
+	  IF (MIND.NE.M2ND) THEN
 	    IF (AND(FLAG(IND2ND),TRANSP).EQ.0) THEN
 	      Z3RD   = Z2ND
 	      IND3RD = IND2ND
@@ -3166,15 +3477,27 @@ C
 	      NORM3D(2) = NORM2D(2)
 	      NORM3D(3) = NORM2D(3)
 	    ENDIF
- 	  ENDIF
- 	  IF (MIND.NE.MTOP) THEN
+	  ENDIF
+	  IF (MIND.NE.MTOP) THEN
 	    Z2ND = ZP
             IND2ND = IND
 	    NORM2D(1) = NORMAL(1)
 	    NORM2D(2) = NORMAL(2)
 	    NORM2D(3) = NORMAL(3)
- 	  ENDIF
+	  ENDIF
 	ENDIF
 	RANK = Z3RD
+	RETURN
+	END
+
+	SUBROUTINE CHKRGB( RED, GRN, BLU, MESSAGE )
+	REAL RED, GRN, BLU
+	CHARACTER*(*) MESSAGE
+        CALL ASSERT (RED.GE.0., MESSAGE)
+        CALL ASSERT (GRN.GE.0., MESSAGE)
+        CALL ASSERT (BLU.GE.0., MESSAGE)
+        CALL ASSERT (RED.LE.1., MESSAGE)
+        CALL ASSERT (GRN.LE.1., MESSAGE)
+        CALL ASSERT (BLU.LE.1., MESSAGE)
 	RETURN
 	END

@@ -1,0 +1,93 @@
+<HTML>
+<HEAD>
+   <TITLE>PDB format for ANISOU records</TITLE>
+</HEAD>
+<BODY>
+
+<H3>ANISOU records in PDB standard form</H3>
+
+<P>The ANISOU records present the anisotropic temperature factors. </P>
+
+<P> <B>Record Format </B> </P>
+
+<PRE><FONT SIZE=-1>COLUMNS        DATA TYPE       FIELD         DEFINITION                  
+----------------------------------------------------------------------
+ 1 -  6        Record name     &quot;ANISOU&quot;                                  
+
+ 7 - 11        Integer         serial        Atom serial number.         
+
+13 - 16        Atom            name          Atom name.                  
+
+17             Character       altLoc        Alternate location indicator.                  
+
+18 - 20        Residue name    resName       Residue name.               
+
+22             Character       chainID       Chain identifier.           
+
+23 - 26        Integer         resSeq        Residue sequence number.    
+
+27             AChar           iCode         Insertion code.             
+
+29 - 35        Integer         u[0][0]       U(1,1)                
+
+36 - 42        Integer         u[1][1]       U(2,2)                
+
+43 - 49        Integer         u[2][2]       U(3,3)                
+
+50 - 56        Integer         u[0][1]       U(1,2)                
+
+57 - 63        Integer         u[0][2]       U(1,3)                
+
+64 - 70        Integer         u[1][2]       U(2,3)                
+
+73 - 76        LString(4)      segID         Segment identifier, left-justified.
+
+77 - 78        LString(2)      element       Element symbol, right-justified.
+
+79 - 80        LString(2)      charge        Charge on the atom.       </FONT>
+</PRE>
+
+<P><B>Details</B> </P>
+
+<P> * Columns 7 - 27 and 73 - 80 are identical to the corresponding ATOM/HETATM
+record. </P>
+
+<P> * The anisotropic temperature factors (columns 29 - 70) are scaled
+by a factor of 10**4 (Angstroms**2) and are presented as integers. </P>
+
+<P> * The anisotropic temperature factors are stored in the same coordinate
+frame as the atomic coordinate records. </P>
+
+<P> * ANISOU values are listed only if they have been provided by the depositor.
+</P>
+
+<P> <B>Verification/Validation/Value Authority Control</B> </P>
+
+<P> The depositor provides ANISOU records, PDB verifies their format. </P>
+
+<P> <B>Relationships to Other Record Types</B> </P>
+
+<P> The anisotropic temperature factors are related to the corresponding
+ATOM/HETATM isotropic temperature factors as B(eq), as described in the
+ATOM and HETATM sections. </P>
+
+<P> <B>Example</B> </P>
+
+<PRE><FONT SIZE=-1>         1         2         3         4         5         6         7         8
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+ATOM    107  N   GLY    13      12.681  37.302 -25.211 1.000 15.56           N
+ANISOU  107  N   GLY    13     2406   1892   1614    198    519   -328       N
+ATOM    108  CA  GLY    13      11.982  37.996 -26.241 1.000 16.92           C
+ANISOU  108  CA  GLY    13     2748   2004   1679    -21    155   -419       C
+ATOM    109  C   GLY    13      11.678  39.447 -26.008 1.000 15.73           C
+ANISOU  109  C   GLY    13     2555   1955   1468     87    357   -109       C
+ATOM    110  O   GLY    13      11.444  40.201 -26.971 1.000 20.93           O
+ANISOU  110  O   GLY    13     3837   2505   1611    164   -121    189       O
+ATOM    111  N   ASN    14      11.608  39.863 -24.755 1.000 13.68           N
+ANISOU  111  N   ASN    14     2059   1674   1462     27    244    -96       N</FONT></PRE>
+
+<P>
+<HR></P>
+
+</BODY>
+</HTML>

@@ -1,5 +1,5 @@
 #
-# Raster3D makefile for SGI under Irix 6.1 (native 64-bit mode)
+# Raster3D makefile for SGI under Irix 6.x (native 64-bit mode)
 #
 LDFLAGS =
 CFLAGS  = -g
@@ -9,6 +9,20 @@ FC	= f77
 # Irix 5.x), uncomment the following line.
 #FFLAGS  = -n32 -g -static -w1
 #
+# You may be able to raise the optimization level (try -O instead of -g)
+# but under Irix 6.1 this produces improper code for ribbon and rastep
+# 
+FFLAGS   = -g
+# 
+# These are otimizations recommended for render by the compiler on my
+# test machine. Yours might vary.  Render really benefits from optimization, 
+# so try to get this right.
+# The following line was correct for Irix 6.1
+# FOPTS = -O -OPT:fprop_limit=999:const_copy_limit=12121
+# The following line is correct for Irix 6.4
+FOPTS = -O -OPT:Olimit=3000
+
+#
 # If you build Raster3D to use the Iris imagetools output format
 # (local.sgi), then add -DLIBIMAGE_SUPPORT to the DEFINES statement.
 # You will also need to add -limage to the LIBS statement.
@@ -17,13 +31,18 @@ FC	= f77
 # If you choose to build Raster3D with support for direct output of
 # TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
 # You will also need to add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
 #
-DEFINES = -DLIBIMAGE_SUPPORT
-LIBS =	-limage
-INCLUDES=	-I/usr/local/include/
+#DEFINES = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT
+#LIBS    = -limage -ltiff
+#
+DEFINES  = -DLIBIMAGE_SUPPORT
+LIBS     = -limage
+#INCLUDES = -I/usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS =		balls normal3d rods ribbon render setup avs2ps
+PROGS =		balls normal3d rastep rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
@@ -38,15 +57,31 @@ tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
 	compress  ../raster3d.tar
 
+normal3d: normal3d.o quadric.o
+	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+
+rastep:	rastep.o quadric.o
+	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+
 ribbon:	$(RIBOBJS)
-	$(FC) $(FFLAGS) $(RIBOBJS) -o ribbon
+	$(FC) $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o
-	$(FC) $(FFLAGS) render.f local.o  \
+render.o: render.f
+	$(FC) $(FOPTS) -c render.f
+
+render:	render.o local.o quadric.o
+	$(FC) $(FFLAGS) render.o quadric.o local.o  \
 	$(LIBS) -o render $(LDFLAGS)
+
+local_jpeg.o: local_jpeg.c
+	cc -g $(INCLUDES) $(DEFINES) -c local_jpeg.c
+
+render_jpeg: render.o local_jpeg.o quadric.o
+	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
+	-ljpeg -o render_jpeg
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps

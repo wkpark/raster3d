@@ -51,4 +51,4 @@ render < example6.r3d | display avs:- &
 # Clean up
 #
 rm -f temp1.r3d temp2.r3d
-#rm -f example6.r3d
+rm -f example6.r3d

@@ -3,47 +3,69 @@
 #
 LDFLAGS = -bloadmap:loadmap.lis
 CFLAGS  = -g
-FFLAGS  = -O -qtkq_size=20000 -qintlog
+FC	= xlf
+FFLAGS  = -O -qtkq_size=20000 -qintlog -qsave
 
 #
 # If you choose to build Raster3D with support for direct output of
 # TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
 # You will also need to add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
 #
 #LIBS    =	-ltiff
-#DEFINES =	-DTIFF_SUPPORT -Dlocal_=local
-LIBS    =	
+#DEFINES = -Dlocal_=local -DTIFF_SUPPORT -DTIFF_INVERT
+#
+LIBS    =
 DEFINES = -Dlocal_=local
 INCLUDES= /usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	balls normal3d rods ribbon render setup avs2ps
+PROGS   =	balls normal3d rastep rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
 clean:
-	rm -f *.o *.u
+	rm -f *.o *.u core
 	rm -f $(PROGS)
+	rm -f render_jpeg
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
+	cp stereo3d /usr/local/bin
 	cp doc/*.l /usr/local/man/manl
 
 tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
 	compress  ../raster3d.tar
 
+normal3d: normal3d.o quadric.o
+	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+
+rastep:	rastep.o quadric.o
+	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+
 ribbon:	$(RIBOBJS)
-	xlf -O $(RIBOBJS) -o ribbon
+	$(FC) -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	cc $(DEFINES) $(INCLUDES) -c local.c
 
-render.o: render.f
-	xlf $(FFLAGS) -c render.f
+render.f: render_patch.aix
+	patch render.f < render_patch.aix
 
-render:	render.o local.o
-	xlf $(FFLAGS) render.o local.o  $(LIBS) -o render $(LDFLAGS)
+render.o: render.f
+	$(FC) $(FFLAGS) -c render.f
+
+render:	render.o local.o quadric.o
+	$(FC) $(FFLAGS) render.o quadric.o local.o  $(LIBS) -o render $(LDFLAGS)
+
+local_jpeg.o: local_jpeg.c
+	cc -g $(INCLUDES) $(DEFINES) -c local_jpeg.c
+
+render_jpeg: render.o local_jpeg.o quadric.o
+	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
+	-ljpeg -o render_jpeg
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps -lm

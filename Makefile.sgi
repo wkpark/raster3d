@@ -1,13 +1,16 @@
 #
-# Raster3D makefile for SGI
+# Raster3D makefile for SGI (Irix 4.x or 5.x)
+# If you are running Irix 6.x then use Makefile.irix6 instead!
 #
 LDFLAGS =
 CFLAGS  = -g
 #
 # Optimization seems to break the Fortran I/O with the Irix compiler
-# If anyone figures out the cure for this I'd love to know - EAM
+# under some older versions of Irix.  If you have problems, try
+# backing off to "-g" instead of "-O" in FFLAGS.
 #
-FFLAGS  = -g -static -w1 -Olimit 2000
+FC	= f77
+FFLAGS  = -O -static -w1 -Olimit 2000
 #
 # If you build Raster3D to use the Iris imagetools output format
 # (local.sgi), then add -DLIBIMAGE_SUPPORT to the DEFINES statement.
@@ -17,36 +20,56 @@ FFLAGS  = -g -static -w1 -Olimit 2000
 # If you choose to build Raster3D with support for direct output of
 # TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
 # You will also need to add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
 #
-DEFINES = -DLIBIMAGE_SUPPORT
-LIBS =	-limage
-INCLUDES=	-I/usr/local/include/
+#DEFINES  = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT
+#LIBS     = -limage -ltiff
+#
+DEFINES  = -DLIBIMAGE_SUPPORT
+LIBS     = -limage
+INCLUDES = -I/usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS =		balls normal3d rods ribbon render setup avs2ps
+PROGS =		balls normal3d rastep rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
 clean:
-	rm -f *.o *.u
+	rm -f *.o *.u core
 	rm -f $(PROGS)
+	rm -f render_jpeg
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
+	cp stereo3d /usr/local/bin
 
 tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
 	compress  ../raster3d.tar
 
+normal3d: normal3d.o quadric.o
+	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+
+rastep:	rastep.o quadric.o
+	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+
 ribbon:	$(RIBOBJS)
-	f77 -O $(RIBOBJS) -o ribbon
+	$(FC) -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o
-	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
+render:	render.f local.o quadric.o
+	$(FC) $(FFLAGS) -Olimit 2000 render.f quadric.o local.o  \
 	$(LIBS) -o render $(LDFLAGS)
+
+local_jpeg.o: local_jpeg.c
+	cc -g $(INCLUDES) $(DEFINES) -c local_jpeg.c
+
+render_jpeg: render.o local_jpeg.o quadric.o
+	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
+	-ljpeg -o render_jpeg
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps -lm

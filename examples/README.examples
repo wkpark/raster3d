@@ -2,10 +2,9 @@ This directory contains some example uses of Raster3D, which
 may serve as confirmation of successful installation or as
 models for general use.
 
-example1.script, example2.script, and example3.script assume that 
-John Cristy's ImageMagick is installed on your system as an image
-viewer.  If it is, then executing these shell scripts should produce
-an image on your X-windows screen.
+Most of the example scripts assume that ImageMagick is installed 
+on your system as an image viewer.  If it is, then executing these 
+shell scripts should produce an image on your X-windows screen.
 
 Example 1
 =========
@@ -42,14 +41,16 @@ The example3.script will just render and display the example.r3d file.
 The example4.script requires that Molscript version 1.4 is installed and
 that you have built TIFF support into the Raster3D package. It should
 start with the Molscript input file and produce a TIFF file containing 
-the same image produced by example3.
+the same image produced by example3.  If you have Molscript V2.0 you
+should see labels in the Raster3D image; earlier versions of Molscript
+did not pass labels through to Raster3D.
 
 Example 5
 =========
 
-Example 5 is an input file to render. It illustrates the use of the
-new object types 8 + 9 to change the material properties for individual
-objects in the figure.  To run it through render you can type something
+Example 5 illustrates the use of object types 8 + 9 to change the 
+material properties for individual objects in the figure.  
+You can run example5.script or else type something
 like:
 	render < example5.r3d | display avs:-          		(ImageMagick)
 	render -sgi test.rgb < example5.r3d ; ipaste test.rgb  	(SGI)
@@ -92,3 +93,15 @@ Example 7
 
 This example shows the use of multiple MATERIAL definitions, mostly
 transparent ones, and file indirection.
+
+Example 8
+=========
+
+Demonstrates the creation of a stereo pair.
+
+Example 9
+=========
+
+This example shows the use of the Raster3D Termal Ellipsoid Program
+(rastep) to display isosurfaces corresponding to anisotropic 
+displacement parameters Uij. 

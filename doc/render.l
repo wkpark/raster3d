@@ -1,6 +1,6 @@
 .l
 .nh
-.TH RENDER 1 "19 March 1997" "Raster3D V2.3"
+.TH RENDER 1 "29 December 1997" "Raster3D V2.4b"
 .SH NAME
 render - image rendering program of Raster3D molecular graphics package
 .SH SYNOPSIS
@@ -152,7 +152,8 @@ from the objects making up the scene. This distance is controlled
 by the EYEPOS parameter.  EYEPOS = 4 describes a perspective corresponding
 to a viewing distance 4 times the narrow dimension of the described scene.
 A very large value of EYEPOS will yield a scene with essentially no
-parallax or perspective.
+parallax or perspective. EYEPOS = 0 disables perspective and parallax 
+altogether.
 .TP 5 
 .B     SOURCE   
 Primary light source position (e.g., 1 1 1).  
@@ -196,8 +197,10 @@ The Raster3D programs always use mode INMODE 3.
  type 8 = explicit material properties for subsequent objects
  type 9 = terminate previous explicit material properties (if any)
 	  otherwise ignored, so remainder of line may act as a comment
- type 10/11/12 = reserved for label processing (new in version 2.3)
- type 13 = glow light source (new in version 2.3)
+ type 10/11/12 = reserved for label processing
+ type 13 = glow light source
+ type 15 = do not apply TMAT transformation to subsequent objects (new in V2.4)
+ type 17 = explicit colors for vertices of preceding triangle (new in V2.4)
  type 0 = end of input file
 .TP 5 
 .B     INFMT or INFMTS
@@ -254,7 +257,8 @@ molecular graphics tools to compose figures for Raster3D to render.
   Object type 9
     Terminates previous set of special material properties.
     The rest of this record is ignored, so object type 9 may also
-    be used as a comment record.
+    be used as a comment record. It is preferable, however, to use
+    the initial character '#' on comment lines.
 
 .TP 5
 .B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.3
@@ -271,7 +275,7 @@ as labels, but otherwise ignores them.
   Object type 12
     reserved (single line of text)
   Object type 13
-    Glow light source. i
+    Glow light source.
     This is a colored, non-shadowing, light source with finite [x y z]
     coordinates and a limited range of illumination. 
     Control parameters are read in free format from a single line of 
@@ -290,6 +294,50 @@ as labels, but otherwise ignores them.
            Phong parameter controlling specular highlights from glow light
        GLOWCOL(3) 
            RGB triple specifying color of glow light source  
+
+.TP 5
+.B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.4
+.PP
+
+  Object type 14
+    quadric surface
+    x, y, z, limiting_radius, red, green, blue, A, B, C, D, E, F, G, H, I, J 
+    Quadric surfaces include spheres, cones, ellipsoids, paraboloids, and
+    hyperboloids. The motivation for this code was to allow rendering
+    thermal ellipsoids for atoms, so the other shapes have not been
+    extensively tested. A quadric surface is described by 10 parameters 
+    (A...J). Although these parameters are sufficient to describe a quadric
+    surface located anywhere, for efficiency during rendering it is also
+    useful to know the center and a bounding sphere. So by convention we
+    require that (A...J) describe a surface centered at the origin, and add
+    additional parameters x, y, z to add a translation component. Therefore
+    a QUADRIC descriptor to render has the 17 parameters listed above.
+
+    The surface itself is the set of points for which Q(x,y,z) = 0 where
+    Q(x,y,z) = Ax2 + By2 + Cz2 + 2Dxy + 2Eyz + 2Fzx + 2Gx + 2Hy + 2Iz + J 
+    Points further from the origin (prior to translation!) than the
+    limiting radius are not rendered. 
+
+  Object type 15
+    begin isolation from TMAT transformation
+    Objects following this descriptor are interpreted as being in an 
+    absolute coordinate system centered at the origin and having unit 
+    extent in X, Y, and Z. The rotation and translation described by the 
+    TMAT matrix is not applied. This isolation from TMAT applies to 
+    subsequent objects until an object of type 9 is encountered. 
+    
+  Object type 17
+    Explicit colors for vertices of preceding triangle (R1G1B1 R2G2B2 R3G3B3).
+    Normally a triangle is colored uniformly in the color specified by the
+    RGB triple in the TRIANGLE record itself. Using this additional object,
+    however, you can specify a separate color for each vertex of the
+    triangle. Points in the interior of the triangle are colored by
+    interpolation using the vertex colors.  This is commonly used in
+    conjunction with explicit vertex normals (object type 7) to describe a
+    smooth surface in terms of a triangular mesh. In this case the 
+    component triangles of the surface are described by three successive 
+    objects of types 1, 7, and 17. 
+    (The ordering 1, 17, 7 is also acceptable).
 
 .TP 5
 .B SAMPLE HEADER

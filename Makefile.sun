@@ -1,42 +1,63 @@
 #
 # Raster3D makefile for SunOS
-#
-# SUNOS support by Elya S. Kurktchi (elya@ljcrf.edu)
+# based on one sent by Elya S. Kurktchi (elya@ljcrf.edu)
 #
 CC	= gcc
+FC	= f77
 LDFLAGS =
 CFLAGS  = -O
 FFLAGS  = -O 
+#
+# If you choose to build Raster3D with support for direct output of
+# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
+# You will also need to add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
 #
 LIBS    = -L/usr/local/include -ltiff -L/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.2 -lgcc
 DEFINES = -DTIFF_SUPPORT
 INCLUDES= -I/usr/local/include/ -I/usr/local/include/tiff
 
 RIBOBJS = ribbon.o ribbon1.o modsubs.o
-PROGS   = balls normal3d rods ribbon render setup avs2ps
+PROGS   = balls normal3d rastep rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
 clean:
-	rm -f *.o *.u
+	rm -f *.o *.u core
 	rm -f $(PROGS)
+	rm -f render_jpeg
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
+	cp stereo3d /usr/local/bin
 	cp doc/*.l /usr/local/man/manl
 
 tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
 	compress  ../raster3d.tar
 
+normal3d: normal3d.o quadric.o
+	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+
+rastep:	rastep.o quadric.o
+	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+
 ribbon:	$(RIBOBJS)
-	f77 -O $(RIBOBJS) -o ribbon
+	$(FC) -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o
-	f77 $(FFLAGS) render.f local.o $(LIBS) -o render $(LDFLAGS)
+render:	render.f local.o quadric.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o $(LIBS) -o render $(LDFLAGS)
+
+local_jpeg.o: local_jpeg.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local_jpeg.c
+
+render_jpeg: render.o local_jpeg.o quadric.o
+	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
+	-ljpeg -o render_jpeg
 
 avs2ps:	avs2ps.c
 	$(CC) -O avs2ps.c -o avs2ps -lm

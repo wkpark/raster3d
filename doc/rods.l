@@ -1,12 +1,12 @@
 .ad l
 .nh
-.TH RODS 1 "29 April 1995" "Raster3D"
+.TH RODS 1 "11 Sept 1997" "Raster3D"
 .SH NAME
 
 rods - preprocessor for ball-and-stick models in Raster3D molecular graphics package
 .SH SYNOPSIS
 
-.B "rods" [\fI-h\fP] [\fI-b\fP] [\fI-radius R\fP]
+.HB rods [\fI-h\fP] [\fI-b\fP] [\fI-radius R\fP] \fI[-Bcolor Bmin Bmax\fP]
 .PP
 \fIRods\fP reads a file describing atom colours and/or a Brookhaven 
 PDB coordinate file and produces a file containing Raster3D descriptor
@@ -49,6 +49,13 @@ a ball-and-stick representation.
 By default \fIrods\fP will draw bonds as cylinders with a 0.2A radius.
 The radius option allows you to change this cylindrical radius.
 
+.B "-Bcolor Bmin Bmax"
+.PP
+Assign colors based on B values rather than from atom or residue types.
+Atoms with B <= Bmin will be colored dark blue; atoms with B >= Bmax
+will be colored light red; atoms with Bmin < B < Bmax will be assigned
+colors shading smoothly through the spectrum from blue to red.
+
 .SH DESCRIPTION
 .PP 
 The input to \fIrods\fP consists of a single text file
@@ -71,6 +78,9 @@ contained in file \fIsetup.angles\fP (if it exists).
 .PP 
 Colours are assigned to atoms using a matching process,
 using COLOUR records prepended to the input PDB file.
+If no COLOUR records are present in the input file, atoms
+will  receive default CPK colors (C=grey, O=red, N=blue, S=yellow, P=green,
+other=magenta).
 Raster3D uses a pseudo-PDB record type with the same basic
 layout as the above but with COLO in the first 4 columns:
  

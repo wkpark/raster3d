@@ -1,6 +1,6 @@
       PROGRAM NORMAL3D
 *
-*     Version 2.3d (7 Aug 1997)
+*     Version 2.4(alpha) (29 Nov 1997)
 *
 * EAM Jan 1996	- Initial release as part of version 2.2
 * EAM Aug 1996	- Add -expand option to deal with file indirection
@@ -8,6 +8,9 @@
 *		  -stereo flag to generate left.r3d and right.r3d
 * EAM Apr 1997	- now handles labels and glowlights
 * EAM May 1997	- (well, now it does) V2.3c
+* EAM Jul 1997	- quadric surfaces, ISOLATE
+* EAM Oct 1997	- fix bug that prevented handling CYLFLAT objects
+* EAM Nov 1997	- handle VERTEXRGB records, allow # as comment
 *
 *	This program is part of the Raster3D package.
 *	It is simply a stripped down version of the input section of 
@@ -39,7 +42,7 @@
 *     - SPECLR   specular reflection component (e.g., 0.30)
 *     - EYEPOS   eye position (e.g., 4)
 *       - relative to 1=narrow dimension of screen
-*       - used for perspective
+*       - used for perspective (0.0 = no perspective)
 *       - don't put it in the transformation matrix yourself
 *     - SOURCE   main light source position (x,y,z components)
 *       - vector length ignored, point source is at infinity
@@ -78,7 +81,11 @@
 *         - type 9:  end previous material
 *	  - type 10: font specifier, we need to note coordinate convention
 *	  - type 11: label, we may have to modify coordinates
-*	  - type 12:
+*	  - type 12: reserved for more labeling options
+*	  - type 13: glowlight
+*	  - type 14: quadric surface
+*	  - type 15: don't apply TMAT to subsequent objects
+*	  - type 17: vertex colors for previous triangle
 *         - type 0:  no more objects (equivalent to eof)
 *
 *-----------------------------------------------------------------------------
@@ -92,7 +99,7 @@
       INTEGER LEFT, RIGHT
       PARAMETER (LEFT=1, RIGHT=2)
 *     Allowable levels of file indirection.
-      PARAMETER (MAXLEV=3)
+      PARAMETER (MAXLEV=5)
       INTEGER    ILEVEL
 *
       REAL  	HUGE
@@ -100,7 +107,7 @@
 *
 *     Codes for triangle, sphere, truncated cone, and string of pearls
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
-      INTEGER PLANE, MXTYPE
+      INTEGER PLANE, QUADRIC, MXTYPE
       PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
       PARAMETER (CYLIND = 3, CYLFLAT= 5)
       PARAMETER (PLANE    = 6)
@@ -109,7 +116,10 @@
       PARAMETER (MATEND   = 9)
       PARAMETER (FONT     = 10, LABEL = 11 )
       PARAMETER (GLOWLIGHT= 13)
-      PARAMETER (MXTYPE   = 13)
+      PARAMETER (QUADRIC  = 14)
+      PARAMETER (NOTRANS  = 15)
+      PARAMETER (MXTYPE   = 17)
+      PARAMETER (VERTEXRGB= 17)
 *
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
@@ -118,7 +128,8 @@
       CHARACTER*80 TITLE
 *
 *     Number of tiles
-      INTEGER NTX, NTY
+      COMMON /RASTER/ NTX, NTY, NPX, NPY
+      INTEGER         NTX, NTY, NPX, NPY
 *
 *     Pixel averaging scheme
       INTEGER SCHEME
@@ -141,29 +152,32 @@
 *     Specular reflection component
       REAL SPECLR
 *
-*     Distance (in +z) of viewing eye
-      REAL   EYEPOS
-*
 *     Primary light source position
       REAL   SOURCE(3)
 *
 *     Input transformation
-      REAL   TMAT(4,4)
+      COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+      REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
+*     Transformation matrix, inverse, and transponsed inverse
+      REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
+*     Shortest rotation from light source to +z axis
+      REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+*
+*     Distance (in +z) of viewing eye
+      REAL   EYEPOS
 *
 *     Input mode
       INTEGER INMODE
 *
 *     Buffer one line of input for decoding
-      CHARACTER*80 LINE
+      CHARACTER*132 LINE
 *
 *     Input format(s)
       CHARACTER*80 INFMTS(MXTYPE),INFMT
 *
 *     Free-format input flag
       LOGICAL INFLGS(MXTYPE),INFLG
-*
-*     Shortest rotation from light source to +z axis
-      REAL   SROT(3,3)
 *
 *     Stuff for shading
       REAL   NL(3),NORMAL(3),LDOTN
@@ -173,6 +187,12 @@
 *     Support for transparency
       REAL OPT(4)
 *
+*     Support for quadratic surfaces
+      REAL QTRANS(17)
+*
+*     Support for NOTRANS (isolate objects from TMAT transformation)
+      LOGICAL ISOLATE
+*
 *     Input buffer for details
       REAL   BUF(100)
 *
@@ -181,7 +201,8 @@
 *
 *     Copy of NOISE for ASSERT to see
       INTEGER ASSOUT
-      COMMON /ASSCOM/ ASSOUT
+      LOGICAL VERBOSE
+      COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
 *
 *     The number of "details" each object type is supposed to have
@@ -202,7 +223,8 @@ c
       INTEGER	GOPT, GPHONG
 *
 *     Keep track of actual coordinate limits (for information only)
-      REAL   TRULIM(3,2)
+      COMMON /NICETIES/ TRULIM
+      REAL              TRULIM(3,2)
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
       TRULIM (3,1) = HUGE
@@ -220,27 +242,30 @@ c
       IDET(MATERIAL) = 10
       IDET(LABEL)  = 6
       IDET(GLOWLIGHT) = 10
+      IDET(QUADRIC)   = 17
+      IDET(VERTEXRGB) = 9
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
       SDET(CYLIND) = 8
+      SDET(QUADRIC)= 14
       SDET(PLANE)  = 1
       SDET(NORMS ) = 1
-      SDET(MATERIAL) = 1
+      SDET(MATERIAL)  = 1
+      SDET(GLOWLIGHT) = 1
+      SDET(VERTEXRGB) = 1
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
       WRITE (NOISE,*) '%             Raster3D normalization ',
-     &                'program V2.3d             %'
+     &                'program V2.4b             %'
       WRITE (NOISE,*) '%            -------------------------',
      &                '-------------            %'
       WRITE (NOISE,*) '% If you publish figures generated by this ',
      &                'program please cite %'
-      WRITE (NOISE,*) '%   Bacon & Anderson (1988) ',
-     &                'J. Molec. Graphics 6, 219-220 and  %'
-      WRITE (NOISE,*) '%   Merritt & Murphy (1994) ',
-     &                'Acta Cryst. D50, 869-873.','          %'
+      WRITE (NOISE,*) '%   Merritt & Bacon (1997)  ',
+     &                'Meth. Enzymol. 277, 505-524.','       %'
       WRITE (NOISE,*) '%            -------------------------',
      &                '-------------            %'
       WRITE (NOISE,*) '% comments & suggestions to:  ',
@@ -267,15 +292,18 @@ c
       ENDDO
       IF (SFLAG) THEN
 	HFLAG = .TRUE.
-	OPEN(UNIT=LEFT,FILE='left.r3d',CARRIAGECONTROL='LIST',
+	OPEN(UNIT=LEFT,FILE='left.r3d',
+     &	     CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
-	OPEN(UNIT=RIGHT,FILE='right.r3d',CARRIAGECONTROL='LIST',
+	OPEN(UNIT=RIGHT,FILE='right.r3d',
+     &	     CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
       ENDIF
 *
 *     Ready for input records
       ILEVEL = 0
       INPUT  = STDIN
+      ISOLATE = .FALSE.
 *
 *     Get title
 1     FORMAT (A80)
@@ -285,13 +313,17 @@ c
       IF (SFLAG) WRITE(RIGHT,1) TITLE
 *
 *     Get number of tiles
-      READ (INPUT,1) LINE
-      READ (LINE,*) NTX,NTY
+      READ (INPUT,1,END=101) LINE
+      READ (LINE,*,ERR=101) NTX,NTY
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
       IF (SFLAG) WRITE (LEFT,1)  LINE
       IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
+      GOTO 102
+101   CALL ASSERT(.FALSE.,
+     &           '>>> This doesnt look like a Raster3D input file! <<<')
+102   CONTINUE
 *
 *     Get number of pixels per tile
       READ (INPUT,1) LINE
@@ -410,13 +442,14 @@ c
       CALL ASSERT (AMBIEN+SPECLR.LE.1., 'ambien+speclr > 1')
       DIFFUS = 1. - (AMBIEN+SPECLR)
 *
-*     Get distance of viewing eye
+*     Note distance of viewing eye, but don't apply it here
       READ (INPUT,1) LINE
       READ (LINE,*) EYEPOS
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
       IF (SFLAG) WRITE (LEFT,1)  LINE
       IF (SFLAG) WRITE (RIGHT,1) LINE
-      CALL ASSERT (EYEPOS.GT.0., 'eyepos.le.0')
+      CALL ASSERT (EYEPOS.GE.0., 'eyepos.lt.0')
+      EYEPOS = 0.0
 *
 *     Get position of primary light source
       READ (INPUT,1) LINE
@@ -451,6 +484,38 @@ c
       	WRITE (RIGHT,*) '-0.03 0. 1.   0.         Right eye view'
       	WRITE (RIGHT,*) ' 0.   0. 0.   1.'
       ENDIF
+*
+*     Compute the rotation matrix which takes the light
+*     source to the +z axis (i.e., to the viewpoint).
+*     first make p = source cross z (and normalize p)
+      P1 = SOURCE(2)
+      P2 = -SOURCE(1)
+*     p3 = 0
+      PLEN = SQRT(P1**2 + P2**2)
+      IF (PLEN .GT. 0.0) P1 = P1 / PLEN
+      IF (PLEN .GT. 0.0) P2 = P2 / PLEN
+*     phi is the angle between source and z (shortest route)
+      COSPHI = SOURCE(3)
+      SINPHI = PLEN
+      SROT(1,1) = P1**2 + (1.-P1**2)*COSPHI
+      SROT(1,2) = P1*P2*(1.-COSPHI)
+      SROT(1,3) = P2*SINPHI
+      SROT(2,1) = SROT(1,2)
+      SROT(2,2) = P2**2 + (1.-P2**2)*COSPHI
+      SROT(2,3) = -P1*SINPHI
+      SROT(3,1) = -SROT(1,3)
+      SROT(3,2) = -SROT(2,3)
+      SROT(3,3) = COSPHI
+      SROT(1,4) = 0.0
+      SROT(2,4) = 0.0
+      SROT(3,4) = 0.0
+      SROT(4,1) = 0.0
+      SROT(4,2) = 0.0
+      SROT(4,3) = 0.0
+      SROT(4,4) = 1.0
+*
+*     Quadrics will require the inverse matrix also (and its transpose)
+      CALL QSETUP
 *
 *     Get input mode
       READ (INPUT,1) LINE
@@ -500,14 +565,17 @@ c
             INFLGS(I) = .FALSE.
           ENDIF
 4       CONTINUE
-	INFLGS(PLANE) = INFLGS(TRIANG)
-	INFMTS(PLANE) = INFMTS(TRIANG)
-	INFLGS(NORMS) = INFLGS(TRIANG)
-	INFMTS(NORMS) = INFMTS(TRIANG)
+	INFLGS(PLANE)     = INFLGS(TRIANG)
+	INFMTS(PLANE)     = INFMTS(TRIANG)
+	INFLGS(NORMS)     = INFLGS(TRIANG)
+	INFMTS(NORMS)     = INFMTS(TRIANG)
+	INFLGS(VERTEXRGB) = INFLGS(TRIANG)
+	INFMTS(VERTEXRGB) = INFMTS(TRIANG)
 	INFLGS(MATERIAL)  = .TRUE.
 	INFLGS(FONT)      = .TRUE.
 	INFLGS(LABEL)     = .TRUE.
 	INFLGS(GLOWLIGHT) = .TRUE.
+ 	INFLGS(QUADRIC)   = .TRUE.
       ELSE
         CALL ASSERT (.FALSE.,'crash 4')
       ENDIF
@@ -515,27 +583,6 @@ c
       IF (SFLAG) CLOSE(LEFT)
       IF (SFLAG) CLOSE(RIGHT)
 *
-*     Compute the rotation matrix which takes the light
-*     source to the +z axis (i.e., to the viewpoint).
-*     first make p = source cross z (and normalize p)
-      P1 = SOURCE(2)
-      P2 = -SOURCE(1)
-*     p3 = 0
-      PLEN = SQRT(P1**2 + P2**2)
-      IF (PLEN .GT. 0.0) P1 = P1 / PLEN
-      IF (PLEN .GT. 0.0) P2 = P2 / PLEN
-*     phi is the angle between source and z (shortest route)
-      COSPHI = SOURCE(3)
-      SINPHI = PLEN
-      SROT(1,1) = P1**2 + (1.-P1**2)*COSPHI
-      SROT(1,2) = P1*P2*(1.-COSPHI)
-      SROT(1,3) = P2*SINPHI
-      SROT(2,1) = SROT(1,2)
-      SROT(2,2) = P2**2 + (1.-P2**2)*COSPHI
-      SROT(2,3) = -P1*SINPHI
-      SROT(3,1) = -SROT(1,3)
-      SROT(3,2) = -SROT(2,3)
-      SROT(3,3) = COSPHI
 *
 c
       npropm  = 0
@@ -544,6 +591,7 @@ c
       ncylind = 0
       nplanes = 0
       ntriang = 0
+      nquads  = 0
 c
 c     Objects in, and count up objects that may impinge on each tile
       NDET = 0
@@ -558,7 +606,10 @@ c     Read in next object
       ENDIF
 c     Aug 1996 - allow file indirection
       READ (INPUT,'(A)',END=50) LINE
-      IF (LINE(1:1) .NE. '@') THEN
+      IF (LINE(1:1) .EQ. '#') THEN
+	WRITE (OUTPUT,1) LINE
+	GOTO 7
+      ELSE IF (LINE(1:1) .NE. '@') THEN
  	READ (LINE,*) INTYPE
       ELSE IF (.NOT.XFLAG) THEN
 	WRITE (OUTPUT,1) LINE
@@ -571,7 +622,7 @@ c     Aug 1996 - allow file indirection
  	  IF (LINE(I:I).EQ.' ') LINE(I:I) = CHAR(0)
  	ENDDO
 C f90 	OPEN (UNIT=INPUT0+ILEVEL,ERR=71,STATUS='OLD',ACTION='READ',
-	OPEN (UNIT=INPUT0+ILEVEL,ERR=71,STATUS='OLD',READONLY,
+	OPEN (UNIT=INPUT0+ILEVEL,ERR=71,STATUS='OLD',
      &	      FILE=LINE(J:80))
  	WRITE (NOISE,'(A,A)') '  + Opening input file ',LINE(2:80)
 	INPUT  = INPUT0+ILEVEL
@@ -584,10 +635,12 @@ c
       IF (INTYPE.EQ.0) GO TO 50
       	IF (INTYPE .EQ. MATEND) THEN
 	    WRITE (OUTPUT,1) LINE 
+	    ISOLATE = .FALSE.
 	    GOTO 7
 	ELSE
 	    WRITE (OUTPUT,'(I2)') INTYPE
 	END IF
+	IF (INTYPE.EQ.CYLFLAT) INTYPE = CYLIND
         CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
         CALL ASSERT (INTYPE.NE.PEARLS,'sorry, no pearls yet')
 c
@@ -598,6 +651,9 @@ c
       IF (INTYPE.EQ.FONT) THEN
 *	handle non-numerical input elsewhere
 	GOTO 9
+      ELSE IF (INTYPE.EQ.NOTRANS) THEN
+	ISOLATE = .TRUE.
+	GOTO 7
       ELSE IF (INFLG) THEN
         READ (INPUT,*,END=50) (BUF(I),I=1,IDET(INTYPE))
       ELSE
@@ -632,28 +688,26 @@ c
         RED = BUF(10)
         GRN = BUF(11)
         BLU = BUF(12)
-        CALL ASSERT (RED.GE.0., 'red < 0 in triangle')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in triangle')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in triangle')
-        CALL ASSERT (RED.LE.1., 'red > 1 in triangle')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in triangle')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in triangle')
+	CALL CHKRGB( RED,GRN,BLU,'invalid triangle color')
         CALL ASSERT (IDET(INTYPE).EQ.12,'idet(1).ne.12')
+*	Isolated objects not transformed by TMAT
+	IF (.NOT.ISOLATE) THEN
 *	update true coordinate limits
-	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
-	TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A,X3A)
-	TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A,Y3A)
-	TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A,Y3A)
-	TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A,Z3A)
-	TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A,Z3A)
+	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
+	  TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A,X3A)
+	  TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A,Y3A)
+	  TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A,Y3A)
+	  TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A,Z3A)
+	  TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A,Z3A)
 *       modify the input, so to speak
-        CALL TRANSF (X1A,Y1A,Z1A, TMAT)
-        CALL TRANSF (X2A,Y2A,Z2A, TMAT)
-        CALL TRANSF (X3A,Y3A,Z3A, TMAT)
+          CALL TRANSF (X1A,Y1A,Z1A, TMAT)
+          CALL TRANSF (X2A,Y2A,Z2A, TMAT)
+          CALL TRANSF (X3A,Y3A,Z3A, TMAT)
+	ENDIF
 *       write it back out again
         WRITE (OUTPUT,91) X1A,Y1A,Z1A, X2A,Y2A,Z2A, X3A,Y3A,Z3A, 
      &                    RED,GRN,BLU
-91      FORMAT( 3F9.5,X,3F9.5,X,3F9.5,X,3F6.3 )
+91      FORMAT( 3F9.5,1X,3F9.5,1X,3F9.5,1X,3F6.3 )
       ELSEIF (INTYPE.EQ.SPHERE) THEN
 *       sphere as read in
 	NSPHERE = NSPHERE + 1
@@ -666,26 +720,24 @@ c
         RED = BUF(5)
         GRN = BUF(6)
         BLU = BUF(7)
-        CALL ASSERT (RED.GE.0., 'red < 0 in sphere')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in sphere')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in sphere')
-        CALL ASSERT (RED.LE.1., 'red > 1 in sphere')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in sphere')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in sphere')
+	CALL CHKRGB( RED,GRN,BLU,'invalid sphere color')
         CALL ASSERT (IDET(INTYPE).EQ.7,'idet(2).ne.7')
+*	Isolated objects not transformed by TMAT
+	IF (.NOT.ISOLATE) THEN
 *	update true coordinate limits
-	TRULIM(1,1) = MIN( TRULIM(1,1), XA )
-	TRULIM(1,2) = MAX( TRULIM(1,2), XA )
-	TRULIM(2,1) = MIN( TRULIM(2,1), YA )
-	TRULIM(2,2) = MAX( TRULIM(2,2), YA )
-	TRULIM(3,1) = MIN( TRULIM(3,1), ZA )
-	TRULIM(3,2) = MAX( TRULIM(3,2), ZA )
+	  TRULIM(1,1) = MIN( TRULIM(1,1), XA )
+	  TRULIM(1,2) = MAX( TRULIM(1,2), XA )
+	  TRULIM(2,1) = MIN( TRULIM(2,1), YA )
+	  TRULIM(2,2) = MAX( TRULIM(2,2), YA )
+	  TRULIM(3,1) = MIN( TRULIM(3,1), ZA )
+	  TRULIM(3,2) = MAX( TRULIM(3,2), ZA )
 *       modify the input, as it were
-        CALL TRANSF (XA,YA,ZA, TMAT)
-        RA = RA / TMAT(4,4)
+          CALL TRANSF (XA,YA,ZA, TMAT)
+          RA = RA / TMAT(4,4)
+	ENDIF
 *       write it back out again
 	WRITE (OUTPUT,92) XA,YA,ZA, RA, RED,GRN,BLU
-92      FORMAT( 3F9.5,X,F9.5,X,3F6.3 )
+92      FORMAT( 3F9.5,1X,F9.5,1X,3F6.3 )
       ELSEIF (INTYPE.EQ.CYLIND) THEN
 	NCYLIND = NCYLIND + 1
 	NDET = NDET + IDET(INTYPE)
@@ -701,29 +753,27 @@ c
         RED = BUF(9)
         GRN = BUF(10)
         BLU = BUF(11)
-        CALL ASSERT (RED.GE.0., 'red < 0 in cylinder')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in cylinder')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in cylinder')
-        CALL ASSERT (RED.LE.1., 'red > 1 in cylinder')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in cylinder')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in cylinder')
+	CALL CHKRGB( RED,GRN,BLU,'invalid cylinder color')
         CALL ASSERT (IDET(INTYPE).EQ.11,'idet(1).ne.11')
+*	Isolated objects not transformed by TMAT
+	IF (.NOT.ISOLATE) THEN
 *	update true coordinate limits
-	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
-	TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A)
-	TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A)
-	TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A)
-	TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A)
-	TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A)
+	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
+	  TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A)
+	  TRULIM(2,1) = MIN( TRULIM(2,1), Y1A,Y2A)
+	  TRULIM(2,2) = MAX( TRULIM(2,2), Y1A,Y2A)
+	  TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A)
+	  TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A)
 *       modify the input, so to speak
-        CALL TRANSF (X1A,Y1A,Z1A, TMAT)
-        CALL TRANSF (X2A,Y2A,Z2A, TMAT)
-        R1A = R1A / TMAT(4,4)
-        R2A = R2A / TMAT(4,4)
+          CALL TRANSF (X1A,Y1A,Z1A, TMAT)
+          CALL TRANSF (X2A,Y2A,Z2A, TMAT)
+          R1A = R1A / TMAT(4,4)
+          R2A = R2A / TMAT(4,4)
+	ENDIF
 *       write it back out again
         WRITE (OUTPUT,93) X1A,Y1A,Z1A, R1A, X2A,Y2A,Z2A, R2A, 
      &                    RED,GRN,BLU
-93      FORMAT ( 3F9.5,X,F9.5,X,3F9.5,X,F9.5,X,3F6.3 )
+93      FORMAT ( 3F9.5,1X,F9.5,1X,3F9.5,1X,F9.5,1X,3F6.3 )
       ELSEIF (INTYPE.EQ.NORMS) THEN
 *	vertex normals as given (these belong to previous triangle)
 	NNORMS = NNORMS + 1
@@ -751,6 +801,18 @@ c
 *       write it back out again
 	WRITE (OUTPUT,91) X1B,Y1B,Z1B, X2B,Y2B,Z2B, X3B,Y3B,Z3B
 *
+*	Vertex colors for preceding triangle 
+*	(no transformation needed)
+*
+      ELSEIF (INTYPE .EQ. VERTEXRGB) THEN
+	NDET = NDET + IDET(INTYPE)
+	MDET = MDET + SDET(INTYPE)
+	CALL CHKRGB( BUF(1),BUF(2),BUF(3),'invalid vertex color')
+	CALL CHKRGB( BUF(4),BUF(5),BUF(6),'invalid vertex color')
+	CALL CHKRGB( BUF(7),BUF(8),BUF(9),'invalid vertex color')
+	WRITE (OUTPUT,91) BUF(1),BUF(2),BUF(3),BUF(4),BUF(5),BUF(6),
+     &	                  BUF(7),BUF(8),BUF(9)
+*
 *	Material properties are saved with no further manipulation
 *
       ELSEIF (INTYPE .EQ. MATERIAL) THEN
@@ -769,7 +831,7 @@ c
 	OPT(4) = BUF(10)
 	WRITE (OUTPUT,94) SPHONG, SSPEC, SR,SG,SB, CLRITY,
      &                    OPT(1),OPT(2),OPT(3),OPT(4)
-94      FORMAT (F5.0,F6.3,X,3F7.3,X,F6.3,3X,4F6.1)
+94      FORMAT (F5.0,F6.3,1X,3F7.3,1X,F6.3,3X,4F6.1)
 *	24-Feb-1997 OPT(4) signals additional MATERIAL records
 	IF (OPT(4).GT.0) THEN
 	  DO I = 1, OPT(4)
@@ -804,16 +866,13 @@ c
         XA = BUF(1)
         YA = BUF(2)
         ZA = BUF(3)
-        IF (IALIGN.NE.3) CALL TRANSF (XA,YA,ZA, TMAT)
+	IF (.NOT.ISOLATE) THEN
+          IF (IALIGN.NE.3) CALL TRANSF (XA,YA,ZA, TMAT)
+	ENDIF
         RED = BUF(4)
         GRN = BUF(5)
         BLU = BUF(6)
-        CALL ASSERT (RED.GE.0., 'red < 0 in label')
-        CALL ASSERT (GRN.GE.0., 'grn < 0 in label')
-        CALL ASSERT (BLU.GE.0., 'blu < 0 in label')
-        CALL ASSERT (RED.LE.1., 'red > 1 in label')
-        CALL ASSERT (GRN.LE.1., 'grn > 1 in label')
-        CALL ASSERT (BLU.LE.1., 'blu > 1 in label')
+	CALL CHKRGB( RED,GRN,BLU,'invalid label color')
 	WRITE (OUTPUT,801) XA,YA,ZA, RED,GRN,BLU
 801	FORMAT(3f10.4,2x,3f6.3)
 	WRITE (OUTPUT,1) LABELSTRING
@@ -827,21 +886,28 @@ c
  	GLOW       = BUF(5)
  	GOPT       = BUF(6)
  	GPHONG     = BUF(7)
- 	CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
- 	GLOWRAD = GLOWRAD/TMAT(4,4)
+*	Isolated objects not transformed by TMAT
+	IF (.NOT.ISOLATE) THEN
+ 	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
+ 	  GLOWRAD = GLOWRAD/TMAT(4,4)
+	ENDIF
  	RED = BUF(8)
  	GRN = BUF(9)
  	BLU = BUF(10)
- 	CALL ASSERT (RED.GE.0., 'red < 0 in glow light')
- 	CALL ASSERT (GRN.GE.0., 'grn < 0 in glow light')
- 	CALL ASSERT (BLU.GE.0., 'blu < 0 in glow light')
- 	CALL ASSERT (RED.LE.1., 'red > 1 in glow light')
- 	CALL ASSERT (GRN.LE.1., 'grn > 1 in glow light')
- 	CALL ASSERT (BLU.LE.1., 'blu > 1 in glow light')
+	CALL CHKRGB( RED,GRN,BLU,'invalid glow light color')
  	WRITE (OUTPUT,802) GLOWSRC,GLOWRAD,GLOW,GOPT,GPHONG,RED,GRN,BLU
 802	FORMAT(4f10.4,1x,f4.2,1x,i4,1x,i4,2x,3f6.3)
  	GOTO 7
- 
+*
+      ELSEIF (INTYPE.EQ.QUADRIC) THEN
+ 	NQUADS = NQUADS + 1
+ 	call QINP( BUF(1), QTRANS(1), .FALSE., BUF(50) )
+ 	xa = (qtrans(1) - xcent) / scale
+ 	ya = (qtrans(2) - ycent) / scale
+ 	za =  qtrans(3) / scale
+ 	ra =  qtrans(4) / scale
+ 	write (output,803) xa,ya,za,ra, (qtrans(i),i=5,17)
+  803	format(4f10.4,4x,3f6.3,/,10f10.4)
 *
       ELSEIF (INTYPE.EQ.TRCONE) THEN
         CALL ASSERT(.FALSE.,'trcones coming soon...')
@@ -872,6 +938,7 @@ c
       IF (NSPHERE.NE.0) WRITE(NOISE,*) 'spheres           =',NSPHERE
       IF (NCYLIND.NE.0) WRITE(NOISE,*) 'cylinders         =',NCYLIND
       IF (NTRIANG.NE.0) WRITE(NOISE,*) 'triangles         =',NTRIANG
+      IF (NQUADS .NE.0) WRITE(NOISE,*) 'quadratic surfaces=',NQUADS
       IF (NTRANSP.NE.0) WRITE(NOISE,*) 'transparent objs  =',NTRANSP
       WRITE(NOISE,*)'-------------------------------'
 *
@@ -903,7 +970,8 @@ c
       LOGICAL LOGIC
       CHARACTER*(*) DAMMIT
       INTEGER ASSOUT
-      COMMON /ASSCOM/ ASSOUT
+      LOGICAL VERBOSE
+      COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
       IF (LOGIC) RETURN
       WRITE (ASSOUT,*) '*** ',DAMMIT
@@ -924,3 +992,14 @@ c
       RETURN
       END
 
+	SUBROUTINE CHKRGB( RED, GRN, BLU, MESSAGE )
+	REAL RED, GRN, BLU
+	CHARACTER*(*) MESSAGE
+        CALL ASSERT (RED.GE.0., MESSAGE)
+        CALL ASSERT (GRN.GE.0., MESSAGE)
+        CALL ASSERT (BLU.GE.0., MESSAGE)
+        CALL ASSERT (RED.LE.1., MESSAGE)
+        CALL ASSERT (GRN.LE.1., MESSAGE)
+        CALL ASSERT (BLU.LE.1., MESSAGE)
+	RETURN
+	END

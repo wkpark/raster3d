@@ -1,5 +1,6 @@
-To install Raster3D 
-===================
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     To install Raster3D       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 1) copy the appropriate Makefile.xxx for your machine to Makefile
 
@@ -8,12 +9,12 @@ To install Raster3D
 
    In order to build Raster3D so that it supports the direct output of
    TIFF image files you must
-	1) Obtain and install the TIFF library. There are a number of
+	1) Obtain and install a TIFF library. There are a number of
 	   implementations available on the net.  I have been using
-	   Sam Leffler's version 3.3beta, available via anonymous ftp
+	   Sam Leffler's version 3.4, available via anonymous ftp
 	   from sgi.com.
-	2) Edit the INCLUDES and LIBS definitions in the Makefile,
-	   INCLUDES = -DTIFF_SUPPORT
+	2) Edit the DEFINES and LIBS definitions in the Makefile,
+	   DEFINES  = -DTIFF_SUPPORT
 	   LIBS     = -ltiff
 
    On SGI machines you may want to build in support for direct output to
@@ -26,14 +27,25 @@ To install Raster3D
 	   INCLUDES = -DLIBIMAGE_SUPPORT
 	   LIBS     = -limage
 
-3) Install the package:
-	make install
+3) You can, if you like, build an alternate version of the rendering 
+   program that directly outputs a JPEG file. This could be useful, say,
+   for the back end of a web server. Depending on where your JPEG 
+   library is installed you may be able to simply try "make render_jpeg".
+   If this fails you will have to edit the Makefile to point correctly
+   to the JPEG library, and perhaps alter the #include statements in 
+   local_jpeg.c  or the INCLUDES definition in the Makefile.
 
-4) Go to the examples subdirectory and try running the example scripts
+4) Install the package:
+	make install
+   If this doesn't work, just copy the executables to wherever you want
+   them to live (usually /usr/local/bin/), and copy the manual pages to
+   /usr/local/man/manl/.
+
+5) Go to the examples subdirectory and try running the example scripts
    to verify installation.
 
 A sample installation on a DEC Alpha might go:
-	cp Makefile.osf Makefile
+	cp Makefile.dec Makefile
 	vi Makefile                    # to check options, etc
 	make install
 
@@ -41,25 +53,58 @@ Notes -
 
 	The install procedure does not automatically install the html
 version of the documentation, nor does it print the PostScript version.
+The SGI/Irix scripts don't even install the man pages, because Irix
+apparently ships without a real man page viewer.
 
-=========================================================================
-Known Problems and notes for specific operating systems
-=========================================================================
 
-=== Digital Unix ===
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       Known Problems          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+Digital Unix
+============
 DEC's f90 compiler produces broken code for render.f when the optimization
 level is set higher than -O1.   Use the f77 compiler or f90 -O1.
+Under Digital Unix 4.0, compiling with "f77 -g" crashes the compiler.
+Optimization levels -O1 to -O5 work fine.  Go figure.
 
-=== IBM/AIX ===
+Irix
+====
+Irix 6.4 same as Digital Unix 4.0; "f77 -g" crashes the compiler.
+f77 -O2 works fine.
 
-AIX V4.2 doesn't like the READONLY keyword in Fortran OPEN statements.
-You can work around this by using the ACTION='READ' keyword for Fortran 90
-(which is also OK in the AIX xlf compiler).  This change is required in
-	render.f	line 875
-	normal3d.f	line 565
-The AIX compiler also doesn't like the Q formats, but that doesn't seem
+AIX
+===
+The AIX compiler doesn't like the Q formats, but that doesn't seem
 to hurt anything.
+
+linux
+=====
+I run this package on a Pentium Pro under redhat linux 4.2, and I have 
+included a Makefile for that platform.  I have "f77" aliased to the
+fort77 script, which then feeds into f2c and gcc.  All straight from
+the redhat distribution except for the f77 alias.
+There are some gotchas, however:
+	- "nawk" is installed as "awk" in redhat, so you need to either
+	  define nawk as an alias for awk or just change "nawk" to "awk"
+	  in the stereo3d script.
+	- Sometimes the TIFF library dumps core after closing an image
+	  file in TIFFClose().  Very annoying, but other than producing
+	  a core dump it doesn't hurt anything - the image file has 
+	  already been successfully created at that point.
+	- The pre-built linux binaries for ImageMagick 3.8.8 get confused
+	  by the byte order in AVS files.  To work around this problem I
+	  added a conditional compilation flag -DNETWORKBYTEORDER in
+	  the Makefile.
+
+Sun, HP
+=======
+No reported problems, but I don't have access to these platforms so 
+I haven't checked the package myself.  If you can confirm that it works
+as distributed, I'd appreciate the information.  If you had to make
+changes, I'd be even more appreciative if you'd let me know what they
+were so that I can fix the distribution accordingly.
+
 
 === OS/2 ===
 
@@ -68,10 +113,10 @@ Uwe Baumert reports the following:
 I'm pleased to say that I was also able to compile your Raster3D package
 under OS/2 (Linux will follow). I used f2c 19970211. I had to modify some
 code (I got wrong iocontrols etc.).  
-[EAM - He means the OPEN statements as described for AIX above]
+[EAM - He means the CARRIAGECONTROL option in the normal3d.f OPEN statements;
+just delete these two lines from the source code].
 I compiled against the libtiff-library (version 4.2). I used the one that
 was included in the NETPBM-Port of Peter Meerwald (pmeerw@cosy.sbg.ac.at)
 and is available from
 ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip. 
 
-=== Linux ===

@@ -82,9 +82,10 @@ plot
 
  	set labelcentre on  ;
  	set labelclip   off ;
- 	set labelsize   16. ;
+ 	set labelsize   12. ;
  	set depthcue    0.4 ;
- 	set labeloffset 0.0 0.0 0.0 ;
+ 	set labeloffset 0.0 0.0 0.5 ;
+	set linecolour white ;
 
  	label require atom OH2 and in residue W270 "1" ;
  	label require atom OH2 and in residue W147 "2" ;
@@ -134,8 +135,9 @@ plot
 !
 	set labelcentre off ;
 	set labelclip   on  ;
-	set labelsize   16. ;
+	set labelsize   12. ;
 	set depthcue    0.4 ;
+	set linecolour  white ;
 
 	set labeloffset  -3.0  0.5 0.5 ;
 	label require atom CA and in residue G13  "Arg 13" ;

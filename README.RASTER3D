@@ -17,17 +17,22 @@ AVAILABILITY:
 	Raster3d is freely available but unsupported. 
 
 REFERENCES:
+	version 2.3:
+	Merritt, Ethan A and Bacon, David J (1997).
+	"Raster3D - photorealistic molecular graphics"
+	Methods in Enxymology 277, 505-524.
+
+	version 2.0:
+	Merritt, Ethan A. and Murphy, Michael E.P. (1994).
+	"Raster3D Version 2.0, a Program for Photorealistic Molecular Graphics"
+	Acta Cryst. D50, 869-873.
+
 	original implementation:
 	Bacon, David J. and Anderson, Wayne F. (1988).  Journal of
 	Molecular Graphics 6, 219-220 (abstract of paper presented
 	at the Seventh Annual Meeting of the Molecular Graphics
 	Society, San Francisco, 10-12 August 1988).  "A Fast
 	Algorithm for Rendering Space-Filling Molecule Pictures."
-
-	version 2.0:
-	Merritt, Ethan A. and Murphy, Michael E.P. (1994).
-	"Raster3D Version 2.0, a Program for Photorealistic Molecular Graphics"
-	Acta Cryst. D50, 869-873.
 
 AUTHORS:
 	originally written by David J. Bacon and Wayne F. Anderson;
@@ -37,6 +42,7 @@ AUTHORS:
 
 SOURCE:
 	ftp:	ftp.bmsc.washington.edu
+		ftp.u.washington.edu/pub/user-supported/raster3d/
 	www:	http://www.bmsc.washington.edu/raster3d/raster3d.html
 
 	contact:		Ethan A Merritt

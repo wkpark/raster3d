@@ -8,4 +8,7 @@
 # Note that Molscript uses the file header.r3d (if it exists)
 # to determine the viewpoint, scale, size, etc.
 # 
+cp header4.r3d header.r3d
 molscript -r < example3.mol | render -tiff example4.tiff
+display example4.tiff
+rm -rf header.r3d

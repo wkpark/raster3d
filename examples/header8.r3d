@@ -1,0 +1,21 @@
+View down central pore of LT B-pentamer
+   40   40 	Number of tiles
+    8    8 	Pixels per tile
+    4     	Anti-aliasing scheme
+ 0.00 0.90 0.90	Baby Blue Background (RGB)
+T        	Shadows?
+   25    	Phong power
+ 0.15    	Secondary (straight on) lighting
+ 0.05    	ambient lighting
+ 0.25    	specular lighting
+ 4.00    	EYEPOS
+ 1.000 1.000 1.000
+  0.9620 -0.0712 -0.2637 0.0 
+ -0.2167  0.3885 -0.8956 0.0 
+  0.1662  0.9187  0.3583 0.0 
+ -22.975 -73.912  34.963   30.00  
+3 
+* 
+* 
+* 
+#	Created by XtalView for ethan  on Mon Dec 22 22:02:37 1997

@@ -10,14 +10,18 @@
 *	Modified to generate cylinders with half bond colors, where needed.
 * EAM Feb 1997
 *	-radius XX to set cylinder radius
+* EAM Sep 1997
+*	-default colors; option for coloring by B-value
+*	-more generous output formats (FORMATs 130 and 140)
 *
 *------------------------------------------------------------------------------
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
       PARAMETER (MAXCOL=5000, MAXATM=10000)
-      REAL RGB(3,MAXCOL),RADIUS(MAXCOL),CEN(3)
-      REAL SPAM(7,MAXATM)
+      REAL RGB(3,MAXCOL),VDW(MAXCOL)
+      REAL SPAM(6,MAXATM)
+      REAL CEN(3)
       CHARACTER*24 MASK(MAXCOL),TEST
       CHARACTER*80 ATOM(MAXATM),CARD
       LOGICAL MATCH
@@ -27,7 +31,7 @@ C				    -h (suppress header records in output)
 C				    -radius XX (set cylinder radius)
 C
       character*64 options
-      logical      bflag, hflag
+      logical      bflag, hflag, bcflag
       real	   cylrad
 c
 c	Read in 3x3 view matrix from file setup.matrix.  
@@ -36,12 +40,23 @@ c	Afterwards the input matrix to RENDER is therefore the identity matrix.
 C                                                     
 	common /matrix/ matrix, coords
 	real*4		matrix(3,3), coords(3)
-	data		matrix / 1.,0.,0.,0.,1.,0.,0.,0.,1. /
-
+C
+C     Default to CPK colors and VDW radii
+      character*60 defcol(7)
+      data defcol /
+     & 'COLOUR#######C################   0.625   0.625   0.625  1.70',
+     & 'COLOUR#######N################   0.125   0.125   1.000  1.60',
+     & 'COLOUR#######O################   0.750   0.050   0.050  1.50',
+     & 'COLOUR#######S################   1.000   1.000   0.025  1.85',
+     & 'COLOUR#######H################   1.000   1.000   1.000  1.20',
+     & 'COLOUR#######P################   0.400   1.000   0.400  1.80',
+     & 'COLOUR########################   1.000   0.000   1.000  2.00'
+     &            /
 c
     3	format(a,a)
 c
 	bflag  = .FALSE.
+	bcflag = .FALSE.
 	hflag  = .FALSE.
 	cylrad = 0.2
 	narg  = iargc()
@@ -49,24 +64,55 @@ c
   500	continue
             call getarg( i, options )
             if (options(1:2) .eq. '-h') hflag = .true.
+            if (options(1:5) .eq. '-Bcol') then
+                bcflag = .true.
+                i = i + 1
+                if (i.gt.narg) goto 701
+                call getarg( i, options )
+                read (options,*,err=701) Bmin
+                i = i + 1
+                if (i.gt.narg) goto 701
+                call getarg( i, options )
+                read (options,*,err=701) Bmax
+            endif
             if (options(1:2) .eq. '-b') bflag = .true.
 	    if (options(1:2) .eq. '-r') then
 		i = i + 1
-		if (i.gt.narg) stop 'illegal radius value'
+		if (i.gt.narg) goto 701
 		call getarg( i, options )
-		read (options,*) cylrad
+		read (options,*,err=701) cylrad
 		if (cylrad.le.0) stop 'illegal radius value'
 	    end if
 	i = i + 1
 	if (i.le.narg) goto 500
+c
+	goto 799
+  701	write (noise,'(A)')
+     &	'syntax: rods [-h] [-b] [-Bcolor Bmin Bmax] [-radius R]'
+	call exit(-1)
+  799	continue
+c
+      write (noise,*) 'Raster3D rods program V2.4(alpha)'
+      if (bcflag) then
+        write (noise,*) 'Atom colors will be assigned based on Biso'
+        write (noise,*) '    from dark blue = Bmin =', Bmin
+        write (noise,*) '      to light red = Bmax =', Bmax
+      endif
+c
 C
+	do i=1,3
+	do j=1,3
+	    matrix(i,j)=0.
+	enddo
+	matrix(i,i)=1.
+	enddo
 	call view_matrix
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'rods V2.3'
+	WRITE(OUTPUT,'(A)') 'rods V2.4b)'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
-	WRITE(OUTPUT,'(A)') '12  12    pixels (x,y) per tile'
-	WRITE(OUTPUT,'(A)') '3         3x3 virtual pixels -> 2x2 pixels'
+	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
+	WRITE(OUTPUT,'(A)') '4         anti-aliasing'
 	WRITE(OUTPUT,'(A)') '0 0 0     black background'
 	WRITE(OUTPUT,'(A)') 'F         no, shadowed rods look funny'
 	WRITE(OUTPUT,'(A)') '25        Phong power'
@@ -90,7 +136,7 @@ c
             STOP 10
           ENDIF
           READ(CARD,'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
-     &          (RGB(I,NCOL),I=1,3),RADIUS(NCOL)
+     &          (RGB(I,NCOL),I=1,3),VDW(NCOL)
         ELSEIF (CARD(1:4).EQ.'ATOM'.OR.CARD(1:4).EQ.'HETA') THEN
           NATM = NATM + 1
           IF (NATM.GT.MAXATM) THEN
@@ -109,6 +155,15 @@ c
         WRITE(NOISE,*) 'No atoms in input.'
         STOP 30
       ENDIF
+*     Load default colors after any that were read in
+      IF (NCOL.LT.MAXCOL-8) THEN
+        DO i = 1,7
+          NCOL = NCOL + 1
+          READ(defcol(i),'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
+     &          (RGB(J,NCOL),J=1,3), VDW(NCOL)
+        ENDDO
+      ENDIF
+*
       IF (NCOL.EQ.0) THEN
         WRITE(NOISE,*) 'No colours in input.'
         STOP 40
@@ -126,7 +181,7 @@ c
           IF (MATCH(TEST,MASK(ICOL))) THEN
 c           READ(CARD,'(30X,3F8.3)') X,Y,Z
 c EAM Oct88
-            READ(CARD,'(30X,3F8.3)') coords
+            READ(CARD,'(30X,3F8.3,6X,F8.2)') coords, Biso
 		x = coords(1)*matrix(1,1) + coords(2)*matrix(2,1) 
      1  	  + coords(3)*matrix(3,1)
 		y = coords(1)*matrix(1,2) + coords(2)*matrix(2,2) 
@@ -134,14 +189,13 @@ c EAM Oct88
 		z = coords(1)*matrix(1,3) + coords(2)*matrix(2,3)
      1  	  + coords(3)*matrix(3,3)
 c EAM Oct88
-            RAD = RADIUS(ICOL)
+            RAD = VDW(ICOL)
             SPAM(1,IATM) = X
             SPAM(2,IATM) = Y
             SPAM(3,IATM) = Z
             SPAM(4,IATM) = RAD
-            SPAM(5,IATM) = RGB(1,ICOL)
-            SPAM(6,IATM) = RGB(2,ICOL)
-            SPAM(7,IATM) = RGB(3,ICOL)
+            SPAM(5,IATM) = ICOL
+	    SPAM(6,IATM) = Biso
             XMAX = MAX(XMAX,X+RAD)
             XMIN = MIN(XMIN,X-RAD)
             YMAX = MAX(YMAX,Y+RAD)
@@ -185,9 +239,9 @@ c
      &       '0 0 1 0'/
      &       4F10.3)
 	WRITE(OUTPUT,'(A)') '3         mixed object types'
-	WRITE(OUTPUT,'(A)') '(9F8.3,2x,3f5.2)'
-	WRITE(OUTPUT,'(A)') '(11F8.3)'
-	WRITE(OUTPUT,'(A)') '(11F8.3)'
+	WRITE(OUTPUT,'(A)') '*'
+	WRITE(OUTPUT,'(A)') '*'
+	WRITE(OUTPUT,'(A)') '*'
       end if
 C
 C	Here's the real loop.  
@@ -205,11 +259,23 @@ C     CYLRAD = 0.2
 C
       IF (BFLAG) THEN
       DO 135 IATM=1,NATM
-	RAD = SPAM(4,IATM) * SHRINK
+	RAD  = SPAM(4,IATM) * SHRINK
+	ICOL = SPAM(5,IATM)
+	if (bcflag) then
+	    call B2RGB( SPAM(6,IATM), Bmin, Bmax, RED, GREEN, BLUE )
+	    RED   = RED*RED
+	    GREEN = GREEN*GREEN
+	    BLUE  = BLUE*BLUE
+	else
+	    RED   = RGB(1,ICOL)
+	    GREEN = RGB(2,ICOL)
+	    BLUE  = RGB(3,ICOL)
+	endif
 	WRITE(OUTPUT,130)
      2         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),RAD,
-     3         SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
-130	FORMAT(1H2,/,7f8.3)
+     3         RED,GREEN,BLUE
+C130	FORMAT(1H2,/,7f8.3)
+130	FORMAT(1H2,/,7(1X,F8.3))
 135   CONTINUE
       ENDIF
 C
@@ -222,28 +288,42 @@ C
 	CLOSE = 0.6 * (SPAM(4,IATM) + SPAM(4,JATM)) 
 	CLOSE = CLOSE**2
 	IF (DIST .LE. CLOSE) THEN
-	  IF(SPAM(5,IATM) .EQ. SPAM(5,JATM) .AND.
-     1      SPAM(6,IATM) .EQ. SPAM(6,JATM) .AND.
-     2      SPAM(7,IATM) .EQ. SPAM(7,JATM)) THEN
+	  if (bcflag) then
+	    ICOL = 1
+	    JCOL = 2
+	    call B2RGB( SPAM(6,IATM), Bmin, Bmax, RED, GREEN, BLUE )
+	    RGB(1,ICOL) = RED*RED
+	    RGB(2,ICOL) = GREEN*GREEN
+	    RGB(3,ICOL) = BLUE*BLUE
+	    call B2RGB( SPAM(6,JATM), Bmin, Bmax, RED, GREEN, BLUE )
+	    RGB(1,JCOL) = RED*RED
+	    RGB(2,JCOL) = GREEN*GREEN
+	    RGB(3,JCOL) = BLUE*BLUE
+	  else
+	    ICOL = SPAM(5,IATM)
+	    JCOL = SPAM(5,JATM)
+	  endif
+	  IF(ICOL.EQ.JCOL) THEN
 	    WRITE(OUTPUT,140)
      1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
      2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
-     3         SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
+     3         RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL)
 	  ELSE
 	    DO 136 K=1,3
 136	    CEN(K) = (SPAM(K,IATM)+SPAM(K,JATM))/2
 	    WRITE(OUTPUT,140)
      1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
      2         CEN(1),CEN(2),CEN(3),CYLRAD,
-     3         SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
+     3         RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL)
 	    WRITE(OUTPUT,140)
      1         CEN(1),CEN(2),CEN(3),CYLRAD,
      2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
-     3         SPAM(5,JATM),SPAM(6,JATM),SPAM(7,JATM) 
+     3         RGB(1,JCOL),RGB(2,JCOL),RGB(3,JCOL)
 	  ENDIF
 	ENDIF
 
-140   FORMAT(1H3,/,11f8.3)
+C140   FORMAT(1H3,/,11f8.3)
+140   FORMAT(1H3,/,2(1X,F8.3,1X,F8.3,1X,F8.3,1X,F7.3),3F7.3)
 150   CONTINUE
 160   CONTINUE
 C
@@ -328,3 +408,63 @@ c
 	return
 	end
 
+CCC     Return RGB triple that runs from dark blue at Bmin
+CC      to light red at Bmax
+C
+	subroutine B2RGB( Biso, Bmin, Bmax, R, G, B )
+	real              Biso, Bmin, Bmax, R, G, B
+c
+	real fraction, h, s, v
+c
+	fraction = (Biso-Bmin) / (Bmax-Bmin)
+	if (fraction.lt.0.) fraction = 0.
+	if (fraction.gt.1.) fraction = 1.
+        h = 240. * (1.-fraction)
+        s = 0.8
+        v = 0.5 + fraction/2.
+        call hsv2rgb( h, s, v, r, g, b )
+        return
+	end
+
+
+CCC	Color format conversion from Hue/Saturation/Value to Red/Green/Blue
+CC	minimal (i.e. NO) error checking
+C
+	subroutine hsv2rgb( h, s, v, r, g, b )
+	real                h, s, v, r, g, b
+c
+	real    f, p, q, t
+	integer i
+c
+	i = h /60.
+	f = h/60. - float(i)
+	p = v * (1. - s)
+	q = v * (1. - s*f)
+	t = v * (1. - s*(1. - f))
+	if (i.eq.5) then
+	    r = v
+	    g = p
+	    b = q
+	else if (i.eq.4) then
+	    r = t
+	    g = p
+	    b = v
+	else if (i.eq.3) then
+	    r = p
+	    g = q
+	    b = v
+	else if (i.eq.2) then
+	    r = p
+	    g = v
+	    b = t
+	else if (i.eq.1) then
+	    r = q
+	    g = v
+	    b = p
+	else
+	    r = v
+	    g = t
+	    b = p
+	endif
+	return 
+	end

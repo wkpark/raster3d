@@ -18,29 +18,30 @@ F         no shadows cast
 *
 *
 *
-9 This is purely a comment record (since there is no previous object)
-9 The following objects will get the properties defined in the header
+# This is purely a comment record (since there is no previous object)
+# The following objects will get the properties defined in the header
 2
  -0.3  0.0 0.0    0.2    0.7 0.3 0.1
 2
  -0.3  0.5 0.0    0.2    0.7 0.7 0.6
 2
  -0.3 -0.5 0.0    0.2    0.4 0.2 0.9
-9 Now we specify material properties which override the header values
-8
-  5.0  0.5               1.0 1.0 0.0   0.0   0 0 0 0
+# Now we specify material properties which override the header values
+@../materials/brass.r3d
 2
   0.3  0.0 0.0    0.2    0.7 0.3 0.1
-9 Another set of material properties which override the header values
-8
-  7.0  0.6               0.5 0.7 1.0   0.0   0 0 0 0
+9 This record is NOT just a comment; it terminates the special material
+# Another set of material properties which override the header values
+@../materials/pearl.r3d
 2
   0.3  0.5 0.0    0.2    0.7 0.7 0.6
-9 Another set of material properties which override the header values
+9 This record is NOT just a comment; it terminates the special material
+# Another set of material properties which override the header values
+# This will be powder blue matte
 8
   1.0  0.0               0.0 0.0 0.0   0.0   0 0 0 0
 2
-  0.3 -0.5 0.0    0.2    0.4 0.2 0.9
+  0.3 -0.5 0.0    0.2    0.5 0.3 0.9
 9 This record is NOT just a comment; it terminates the special material
 0
 

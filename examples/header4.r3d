@@ -1,7 +1,7 @@
-Header records for example3; TMAT taken from Molscript run
+Header records for example4; force size and background color
 64 64     tiles in x,y
-18 18     pixels (x,y) per tile
-3         3x3 virtual pixels -> 2x2 pixels
+12 12     pixels (x,y) per tile
+4         3x3 virtual pixels -> 2x2 pixels
 0 0 0     black background colour
 F         no shadows cast
 25        Phong power
@@ -10,10 +10,10 @@ F         no shadows cast
 0.25      specular reflection component
 0.0       EYEPOS = 0 disables perspective
 1 1 1     main light source position
- -0.503902  -0.857597   -0.103004   0
- -0.262711   0.038566    0.964103   0
- -0.822840   0.512874   -0.244734   0
- 95.019661 -15.608208  -60.094696   35.0
+1 0 0  0
+0 1 0  0
+0 0 1  0
+0 0 0  1.0
 3         mixed objects
 *
 *

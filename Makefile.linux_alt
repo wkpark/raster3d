@@ -1,0 +1,99 @@
+#
+# Raster3D makefile for linux 
+# based on one ssent by Arno Paehler (paehler@atlas.rc.m-kasei.co.jp)
+# I don't know exactly what flavor of linux he wrote it for; it doesn't
+# work on my redhat system (use Makefile.redhat instead)
+#
+# assumes that the perl script fort77 [locally called f77 - aop] 
+# is available acting as compiler
+#
+# Where to put things
+#
+prefix = /usr/local
+bindir = $(prefix)/bin
+mandir = $(prefix)/man/manl
+#
+CC       = /usr/bin/gcc
+F2       = /usr/bin/f2c
+FC      = /usr/bin/f77
+RM      = /bin/rm -f
+#
+INSTALL         = /bin/install -o root -g root
+#
+LDFLAGS  = -s -Wl,-x
+CFLAGS   = -O2 -m486 -fomit-frame-pointer -pipe
+FFLAGS   = -a -w
+#
+# If you choose to build Raster3D with support for direct output of
+# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
+# You will also need to add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
+#
+ LIBS    =	-ltiff
+ DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT
+#LIBS    =
+#DEFINES =
+INCLUDES =	-I/usr/include/gr
+
+RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
+PROGS    =	balls normal3d rastep rods ribbon render setup avs2ps
+
+all:	$(PROGS)
+
+clean:
+	rm -f *.o *.u core
+	rm -f $(PROGS)
+	rm -f render_jpeg
+
+install: $(PROGS)
+	$(INSTALL) -m 755 $(PROGS) $(bindir)
+	$(INSTALL) -m 755 stereo3d $(bindir)
+	$(INSTALL) -m 644 doc/*.l $(mandir)
+
+tar:
+	(cd ..; tar -zcvvf raster3d.tgz raster3d)
+
+normal3d: normal3d.o quadric.o
+	mv normal3d.f normal3d.f.bak
+	grep -v CARRIAGECONTROL normal3d.f.bak > normal3d.f
+	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+
+rastep:	rastep.o quadric.o
+	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+
+ribbon:	$(RIBOBJS)
+	$(FC) $(LDFLAGS) $(RIBOBJS) -o ribbon
+	$(RM) $(RIBOBJS)
+
+rods:
+	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods
+
+balls:
+	$(FC) $(FFLAGS) balls.f $(CFLAGS) $(LDFLAGS) -o balls
+
+local.o: local.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+
+render:	render.f local.o quadric.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o  \
+	$(LIBS) -o render
+	$(RM) local.o
+
+local_jpeg.o: local_jpeg.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local_jpeg.c
+
+render_jpeg: render.o local_jpeg.o quadric.o
+	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
+	-ljpeg -o render_jpeg
+
+avs2ps:	avs2ps.c
+	$(CC) $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm
+
+setup:	balls
+	ln -s balls setup
+
+$(RIBOBJS):
+	$(F2) $(FFLAGS) $*.f
+	$(CC) $(CFLAGS) -c -o $*.o $*.c
+	$(RM) $*.c

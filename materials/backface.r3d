@@ -1,0 +1,8 @@
+9  Here is an example of specifying a double-sided material
+9  The front uses default header values for IPHONG, SPECULAR, etc
+9  and takes its color (in this case) from the individual objects.
+9  The back side is colored (in this case) greenish-grey, and again
+9  uses the default header values for IPHONG, SPECULAR.
+8
+  -1. -1.    1.0 1.0 1.0   0.0   0 0 0 1
+BACKFACE 0.4 0.4 0.6 -1 -1

@@ -108,8 +108,8 @@ c
 c
       WRITE(OUTPUT,'(A)') 'A colour C-alpha ribbon'
       WRITE(OUTPUT,'(A)') '80 64     tiles in x,y'
-      WRITE(OUTPUT,'(A)') '12 12     pixels (x,y) per tile'
-      WRITE(OUTPUT,'(A)') '3         3x3 into 2x2 pixels'
+      WRITE(OUTPUT,'(A)') ' 8  8     pixels (x,y) per tile'
+      WRITE(OUTPUT,'(A)') '4         anti-aliasing 3x3 into 2x2 pixels'
       WRITE(OUTPUT,'(A)') '0 0 0     black background'
       WRITE(OUTPUT,'(A)') 'F         no, ribbons cast funny shadows'
       WRITE(OUTPUT,'(A)') '25        Phong power'
@@ -181,7 +181,6 @@ C
             SPAM(4,IATM) = RAD
 C
 C	    EAM Aug 1997 - finally get around to honoring atom colors
-            SPAM(5,IATM) = 1
 	    DO 84 ICOL = 1, NCOL
 		IF (SMATCH(TEST,MASK(ICOL))) THEN
 		    SCAM(IATM) = ICOL

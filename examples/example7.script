@@ -1,0 +1,6 @@
+# E A Merritt April 1994
+# Illustration of transparent objects and file indirection
+# Also a test of the direct JPEG output variant of the
+# rendering program.
+#
+render_jpeg < example7.r3d | display jpeg:-
