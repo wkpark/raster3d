@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-#	Raster3D labeling script label3d V2.6f
+#	Raster3D labeling script label3d V2.7a
 #       ======================================
 #
 # Ethan A Merritt  April 2002
 #
 # Usage
-#	label3d [-tiff [outfile.tiff]] < inputfile.r3d > file_with_labels.tiff
-#	label3d  -png  [outfile.png]   < inputfile.r3d > file_with_labels.png
+#	label3d  -tiff [outfile.tiff] < inputfile.r3d > file_with_labels.tiff
+#	label3d [-png  [outfile.png]] < inputfile.r3d > file_with_labels.png
 #
 # Environmental variables
 #	FONTSCALE controls mapping of nominal font size to height in pixels
@@ -20,6 +20,7 @@
 #	- together these changes mean you can run label3d from a directory
 #	  for which you do not have write access
 #	- add -png option (tiff is still the default)
+#	- 2.6g default to png
 #
 # Requirements
 #	- Requires ghostscript and ImageMagick.
@@ -59,7 +60,7 @@ else
             outfile="$option"
         fi
     else
-	echo "label3d version 2.6e"
+	echo "label3d version 2.7a"
         echo "unrecognized option: $option" 1>&2
 	echo "Usage:  label3d [-tiff [out.tiff]] [-png [out.png]] < in.r3d > outfile" 
 	exit -1 
@@ -103,9 +104,9 @@ if [ ! -e ${tmp}_label3d.ps ]; then
 fi
 
 #
-IMAGESIZE=`identify ${tmp}_render.${img} | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
+IMAGESIZE=`identify ${tmp}_render.${img} | sed -e 's/.* \([0-9]*x[0-9]*\).*/\1/'`
 
-if ( gs -sDEVICE=png256 -dNOPAUSE -q -sOutputFile=${tmp}_label3d.png \
+if ( gs -sDEVICE=png16m -dNOPAUSE -q -sOutputFile=${tmp}_label3d.png \
    -g$IMAGESIZE ${tmp}_label3d.ps -c quit ) 
 then
    echo "label3d: labels written to ${tmp}_label3d.png" 1>&2

@@ -1,4 +1,16 @@
-		Release 2.6f (mostly relevant only to RPM installation) 
+		Release 2.7c
+ 6-Feb-2004	modify label3d and stereo3d scripts to deal with changes to recent
+ 		versions of ImageMagick and ghostscript
+17-Oct-2003	rastep now checks input for illegal (=0) axial Uij terms
+19-Aug-2003	render -bg {white|black|#RRGGBB}  set background from command line
+		Release 2.7b
+19-Jun-2003	Fix initialization of TMPNAM in normal3d.f 		
+		Release 2.7a
+ 6-May-2003	render, and all other programs,  now default to PNG output.
+		Add sun-forte Makefile option (Chandler Wilkerson <chandler@cs.uh.edu>)
+ 5-May-2003	Modify default color table in rastep so that if atom name column
+ 		is one off it still works.
+ 6-Nov-2002	Release 2.6f (mostly relevant only to RPM installation) 
  6-Nov-2002	Change default image format in scripts to PNG rather than TIFF
  		Modify RPM installation script for newer ImageMagick delegates format
 		Build RPM against newer libpng.so.3 (Mandrake 8.2/9.0 Redhat 7.3/8.0)

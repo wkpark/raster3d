@@ -1,9 +1,10 @@
 #!/bin/csh
-# E A Merritt October 1998
+# E A Merritt January 2003
 # Illustration of 
 #	material properties 
 #	file indirection
 #	R3D_LIB environmental variable
+#	gamma correction applied while rendering
 #
 setenv R3D_LIB ../materials
-render < example1.r3d | display avs:-
+render -gamma 1.1 -png < example1.r3d | display png:-

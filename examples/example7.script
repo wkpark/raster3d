@@ -19,5 +19,5 @@ stereo3d -png < example7.r3d | display -geometry 50% png:- &
 #
 echo "Using the stereo3d script to process labels into a stereo pair"
 echo "This may take a minute, because ghostscript is slow,"
-echo "and the ImageMagick motage command isn't fast either...."
+echo "and the ImageMagick montage command isn't fast either...."
 #

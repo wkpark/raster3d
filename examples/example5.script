@@ -22,4 +22,4 @@
 #	   A rotation matrix and translation corresponding to that already
 #	   used by Molscript in example3.
 #
-render < example5.r3d | display avs:- 
+render -png < example5.r3d | display png:- 

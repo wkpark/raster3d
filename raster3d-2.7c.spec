@@ -1,18 +1,21 @@
 Summary: Raster3D photorealistic molecular graphics package
 Name: Raster3D
-Version: 2.6.6
-Release: 2
-%define  r3dver Raster3D_2.6f
+Version: 2.7c
+Release: 3
+%define  r3dver %{name}_%{version}
 Copyright: Source freely available, redistribution restricted
-Source: %{r3dver}.tar.gz
+Source: http://www.bmsc.washington.edu/raster3d/%{name}_%{version}.tar.gz
 URL: http://www.bmsc.washington.edu/raster3d
 Packager: Ethan A Merritt
 Group: Graphics
 BuildRoot:%{_tmppath}/%{name}-%{version}-buildroot
+BuildRequires: libpng-devel zlib-devel libjpeg-devel libtiff-devel
+#
+# You may or may not want the following definitions
 %define _prefix /usr/local
-%define _bindir /usr/local/bin
-%define _mandir /usr/local/man
-%define _datadir /usr/local/share
+%define _bindir  %{_prefix}/bin
+%define _mandir  %{_prefix}/man
+%define _datadir %{_prefix}/share
 
 %description
 The Raster3D molecular graphics package consists of a core rendering program 
@@ -33,20 +36,38 @@ Program reference and requested citation:
 
 %build
 make clean
-if [ -x pgf77 ]; then
+if [ -x $PGI/linux86/bin/pgf77 ]; then
   make linux-pgf77
-  make all FFLAGS='-O -Munroll -tp px'
+  make all FFLAGS='-O -Munroll -tp px' PLIBS='/usr/lib/libpng.a'
 else
   make linux
-  make all
+  make all FFLAGS="$RPM_OPT_FLAGS" CFLAGS="$RPM_OPT_FLAGS"
 fi
-mkdir -p $RPM_BUILD_ROOT%{_prefix}/bin
+
+# Changing R3D_LIB
+grep -v R3D_LIB Raster3D.csh > Raster3D.csh.$$
+echo "setenv R3D_LIB %{_datadir}/Raster3D/materials" >> Raster3D.csh.$$
+mv Raster3D.csh.$$ Raster3D.csh
+grep -v R3D_LIB Raster3D.sh > Raster3D.sh.$$
+echo "export R3D_LIB=%{_datadir}/Raster3D/materials" >> Raster3D.sh.$$
+mv Raster3D.sh.$$ Raster3D.sh
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT%{_datadir} 
+mkdir -p $RPM_BUILD_ROOT%{_mandir}
+mkdir -p $RPM_BUILD_ROOT%{_bindir}
 make install prefix=$RPM_BUILD_ROOT%{_prefix} \
+             datadir=$RPM_BUILD_ROOT%{_datadir}/Raster3D/materials \
              mandir=$RPM_BUILD_ROOT%{_mandir}/manl
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}/profile.d
-cp Raster3D.{csh,sh} $RPM_BUILD_ROOT/%{_sysconfdir}/profile.d/
+install -m755 Raster3D.{csh,sh} $RPM_BUILD_ROOT/%{_sysconfdir}/profile.d/
+
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %files
+%defattr (-,root,root)
 %doc README CHANGELOG BUGS doc/R3D_manual.pdf VERSION
 
 %{_bindir}/avs2ps 
@@ -90,10 +111,10 @@ XML="  <delegate decode=\"r3d\" command='render -png \"%o\"<\"%i\"' />"
 if [ -a $MGK ]; then
   if grep -q "xml" $MGK; then
     if ! grep -q "r3d" $MGK; then
-      cp $MGK /tmp/delegates.bak.$$
+      cp -f $MGK /tmp/delegates.bak.$$
       sed "/<\/delegatemap>/{x;s!^!$XML!;G;}" $MGK > /tmp/delegates.mgk.$$
-      cp /tmp/delegates.mgk.$$ $MGK
-      rm /tmp/delegates.mgk.$$
+      cp -f /tmp/delegates.mgk.$$ $MGK
+      rm -f /tmp/delegates.mgk.$$
     fi
   else
     if grep -q "r3d" $MGK; then
@@ -102,7 +123,39 @@ if [ -a $MGK ]; then
   fi
 fi
 
+%postun
+MGK=
+if   [ -a /usr/lib/ImageMagick/modules/coders/delegates.mgk ]; then
+  MGK="/usr/lib/ImageMagick/modules/coders/delegates.mgk"
+elif [ -a /usr/X11R6/share/ImageMagick/delegates.mgk ]; then
+  MGK="/usr/X11R6/share/ImageMagick/delegates.mgk"
+elif [ -a /usr/lib/ImageMagick/delegates.mgk ]; then
+  MGK="/usr/lib/ImageMagick/delegates.mgk"
+fi
+
+if [ -a $MGK ]; then
+  grep -v r3d $MGK > /tmp/delegates.mgk.$$
+  cp -f /tmp/delegates.mgk.$$ $MGK
+  rm -f /tmp/delegates.mgk.$$  
+fi
+
+
 %changelog
+* Thu Feb 12 2004 EAM
+- rastep logical test of noerr fails in g77
+* Fri Feb  6 2004 EAM
+- modify label3d and stereo3d to handle change in ImageMagick output format
+- built under Mandrake 9.2 against glibc.so.6
+* Mon Oct 20 2003 EAM
+- Add -background option to render; check for Uii=0 in rastep
+* Thu Jun 19 2003 EAM
+- Fix TMPDIR bug in normal3d and update docs to say PNG is default output
+* Wed May  7 2003 EAM
+- Bump versioning to 2.7a because rpm thinks 2.6g < 2.6.6 (2.6f)
+- reduce problems with libpng versioning by linking to a static libpng.a
+* Thu Jan  2 2003 MATSUURA Takanori <t-matsuu@estyle.ne.jp>
+- prefix was changed to %%{_prefix}
+- improved, more complete spec file
 * Thu Nov  7 2002 <jpaint@u.washington.edu>
 - modify post-install script for ImageMagick XML delegates file
 * Wed Nov  6 2002 EAM

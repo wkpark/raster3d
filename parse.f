@@ -1,10 +1,10 @@
 	subroutine parse
-c	Version 2.6f
+c	Version 2.7c
 c
-      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, 
+      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, XBG, 
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
-      INTEGER          NSCHEME, SHADOWFLAG
+      INTEGER          NSCHEME, SHADOWFLAG, XBG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
 c
@@ -27,6 +27,7 @@ c
 	nay = -1
 	nscheme = -1
 	shadowflag = -1
+	xbg = 0
 	quality = 90
 	lflag = .false.
 	zoom = 0.
@@ -111,6 +112,15 @@ c
 	    	shadowflag = 1
 	    else if (option(1:9).eq.'-noshadow') then
 	    	shadowflag = 0
+	    else if (option(1:3).eq.'-bg') then
+	    	iarg = iarg + 1
+		call getarg( iarg, option )
+		if (option(1:5).eq.'white') xbg = 'FFFFFFFF'X
+		if (option(1:5).eq.'black') xbg = 'FF000000'X
+		if (option(1:1).eq.'#') then
+		    read  (option(2:7),'(1Z6)') xbg
+		    write (0,'(1Z12)') xbg
+		endif
 	    else 
 	    	larg = larg + 1
 		args(larg) = option

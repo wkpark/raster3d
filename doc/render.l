@@ -1,12 +1,14 @@
 .l
 .nh
-.TH RENDER 1 " 8 May 1999" "Raster3D"
+.TH RENDER 1 "19 May 2003" "Raster3D"
 .SH NAME
 render - Raster3D molecular graphics package rendering program
 .SH SYNOPSIS
-.B "render"  < infile.r3d > outfile.avs
+.B "render"  < infile.r3d > outfile.png
 
 .B "render"  -png < infile.r3d > outfile.png
+
+.B "render"  -avs < infile.r3d > outfile.avs
 
 .B "render"  [\fI-quality NN\fP] -jpeg < infile.r3d > outfile.jpeg
 
@@ -24,6 +26,7 @@ additional non-shadowing light sources,
 specular highlighting, transparency, and Phong shaded surfaces.
 Output is to stdout [or optional file] in the form of a pixel image
 with 24 bits of color information per pixel.
+As of version 2.7, the default output format is PNG.
 
 .SH OPTIONS
 .TP 5
@@ -37,6 +40,19 @@ Force anti-aliasing (SCHEME 4)
 Force output of transparency information (SCHEME 0). This only works
 if the output image format supports an alpha channel (AVS, TIFF, but
 not JPEG). Note that this turns off anti-aliasing.
+
+.TP 5
+.B "-avs [outfile.avs]"
+
+By default \fIrender\fP will produce an PNG image on stdout.
+The -avs flag will cause it to output an AVS image file instead, or
+stream the output to stdout if no file is specified.
+
+.TP 5
+.B "-bg white|black|#RRGGBB"
+
+Set background color. #RRGGBB is a hexadecimal number representing
+the red, green and blue components.
 
 .TP 5
 .B "-draft"
@@ -72,7 +88,7 @@ some odd viewing program.
 .B "-jpeg [outfile.jpeg]"
 
 Only if compiled with -DJPEG_SUPPORT.
-By default \fIrender\fP will produce an AVS-compatible image on stdout.
+By default \fIrender\fP will produce an PNG image on stdout.
 The -jpeg flag will cause it to output a JPEG image file instead, or
 stream the output to stdout if no file is specified.
 
@@ -95,10 +111,8 @@ whose type is determined by the filename extension xxx.
 .TP 5
 .B "-png [outfile.png]"
 
-Only if compiled with -DPNG_SUPPORT.
-By default \fIrender\fP will produce an AVS-compatible image on stdout.
-The -png flag will cause it to output a PNG image file instead, or
-stream the output to stdout if no file is specified.
+Only if compiled with -DPNG_SUPPORT.  This is now the default output format.
+The -png flag will stream the output to stdout if no file is specified.
 
 .TP 5
 .B "-quality"

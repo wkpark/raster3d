@@ -6,7 +6,7 @@
 <body>
 <img src="r3d_icon.gif" alt="" align=left vspace=10>
 <br>
-<h1 align=center>Raster3D V2.6</h1>
+<h1 align=center>Raster3D V2.7</h1>
 <br clear=all>
 
 The Raster3D molecular graphics package consists of a core program 
@@ -186,10 +186,14 @@ documentation.
 </p>
 
 <p>
-<b>Version 2.6</b> adds support for bounding planes, and removes the
+Version 2.6 added support for bounding planes, and removed the
 previous limit on stacking transparent objects.  The installation process
 has been modified so that all user-configurable options are collected into
 the files <i>parameters.incl</i> and <i>Makefile.template</i>.
+</p>
+
+<p>
+<b>Version 2.7</b> changes the default output format to PNG for all programs.
 </p>
 
 <h4>
@@ -223,7 +227,7 @@ Molscript/Raster3D/ImageMagick allows one to describe, render, and view 3D
 representations of existing Molscript figures. 
 
 <pre>
-molscript -r &lt; infile.dat | render | display avs:-
+molscript -r &lt; infile.dat | render | display png:-
 </pre>
 A similar example using xv as an image viewer, and assuming that 
 TIFF support has been built into the render program:
@@ -240,11 +244,11 @@ molscript -r &lt; infile.dat | stereo3d -border -png stereo_pair.png
 </pre>
 The
 Raster3D distribution also includes a filter utility which will convert the
-24-bit color output stream from render into a dithered black &amp; white
+24-bit color AVS output stream from render into a dithered black &amp; white
 PostScript image:
 
 <pre>
-render &lt; description.r3d | avs2ps &gt; picture.ps
+render -avs &lt; description.r3d | avs2ps &gt; picture.ps
 
 </pre>
 

@@ -1,19 +1,19 @@
 .ad l
 .nh
-.TH LABEL3D 1 " 9 Feb 2002" "Raster3D"
+.TH LABEL3D 1 "19 May 2003" "Raster3D"
 .SH NAME
 
 label3d - process a Raster3D scene containing labels
 
 .SH SYNOPSIS
 
-   label3d [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff
-   label3d  -png  [outfile.png ]  < infile.r3d > outfile.png 
+   label3d [-png  [outfile.png ]] < infile.r3d > outfile.png 
+   label3d  -tiff [outfile.tiff]  < infile.r3d > outfile.tiff
 
 .PP
 \fIlabel3d\fP is a shell script that processes a Raster3D input 
 file containing label descriptors (object types 10, 11, 12)
-into a TIFF or PNG image containing both the molecular
+into a TIFF or PNG (default) image containing both the molecular
 graphics image and the associated labels.
 
 label3d uses the Raster3D utilities \fIr3dtops\fP and \fIrender\fP, 

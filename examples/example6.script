@@ -9,7 +9,7 @@ render -size 345x345 -aa -jpeg < example6.r3d | display -title "-size 345x345 -a
 #
 render -size 245x345 -jpeg < example6.r3d | display -title "-size 245x345"  jpeg:- &
 #
-render -size 400x600 -alpha < example6.r3d | display -title "-size 400x600 -alpha"  avs:- &
+render -size 400x600 -alpha < example6.r3d | display -title "-size 400x600 -alpha"  - &
 #
 sleep 6
 render -help

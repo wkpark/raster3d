@@ -366,10 +366,10 @@
 *
 *
 *     Command line options (Aug 1999) NB: nax,nay,quality MUST be integer*2
-      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, 
+      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, XBG,
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
-      INTEGER          NSCHEME, SHADOWFLAG
+      INTEGER          NSCHEME, SHADOWFLAG, XBG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
 *
@@ -791,6 +791,14 @@ C	Header records and picture title
 *
 *     Get background colour
       READ (INPUT,*,ERR=104) BKGND
+      if (XBG.NE.0) then
+	BKGND(3) = FLOAT(iand(XBG,'00FF'X)) / 255.
+	BKGND(2) = FLOAT(iand(XBG,'FF00'X)/256) / 255.
+	BKGND(1) = FLOAT(iand(XBG,'FF0000'X)/65536) / 255.
+	BKGND(3) = BKGND(3)**2
+	BKGND(2) = BKGND(2)**2
+	BKGND(1) = BKGND(1)**2
+      endif
       IF (VERBOSE) THEN
       	WRITE (NOISE,1106) 'bkgnd=',BKGND
       END IF
@@ -4038,10 +4046,10 @@ C       CALL ASSERT (K.LE.OUTSIZ,'k>outsiz')
 
       SUBROUTINE ISOLATE( X, Y )
 *     Expand X and Y coordinates to fill image regardless of aspect ratio
-      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, 
+      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, XBG,
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
-      INTEGER          NSCHEME, SHADOWFLAG
+      INTEGER          NSCHEME, SHADOWFLAG, XBG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,

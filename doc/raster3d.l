@@ -75,7 +75,7 @@ Integrated use of MOLSCRIPT/Raster3D/ImageMagick allows one to
 describe, render, and view 3D representations of existing MOLSCRIPT
 figures:
 
-     molscript -r infile.dat | render | display avs:-
+     molscript -r infile.dat | render | display png:-
 
 A similar example using xv as an image viewer, and assuming that TIFF
 support has been built into the render program:

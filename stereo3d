@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	Raster3D utility script "stereo3d" V2.6f
+#	Raster3D utility script "stereo3d" V2.7a
 #       ========================================
 #
 # Ethan A Merritt - April 2002
@@ -26,11 +26,11 @@
 #	Ghostscript (if labels are present).
 # 	TIFF support, although this could be changed.
 # 	sed (previous versions used awk/nawk).
-# This script was tested using ImageMagick version 5.3.8
+# This script was tested using ImageMagick version 5.5.4
 #
 # Usage:
-#	stereo3d [-angsep] [-border] [-tiff [out.tiff]] < infile.r3d > outfile.tiff
-#	stereo3d [-angsep] [-border]  -png  [out.png]   < infile.r3d > outfile.png
+#	stereo3d [-angsep] [-border]  -tiff [out.tiff] < infile.r3d > outfile.tiff
+#	stereo3d [-angsep] [-border] [-png  [out.png]] < infile.r3d > outfile.png
 #
 # Temporary files:
 #	Scratch files are put in $TMPDIR, if it exists, else in /tmp
@@ -72,7 +72,7 @@ else
     elif [ "$previous" = "-size" ] ; then
     	more_options="-size $option"
     else
-	echo "stereo3d version 2.6e" 1>&2
+	echo "stereo3d version 2.7a" 1>&2
 	echo "unrecognized option: $option" 1>&2
 	echo "Usage:" 1>&2
 	echo "	stereo3d [-border] [-angsep] [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff" 1>&2
@@ -123,7 +123,7 @@ label3d -${img} < ${tmp}_right.r3d > ${tmp}_right.${img} 2> /dev/null \
          || mv ${tmp}_render.${img}  ${tmp}_right.${img}
 #
 # Find image size
-IMAGESIZE=`identify ${tmp}_left.${img} | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
+IMAGESIZE=`identify ${tmp}_left.${img} | sed -e 's/.* \([0-9]*x[0-9]*\).*/\1/'`
 WIDTH=`echo $IMAGESIZE | sed -e 's/x.*//'`
 HEIGHT=`echo $IMAGESIZE | sed -e 's/.*x//'`
 IMAGESIZE=`echo "$WIDTH x $HEIGHT" | sed -e 's/ //g'`
@@ -142,7 +142,7 @@ fi
 #
 if [ "$STEREOBORDER" ]; then
    echo "stereo3d: adding border" 1>&2
-   NEWWIDTH=`identify ${tmp}_stereo3d.${img} | sed -e 's/.* \([0-9]*\)x[0-9]* .*/\1/'`
+   NEWWIDTH=`identify ${tmp}_stereo3d.${img} | sed -e 's/.* \([0-9]*\)x[0-9]*.*/\1/'`
    IMAGESIZE=`echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
    mogrify -crop $IMAGESIZE+0+0 -bordercolor black -border 2x4 ${tmp}_stereo3d.${img}
 fi

@@ -18,17 +18,17 @@ files produced by other Raster3D utilities.
 .PP
 To describe a simple space-filling model coloured by residue type:
 .PP
-     cat mycolours.pdb protein.pdb | balls | render > mypicture.avs
+     cat mycolours.pdb protein.pdb | balls | render > mypicture.png
 .PP
 To include a pre-selected view matrix with the same model:
 .PP
      cp  view1.matrix setup.matrix
-     cat mycolours.pdb protein.pdb | balls | render > mypicture.avs
+     cat mycolours.pdb protein.pdb | balls | render > mypicture.png
 .PP
 To prepend header records describing a pre-selected scale and view:
 .PP
      cat mycolours.pdb protein.pdb | balls -h > balls.r3d
-     cat header.r3d balls.r3d | render > mypicture.avs
+     cat header.r3d balls.r3d | render > mypicture.png
 .SH OPTIONS
 
 .B "-h"

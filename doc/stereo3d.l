@@ -1,14 +1,14 @@
 .ad l
 .nh
-.TH STEREO3D 1 " 9 Feb 2002" "Raster3D"
+.TH STEREO3D 1 "19 May 2003" "Raster3D"
 .SH NAME
 
 stereo3d - render a Raster3D scene as a side-by-side stereo pair
 
 .SH SYNOPSIS
 
-   stereo3d [options] [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff
-   stereo3d [options]  -png  [outfile.png ]  < infile.r3d > outfile.png 
+   stereo3d [options] [-png  [outfile.png ]] < infile.r3d > outfile.png 
+   stereo3d [options]  -tiff [outfile.tiff]  < infile.r3d > outfile.tiff
 
 .PP
 \fIstereo3d\fP is a shell script that renders a single Raster3D input 

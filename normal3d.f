@@ -341,6 +341,7 @@ c
                 read (flags(kbrk+1:15),*,err=10,end=10) nay
 	ELSE IF (FLAGS(1:7) .EQ. '-stereo') THEN
 		SFLAG   = .TRUE.
+		lentmp =1
 		IF (I.LT.NARG) THEN
 		    CALL GETARG(I+1, FLAGS)
 		    IF (FLAGS(1:1).NE.'-') THEN

@@ -83,8 +83,8 @@ linux (g77 compiler)
 	impingement test in qinp() to give different result than the one
 	in render(). This causes render to exit with an error message.
 
-	g77 on top of gcc-2.96 (Mandrake 8.0) has been reported to produce 
-	incorrect code in render;  the same report says that gcc-2.95 is OK.   
+	g77 on top of gcc-2.96 has been reported to produce incorrect code in 
+	render;  the same report says that gcc-2.95 is OK.   
 	I still recommend using a real Fortran compiler, rather than g77.
 
 Windows

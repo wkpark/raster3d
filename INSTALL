@@ -48,10 +48,15 @@ User configurable options are contained in two files:
    delegate.  You can do this by adding lines at the end of the file
    /usr/local/share/ImageMagick/delegates.mgk   as shown below:
 
-#
+# Version 4.x of ImageMagick used a private format for the delegate file
 # Use Raster3D rendering program as a delegate for files ending in .r3d
    r3d=>
 	   render -tiff %o < %i
+
+# Version 5.x of ImageMagick uses XML for the delegate file
+# Use Raster3D rendering program as a delegate for files ending in .r3d
+   <delegate decode="r3d" command='render -png "%o"<"%i"' />
+
 
 7) Go to the examples subdirectory and try running the example scripts
    to verify installation.
@@ -100,24 +105,22 @@ or obtaining and installing a more recent version of libpng from
 
 linux
 =====
-Works fine under Redhat 6.x and Mandrake 7.x, 8.x
-There were some gotchas under earlier earlier Redhat versions, however:
-	- The pre-built linux binaries for ImageMagick 3.8.8 got confused
-	  by the byte order in AVS files.  To work around this problem I
-	  added a conditional compilation flag -DNETWORKBYTEORDER
+Works fine under Redhat 7.x and Mandrake 8.x, 9.0
 	  
-In Redhat 6.1 "f77" is a symlink to the g77 compiler. The package works
-when compiled with g77, but runs slower than it does when compiled by a
-better compiler (e.g. Portland or DEC).  I have included another configuration
+The package works when compiled with g77, but runs slower than it does when 
+compiled by a better compiler (e.g. Portland or DEC).  The new Intel compiler
+seems to generate incorrect code for the render program when set to full 
+optimization.  I have included another configuration
 option "make linux-pgf77" that can be used with the Portland Group compiler.  
 It produces faster code, and correctly supports the auto-delete option for
 scratch files. Do yourself a favor and buy a Portland compiler license.
 
-Mandrake 8.x contains a version of libtiff.so with no support for LZW
-compression.  This makes your output tiff files much larger than they ought
-to be.  Blame it all on Unisys, who are being litigious about use of LZW
-compression.  If this is a problem, you can build your own libtiff from
-any source distribution with version <= 3.3.2
+Newer linux distributions contain a version of libtiff.so with no support
+for LZW compression.  This makes your output tiff files much larger than 
+they ought to be.  Blame it all on Unisys, who are being litigious about 
+use of LZW compression.  If this is a problem, you can build your own 
+libtiff from any source distribution with version <= 3.3.2
+The LZW patent expires in June 2003, so maybe this problem will go away.
 Or you could switch to generating PNG images
 
 

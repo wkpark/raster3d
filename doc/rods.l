@@ -19,11 +19,11 @@ files produced by other Raster3D utilities.
 .PP
 To describe a simple bonds-only model coloured by residue type:
 .PP
-     cat mycolours.pdb protein.pdb | rods | render > mypicture.avs
+     cat mycolours.pdb protein.pdb | rods | render > mypicture.png
 .PP
 To render the same molecule as ball-and-stick:
 .PP
-     cat mycolours.pdb protein.pdb | rods -b | render > mypicture.avs
+     cat mycolours.pdb protein.pdb | rods -b | render > mypicture.png
 .SH OPTIONS
 
 .B "-h"

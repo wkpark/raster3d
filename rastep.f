@@ -71,6 +71,8 @@
 *		  time during testing?
 *		  the rest of CARD() array can go too?
 *		  all the tests on IF ATOM(I)(1:).eq.'ATOM' are now unneeded
+* EAM May 2003	- expand default color table to allow for off-by-one atom names
+* EAM Oct 2003	- trap and report 0 values for axial Uij components in input
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -135,7 +137,8 @@ c     Support for validation of similarity of bonded atoms
       real	anisov(6)
 c
 c     Default to CPK colors and VDW radii
-      character*60 defcol(9)
+      parameter (DEFCOLS = 17)
+      character*60 defcol(DEFCOLS)
       data defcol /
      & 'COLOUR###### CA ##############   0.175   0.175   0.175  1.70',
      & 'COLOUR###### C  ##############   0.175   0.175   0.175  1.70',
@@ -145,6 +148,14 @@ c     Default to CPK colors and VDW radii
      & 'COLOUR#######S################   1.000   1.000   0.025  1.85',
      & 'COLOUR#######H################   1.000   1.000   1.000  1.20',
      & 'COLOUR#######P################   0.050   0.750   0.050  1.80',
+     & 'COLOUR##### CA ###############   0.175   0.175   0.175  1.70',
+     & 'COLOUR##### C  ###############   0.175   0.175   0.175  1.70',
+     & 'COLOUR######C#################   0.625   0.625   0.625  1.70',
+     & 'COLOUR######N#################   0.125   0.125   1.000  1.60',
+     & 'COLOUR######O#################   0.750   0.050   0.050  1.50',
+     & 'COLOUR######S#################   1.000   1.000   0.025  1.85',
+     & 'COLOUR######H#################   1.000   1.000   1.000  1.20',
+     & 'COLOUR######P#################   0.050   0.750   0.050  1.80',
      & 'COLOUR########################   1.000   0.000   1.000  2.00'
      &            /
 c
@@ -410,6 +421,14 @@ c
 	  do i=1,6
 	  	uij(i,natm) = uij(i,natm) * 0.0001
 	  enddo
+	  noerr = 1
+	  do i=1,3
+	  	if (uij(i,natm).eq.0.0) then
+		    uij(i,natm) = 0.0001
+		    noerr = 0
+		endif
+	  enddo
+	  if (noerr.eq.0) goto 15
         ELSEIF (CARD(1:4).EQ.'ATOM'.OR.CARD(1:4).EQ.'HETA') THEN
           NATM = NATM + 1
           IF (NATM.GT.MAXATM) THEN
@@ -429,6 +448,9 @@ c
 14	write(noise,*) '*** ANISOU record out of order - ', card(13:70)
 	nerrors = nerrors + 1
 	goto 10
+15	write(noise,*) '*** Illegal ANISOU values - ', card(13:70)
+	nerrors = nerrors + 1
+	goto 10
 *     Come here when EOF or 'END' record is reached
 50    CONTINUE
       IF (NATM.EQ.0) THEN
@@ -436,8 +458,8 @@ c
         STOP 30
       ENDIF
 *     Load default colors after any that were read in
-      IF (NCOL.LT.MAXCOL-8) THEN
-        DO i = 1,9
+      IF (NCOL.LE.MAXCOL-DEFCOLS) THEN
+        DO i = 1,DEFCOLS
 	  NCOL = NCOL + 1
           READ(defcol(i),'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
      &          (RGB(J,NCOL),J=1,3), VDW(NCOL)

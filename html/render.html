@@ -16,7 +16,7 @@ Render reads an ascii file consisting of several header lines followed by indivi
 object descriptors. The objects are rendered using a fast Z-buffer algorithm.
 Output is to stdout [or optional file] in the form of a pixel image with 
 24 bits of color information per pixel. 
-The default output file format is an AVS image sent to stdout. 
+The default output file format is an PNG image sent to stdout. 
 Additional image file types may be optionally included
 during installation of the Raster3D package.
 
@@ -25,9 +25,10 @@ Usage:
 <pre>
    input from stdin; output mode controlled from command line 
 
-     render                        AVS image to stdout
-     render -jpeg [outfile]        JPEG image to outfile (defaults to stdout)
+     render                        PNG image to stdout
+     render -avs  [outfile]        AVS image to outfile (defaults to stdout)
      render -png  [outfile]        PNG image to outfile (defaults to stdout)
+     render -jpeg [outfile]        JPEG image to outfile (defaults to stdout)
      render -sgi  [outfile]        output to SGI libimage file (defaults to render.rgb)
      render -tiff [outfile]        output to TIFF file (defaults to render.tif)
      render -out   outfile.xxx     pipe output to ImageMagick for
@@ -39,6 +40,7 @@ Options:
 
     -aa                   anti-aliasing (SCHEME 4)
     -alpha                alpha channel in output image (SCHEME 0)
+    -bg <color>           set background, <color> is black, white or #RRGGBB
     -debug                verbose output while running
     -draft                no anti-aliasing (SCHEME 1)
     -fontscale FF         multiplier for PostScript label fonts
@@ -134,6 +136,9 @@ can be modified to produce a TIFF file without conversion:
 	supports an alpha channel (AVS, TIFF, but <i>not</i> JPEG).  Note that this
 	turns off anti-aliasing. This option can be used to produce an image with
 	a transparent background.
+    <dt><i> -bg white|black|#RRGGBB</i>
+    <dd>Set background color. #RRGGBB is a hexadecimal representation of the
+	color components.
     <dt><i> -draft</i>
     <dd>Turn off anti-aliasing (SCHEME 1) to increase rendering speed.
     <dt><i> -fontscale XX</i>

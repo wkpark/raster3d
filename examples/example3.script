@@ -5,4 +5,4 @@
 # version instead, then try:
 # render -sgi example3.rgb < example3.r3d;  ipaste example3.rgb
 # 
-render < example3.r3d | display avs:-
+render -png < example3.r3d | display png:-

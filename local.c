@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.6
+ * Raster3D V2.7
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL.
@@ -35,7 +35,8 @@
  * here we recognize
  *		-invert	         invert y coordinate axis
  *		-jpeg [filename] for jpeg output
- *		-png  [filename] for jpeg output
+ *		-png  [filename] for png output
+ *		-avs  [filename] for AVS output
  *		-sgi  [filename] SGI libimage format output
  *		-tiff [filename] TIFF output format
  *		-out   file.xxx  pipe output to ImageMagick
@@ -194,6 +195,12 @@ if (*option == 0)
 #endif
       }
 
+    /* Version 2.7a - AVS used to be the default, but no longer */
+    else if (strncmp( (char *)buffer1, "-avs" , 4) == 0)
+      {
+	mode  = 0;
+      }
+
     else if (strncmp( (char *)buffer1, "-sgi" , 4) == 0)
       {
 #ifdef      LIBIMAGE_SUPPORT
@@ -262,11 +269,11 @@ if (*option == 0)
 	fprintf(stderr, "\n\n Usage:");
 	fprintf(stderr, "\n   input from stdin; output mode controlled from command line \n");
 	fprintf(stderr,
-		"\n     render                        AVS image to stdout");
+		"\n     render [-png [outfile]]       PNG image to stdout (default!) or file");
+	fprintf(stderr,
+		"\n     render -avs                   AVS image to stdout");
 	fprintf(stderr,
 		"\n     render -jpeg [outfile]        JPEG image to outfile (defaults to stdout)");
-	fprintf(stderr,
-		"\n     render -png  [outfile]        PNG image to outfile (defaults to stdout)");
 	fprintf(stderr,
 		"\n     render -sgi  [outfile]        output to SGI libimage file (defaults to render.rgb)");
 	fprintf(stderr,
@@ -278,6 +285,7 @@ if (*option == 0)
 	fprintf(stderr,"\n   these over-ride contents of input stream header records \n");
 	fprintf(stderr,"\n    -aa                   anti-aliasing (SCHEME 4)");
 	fprintf(stderr,"\n    -alpha                alpha channel in output image (SCHEME 0)");
+	fprintf(stderr,"\n    -bg white|black|<col> set background color (<col> is hex #RRGGBB)");
 	fprintf(stderr,"\n    -debug                verbose output while running");
 	fprintf(stderr,"\n    -draft                no anti-aliasing (SCHEME 1)");
 	fprintf(stderr,"\n    -fontscale FF         multiplier for PostScript font size");
@@ -293,8 +301,20 @@ if (*option == 0)
 	exit(-1);
       }
 
-    else /* default avs mode */
-      mode  = 0;
+    else /* Version 2.7a - default to png */
+      {
+#ifdef      PNG_SUPPORT
+	mode  = 6;
+	ofile = (char *)buffer2;
+#else
+	fprintf(stderr,
+		"\n This copy of render was not built with png support\n");
+	fprintf(stderr,
+		"Defaulting to AVS instead\n");
+	mode  = 0;
+#endif
+      }
+
 
     if (invert) status |= INVERT;
 

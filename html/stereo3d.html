@@ -15,8 +15,8 @@ stereo3d is a shell script that renders a single
 input file as a side-by-side stereo pair.
 
 <pre>
-stereo3d [options] [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff
-stereo3d [options]  -png  [outfile.png ]  < infile.r3d > outfile.png
+stereo3d [options] [-png] [outfile.png ]  < infile.r3d > outfile.png
+stereo3d [options]  -tiff [outfile.tiff]  < infile.r3d > outfile.tiff
 </pre>
 
 stereo3d uses the Raster3D utilities
@@ -28,7 +28,7 @@ and the ImageMagick image processing package.
 <p>
 Input is from <i>stdin</i>, output is to <i>stdout</i> unless explicitly 
 given on the command line.  
-Default output format is TIFF, but PNG output can be chosen instead.
+Default output format is PNG, but TIFF output can be chosen instead.
 Intermediate files are created in directory $TMPDIR, if defined, otherwise
 in /usr/tmp.  
 </p>
@@ -58,11 +58,11 @@ the weak points of the two methods.
 <h4>EXAMPLES</h4>
 If the following line would render single image:
 <pre>
-	render -tiff single.tiff < input.r3d
+	render -png single.png < input.r3d
 </pre>
 then the following line would render the same scene as a stereo pair instead:
 <pre>
-	stereo3d -tiff stereo.tiff < input.r3d
+	stereo3d -png stereo.png < input.r3d
 </pre>
 
 <h4>OPTIONS</h4>

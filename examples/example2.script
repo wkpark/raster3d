@@ -36,7 +36,7 @@ cat header2.r3d plane.r3d $TMPSUGAR $TMPBALLS > $TMPFILE
 # If you have built the SGI libimage version instead, then use
 #  render example1.rgb < $TMPFILE; ipaste example1.rgb
 #
-render < $TMPFILE | display avs:-
+render -png < $TMPFILE | display png:-
 #
 # Clean up before leaving
 #

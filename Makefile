@@ -34,7 +34,7 @@ help:
 	else \
 	echo "" ; \
 	echo "Please start by typing '"make OS"', where OS is one of" ; \
-	echo "	linux linux-pgf77 linux-ppc dec sun irix5 irix6 cygwin aix hpux" ; \
+	echo "	linux linux-pgf77 linux-ppc dec sun sun-forte irix5 irix6 cygwin aix hpux" ; \
 	echo "If your OS is not shown but you have g77/gcc installed, try" ; \
 	echo "	make linux" ; \
 	echo "" ; \
@@ -136,6 +136,15 @@ sun:	strip-for-g77
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo LDFLAGS = -L/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.2 -lgcc >> Makefile.incl
 
+sun-forte:	strip-for-g77
+	@cp Makefile.template Makefile.incl
+	@echo OS = sun                        >> Makefile.incl
+	@echo CC = cc                         >> Makefile.incl
+	@echo CFLAGS = -fast -`fpversion -foption`       >> Makefile.incl
+	@echo FC = f77                        >> Makefile.incl
+	@echo FFLAGS = \${CFLAGS}               >> Makefile.incl
+	@echo RM = /bin/rm -f                 >> Makefile.incl
+
 
 strip-for-g77: render.f.bak normal3d.f.bak rastep.f.bak
 render.f.bak:
@@ -200,6 +209,8 @@ label3d:
 # Install
 #
 install:	all
+	if [ ! -e $(prefix)  ] ; then mkdirhier $(prefix) ; fi
+	if [ ! -e $(bindir)  ] ; then mkdirhier $(bindir) ; fi
 	chmod 755 $(PROGS);   cp $(PROGS) $(bindir)
 	chmod 755 $(SCRIPTS); cp $(SCRIPTS) $(bindir)
 	if [ ! -e $(datadir) ] ; then mkdirhier $(datadir) ; fi

@@ -2,7 +2,7 @@
 # These commands for maintaining the distribution package
 # cause great difficulties with some versions of make.
 # Preparation
-#    Check that the spec file on the last line of this file is correct
+#    nothing special needed (I hope)
 # To actually build the tar file, you need to do something like
 #    make distclean; cp Makefile.package Makefile.incl; make tar
 # After that (tar file is needed first!) to make the RPM files 
@@ -26,5 +26,5 @@ tar:	../$(TARFILE)
 rpm:		../$(TARFILE) rpm_build
 rpm_build:
 	cp ../Raster3D_$(VERSION).tar.gz /usr/src/RPM/SOURCES/
-	rpm -ba --target i586 raster3d-2.6.6.spec
+	rpm -ba --target i586 raster3d-$(VERSION).spec
 
