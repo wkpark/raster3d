@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH RASTEP 1 " 8 May 1999" "Raster3D"
+.TH RASTEP 1 " 1 Dec 1999" "Raster3D"
 
 .SH NAME
 
@@ -9,13 +9,26 @@ rastep - (Raster3D Thermal Ellipsoid Program)
 .PP
 .B "rastep" [\fI-h\fP] [\fI-iso\fP] [\fI-Bcolor Bmin Bmax\fP] 
 .B [\fI-prob Plevel\fP] [\fI-fancy[0-3]\fP] [\fI-radius R\fP]
-.B [\fI-tabulate [tabfile]\fP] [\fI-by_atomtype\fP]
+.B < infile.pdb > ellipsoids.r3d
+.PP 
+.B "rastep" \fI-tabulate [tabfile]\fP [\fI-by_atomtype\fP]
+.B [\fI-com [comtabfile]\fP] < infile.pdb > statistics.text
 .PP
-\fIRastep\fP reads a Brookhaven PDB coordinate file and 
-creates an input file for the Raster3D render program.
-Atoms are represented by ellipsoids enclosing an isosurface of the probability
-density function described by the Anisotropic Displacement Parameters Uij.
-These are commonly known as themal ellipsoids.
+\fIRastep\fP reads a PDB coordinate file.
+This file must contain ANISOU records describing atoms refined anisotropically.
+\fIRastep\fP can either create an input file for the Raster3D render program
+or perform a statistical analysis of the atomic anisotropy for various classes 
+of input atoms.
+By default the program creates an ellipsoid+stick scene description in which 
+each atom  is represented by an ellipsoid enclosing an isosurface 
+of the probability density function. 
+These are commonly known as thermal ellipsoids. 
+.PP
+The program can be run in an alternate mode, controlled by the -tabulate option,
+in which the primary output to stdout is a list of the Eigenvalues of the Uij 
+matrix, followed by the corresponding atomic anisotropy and isotropic Ueq, 
+for each atom in the input file with both an ATOM record and a
+matching ANISOU record.
 .PP
 .SH EXAMPLES
 .PP
@@ -30,6 +43,28 @@ the resulting input file can be merged with other scene components
      rastep -h -Bcolor 10. 30. < infile.pdb > ellipsoids.r3d
      cat header.r3d ellipsoids.r3d otherstuff.r3d | render -tiff picture.tiff
 .SH OPTIONS
+
+.B "-auto"
+.PP
+Auto-selection of viewing angle, chosen to minimize the spread of the atoms 
+along the view direction. 
+
+.B "-Bcolor Bmin Bmax"
+.PP
+Assign colors based on B values rather than mathcing ATOM records against
+input or default COLOUR records. Atoms with B <= Bmin will be colored
+dark blue; atoms with B >= Bmax will be colored light red; atoms with 
+Bmin < B < Bmax will be assigned colors shading smoothly through the
+spectrum from blue to red.
+
+.B "-fancy[0-3]"
+.PP
+The \fI-fancy\fP option selects increasingly complex representations of
+the rendered ellipsoids.
+  -fancy0 [default] = solid surface
+  -fancy1 = principal axes of ellipsoid, with transparent bounding surface
+  -fancy2 = colored equatorial planes of the ellipsoid
+  -fancy3 = colored equatorial planes with transparent bounding surface
 
 .B "-h"
 .PP
@@ -51,13 +86,13 @@ ATOM/HETATM record will be used to generate a sphere instead. Selecting the
 \fI-iso\fP option will force the program to use the B value in the ATOM
 record even if an ANISOU record is also present.
 
-.B "-Bcolor Bmin Bmax"
+.B "-mini"
 .PP
-Assign colors based on B values rather than mathcing ATOM records against
-input or default COLOUR records. Atoms with B <= Bmin will be colored
-dark blue; atoms with B >= Bmax will be colored light red; atoms with 
-Bmin < B < Bmax will be assigned colors shading smoothly through the
-spectrum from blue to red.
+Auto-orientation (as in -auto) and small size plot (176x208). 
+
+.B "-nohydrogens"
+.PP
+Do not plot hydrogens, even if present in PDB file.
 
 .B "-prob Plevel"
 .PP
@@ -71,16 +106,7 @@ if Plevel > 1 this value is interpreted as a percent.
 .PP
 By default, rastep draws bonds with radius 0.10A between neighboring atoms
 using the same algorithm as rods. This option allows you to change the 
-radius of the bonds.
-
-.B "-fancy[0-3]"
-.PP
-The \fI-fancy\fP option selects increasingly complex representations of
-the rendered ellipsoids.
-	-fancy0 [default] = solid surface
-	-fancy1	= principal axes of ellipsoid, with a transparent bounding surface
-	-fancy2 = colored equatorial planes of the ellipsoid
-	-fancy3 = colored equatorial planes with a transparent bounding surface
+radius of the bonds. If the radius is set to 0 no bonds are drawn.
 
 .B "-tabulate [tabfile]"
 .PP
@@ -98,6 +124,10 @@ subdivision of atoms by atom type in the preparation of statistical
 summaries. Atom types are taken from columns 77:78 of the PDB ATOM
 records.
 
+.B "-com [comtabfile]"
+.PP
+Tabulate distribution of anisotropy in shells by distance from 
+center-of-mass. Output to comtabfile if specified, otherwise to stdout.
 
 .SH NOTES
 .PP 

@@ -8,7 +8,7 @@ balls - preprocessor for space-filling models in Raster3D molecular graphics pac
 .PP
 .B "balls" [\fI-h\fP]
 .PP
-\fIBalls\fP reads a file describing atom colours and/or a Brookhaven 
+\fIBalls\fP reads a file describing atom colours and/or a 
 PDB coordinate file and produces a file containing Raster3D descriptor
 records for each atom in the input file.  The file produced by \fIballs\fP
 may be fed directly to \fIrender\fP or it may be combined with descriptor
@@ -46,11 +46,12 @@ produced by other programs.
 .SH DESCRIPTION
 .PP 
 The input to \fIballs\fP consists of a single text file
-containing colour information and atomic coordinates in Brookhaven
+containing colour information and atomic coordinates in 
 PDB data bank format.
 Coordinates are output as Raster3D descriptor records
 with colours and sphere radii assigned according to the COLO
 records described below.  
+By default atoms are assigned CPK colours.
 By default the output file contains a set of header records as
 required by the \fIrender\fP program.
 The header is constructed to include a TMAT matrix corresponding to

@@ -34,10 +34,27 @@ C	to RENDER is therefore the identity matrix.
 C                                                     
 	common /matrix/ matrix, postrn, coords
 	real*4		matrix(3,3), postrn(3), coords(3)
-	data		matrix / 1.,0.,0.,0.,1.,0.,0.,0.,1. /
+C
+C     Default to CPK colors and VDW radii
+      character*60 defcol(7)
+      data defcol /
+     & 'COLOUR#######C################   0.625   0.625   0.625  1.70',
+     & 'COLOUR#######N################   0.125   0.125   1.000  1.60',
+     & 'COLOUR#######O################   0.750   0.050   0.050  1.50',
+     & 'COLOUR#######S################   1.000   1.000   0.025  1.85',
+     & 'COLOUR#######H################   1.000   1.000   1.000  1.20',
+     & 'COLOUR#######P################   0.400   1.000   0.400  1.80',
+     & 'COLOUR########################   1.000   0.000   1.000  2.00'
+     &            /
 c
     3	format(a,a)
 c
+	do i=1,3
+	do j=1,3
+	    matrix(i,j)=0.
+	enddo
+	matrix(i,i)=1.
+	enddo
 	call view_matrix
 c
 c	Ethan Merritt Apr 1992
@@ -51,7 +68,7 @@ c
 	end do
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'A colour molecule picture'
+	WRITE(OUTPUT,'(A)') 'balls - Raster3D version 2.5'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         anti-aliasing 3x3 -> 2x2 pixels'
@@ -97,6 +114,15 @@ c
         WRITE(NOISE,*) 'No atoms in input.'
         STOP 30
       ENDIF
+*     Load default colors after any that were read in
+      IF (NCOL.LT.MAXCOL-8) THEN
+        DO i = 1,7
+          NCOL = NCOL + 1
+          READ(defcol(i),'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
+     &          (RGB(J,NCOL),J=1,3), RADIUS(NCOL)
+        ENDDO
+      ENDIF
+*
       IF (NCOL.EQ.0) THEN
         WRITE(NOISE,*) 'No colours in input.'
         STOP 40

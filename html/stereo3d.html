@@ -1,0 +1,84 @@
+<html>
+<head>
+<title> stereo3d - Raster3D package </title>
+   <LINK REL=stylesheet HREF="r3d_docstyle.css" TEXT="text/css">
+</head>
+<body>
+
+<h1 align=center>
+STEREO3D
+</h1>
+<h4>
+SYNOPSIS</h4>
+stereo3d is a shell script that renders a single 
+<a href="raster3d.html"> Raster3D </a> 
+input file as a side-by-side stereo pair.
+The resulting image is placed in file <b>stereo.tiff</b>.
+
+<listing>
+stereo3d [-border] render_input_file.r3d
+</listing>
+
+stereo3d uses the Raster3D utilities
+<a href="label3d.html">label3d</a>,
+<a href="normal3d.html">normal3d</a> and
+<a href="render.html">render</a>,
+and the utility programs identify, mogrify, and montage from
+John Cristy's ImageMagick image processing package.
+Three intermediate files are produced by normal3d:
+<ul>
+<li>stereo3d.tmp - normalized version of the input file
+<li>left.r3d - header records for left eye view
+<li>right.r3d - header records for right eye view
+</ul>
+Additional intermediate files may be produced by label3d.
+The two views are separately rendered to yield images left.tiff and right.tiff
+(deleted upon completion), optionally given black borders, and merged to form a single
+side-by-side stereo pair stereo.tiff.
+
+<h4>EXAMPLES</h4>
+If the following line would render and display a single image:
+<listing>
+	render -tiff single.tiff < input.r3d;  display single.tiff
+</listing>
+then the following line would render and display the same scene
+as a stereo pair instead:
+<listing>
+	stereo3d input.r3d; display stereo.tiff
+</listing>
+<b>NB</b>: The output image is always called stereo.tiff; there is no
+provision at present to specify some other name.
+
+<h4>OPTIONS</h4>
+<dl>
+<dt><i>-border</i></dt>
+<dd>By default the left and right images are placed next to each other with no
+intervening space and no frame around them.  The -border option requests a
+4 pixel wide black border separating and surrounding the component images.</dd>
+</dl>
+
+
+<h4>ENVIRONMENT</h4>
+This script requires TIFF support in render, the unix utility sed, and the
+<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">
+ImageMagick</a> image processing package. The three intermediate files
+listed above are created each time the script is run. Any exiting files
+named left.tiff, right.tiff, or stereo.tiff will be destroyed.
+
+The default version of stereo3d invokes the <a href="label3d.html">label3d</a>
+script so that labels are processed in stereo also.  If label3d processing
+is not configured on your machine you may want to replace the stereo3d
+script with an alternate version named stereo3d_nolabels in the Raster3D
+distribution package.
+
+<h4>AUTHORS</h4>
+Ethan A Merritt.
+
+<hr>
+<a href="raster3d.html">
+<img src="index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+#
+# Raster3D makefile for Windows using gnu GCC/G77 compiler environment
+# contributed by Suhaib Siddiqi
+# See also the notes in the INSTALL file.
+# 
+
+#
+# Where to put things
+#
+prefix = /gnu/mingw32/local
+bindir = $(prefix)/bin
+mandir = $(prefix)/man/manl
+#
+CC       = gcc
+F2       = f2c
+#F2      = f77
+FC      = g77
+RM      = rm -f
+#
+INSTALL         = /bin/install -o root -g root
+#
+LDFLAGS  = 
+CFLAGS   = -O1 -m486 -fnative-struct
+FFLAGS   = -O1
+
+#LDFLAGS = -fast
+#CFLAGS = -fast
+#FFLAGS = -fast
+
+#
+# TIFF support (enabled by default)
+#     add -DTIFF_SUPPORT to the DEFINES statement.
+#     add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
+#
+# JPEG support (disabled by default)
+#     add -DJPEG_SUPPORT to the DEFINES statement.
+#     add -ljpeg to the LIBS definition.
+#
+
+LIBS    =	-Lc:/gnu/mingw32/lib -ltiff -ljpeg -lz
+DEFINES	=	-DTIFF_SUPPORT -DJPEG_SUPPORT -DIMAGEPIPE -DLINUX -DWIN32 -D__MSVCRT__
+INCLUDES =	-Ic:/gnu/mingw32/include
+
+RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
+PROGS    =	balls normal3d rastep rods ribbon render avs2ps 
+
+all:	$(PROGS)
+
+clean:
+	rm -f *.o *.u core
+	rm -f $(PROGS)
+
+install: $(PROGS)
+	$(INSTALL) -m 755 $(PROGS) $(bindir)
+	$(INSTALL) -m 755 stereo3d $(bindir)
+	$(INSTALL) -m 755 label3d $(bindir)
+	$(INSTALL) -m 644 doc/*.l $(mandir)
+	@echo "	*******************************************"
+	@echo "	* The examples/ subdirectory contains     *"
+	@echo "	* files to verify your installation and   *"
+	@echo "	* to serve as examples of use.            *"
+	@echo "	*******************************************"
+
+tar:
+	(cd ..; tar -zcvvf raster3d.tgz raster3d)
+
+normal3d: normal3d.f.bak normal3d.f quadric.o
+	$(FC) $(FFLAGS) normal3d.f quadric.o -o normal3d -lmsvcrt
+
+normal3d.f.bak:
+	mv normal3d.f normal3d.f.bak
+	grep -v CARRIAGECONTROL normal3d.f.bak > normal3d.f
+
+rastep:	rastep.o quadric.o
+	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep -lmsvcrt
+
+rastep.f.bak:
+	mv rastep.f rastep.f.bak
+	grep -v CARRIAGECONTROL rastep.f.bak > rastep.f
+
+
+ribbon:	$(RIBOBJS)
+	$(FC) $(LDFLAGS) $(RIBOBJS) $(INCLUDES) -o ribbon -lmsvcrt
+	$(RM) $(RIBOBJS)
+
+rods:
+	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods -lmsvcrt
+
+balls:
+	$(FC) $(FFLAGS) balls.f $(CFLAGS) $(LDFLAGS) -o balls -lmsvcrt
+
+local.o: local.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) $(LIBS) -c local.c 
+
+render:	render.f local.o quadric.o parse.o r3dtops.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o -o render \
+	$(LIBS) -lmsvcrt
+	$(RM) local.o parse.o r3dtops.o
+
+
+avs2ps:	avs2ps.c
+	$(CC) -D__WIN32__ $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm -lmsvcrt
+
+$(RIBOBJS):
+	$(F2) $(FFLAGS) $*.f
+	$(CC) $(CFLAGS) -c -o $*.o $*.c
+	$(RM) $*.c

@@ -1,0 +1,65 @@
+
+most recent change:	   31-Jan-2000
+
+The file Raster3D_2.5b.tar.Z contains the full source distribution for
+version 2.5b (beta release) of RASTER3D.
+
+This is a unified distribution which has been tested on the following 
+machines:
+
+	Alpha / OSF 4.0
+	SGI / Irix 6.2 6.5
+	IBM RS6000 / AIX
+	Intel Pentium / linux (Redhat 6.1)
+
+Previous versions have been tested under Irix 5.3, SUNOS, and other
+flavors of linux.  If you run into installation problems, please let
+me know (particularly if you can also tell me what you needed to fix!)
+
+For optimal use of Raster3D you should also obtain 
+John Cristy's ImageMagick package for image manipulation and viewing 
+	(www.wizards.dupont.com/cristy/ImageMagick.html)
+Some version of a TIFF library
+	(e.g. via ftp from sgi.com)
+Some version of a JPEG library
+Version 2.0 of Molscript (http://www.avatar.se/molscript)
+
+
+New in version 2.5:
+
+- new command line options to render that supercede header contents:
+
+    -aa                   anti-aliasing (SCHEME 4)
+    -alpha                alpha channel in output image (SCHEME 0)
+    -debug                verbose output while running
+    -draft                no anti-aliasing (SCHEME 1)
+    -fontscale FF         multiplier for PostScript font size
+    -labels               write labels to PostScript file label3d.ps
+    -invert               invert y axis
+    -size HHHxVVV         specify size of output image in pixels
+
+- other changes to render
+			Label processing (previous stand-alone program
+			r3dtops) folded into the render program. Scripts
+			label3d and stereo3d modified to match this change.
+
+- Documentation
+			HTML documentation now in separate subdirectory.
+			Includes an interactive tool r3d_colorpicker.html
+
+- New programs
+	rings3d		creates sold-plane descriptions of ring systems
+			in TRP, PHE, HIS residues, nucleotide bases,
+			sugar rings. See example6 figure.
+
+- /materials		Expanded collection of sample material definitions
+			illustrating various transparency modes, 2-sided
+			objects, metallic surfaces, and so forth.
+			If you set the environmental variable R3D_LIB to
+			point to this directory, then file indirection in
+			render input scripts will look here to resolve 
+			requests for materials.
+
+
+				Ethan A Merritt
+				merritt@u.washington.edu

@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.4j (18 May 1999)
+*     Version 2.5b (11 Jan 2000)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -59,6 +59,9 @@
 * EAM Nov 1998	- more work on Z-clipping
 * EAM Feb 1999	- re-work output module local.c to support -jpeg and -out
 * EAM May 1999	- allow explicit vertex colors for cylinders also
+* EAM Jul 1999	- 2.4l preliminary work towards an after-the-fact rotation option
+* EAM Sep 1999	- 2.5a command line parsing in separate routine parse()
+*		  label processing folded into render; routines in r3dtops.f
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -186,15 +189,11 @@
 *	may be inserted to delineate meta-objects or act as comments.
 *
 *-----------------------------------------------------------------------------
-* V2.3
 *	Object types 10 and 11 are used for specifying labels.
 *	Label object types are
 *	  - type 10: Font_Name size alignment
 *	  - type 11: XYZ RGB on first line
 *		     label (ascii characters enclosed in quotes) on second line
-*	Unfortunately, render itself still can't handle the labels.
-*	That is left to a separate, parallel, program called labels3d.
-*	So here we just note their presence but otherwise ignore them.
 *	Object type 12 is reserved to go with this, as I have a nagging
 *	suspicion more information may turn out to be necessary.
 *-----------------------------------------------------------------------------
@@ -225,9 +224,8 @@
 *     - centre of "virtual screen" is (0,0,0)
 *     - x to right, y to top, z towards viewer
 *     - the smaller of the x and y dimensions goes from -.5 to +.5
-*     - z cuts off at +1 and -1
+*     - z cuts off at +1 and -1 by default, but is modified by FRONTCLIP, BACKCLIP
 *     - shadow box dimensions determined by NSX/NTX, NSY/NTY
-*     - so it's generally best to "centre" your model at (0,0,0)
 *
 *
 *     Output image (OBSOLETE!, superceded by code in local.c):
@@ -256,14 +254,9 @@
 *
 *     Deferred priorities:
 *
-*     - z-buffer in and/or out (less than useful?)
 *     - superior pixel averaging (you should use another pass?)
-*     - print out array memory use stats
-*     - print out analysis of input transformation TMAT
 *     - better assignment of triangles to tiles (do clipping?)
 *     - better estimate of max. triangle elevation within tile
-*     - more flexible control of image NX, NY (ugh--partial tiles?)
-*     - greater range in z (could lead to huge shadow boxes needed?)
 *
 *
 *     Why I don't do shadowing properly:
@@ -318,9 +311,9 @@
 *     Overkill:
       IMPLICIT REAL   (A-H, O-Z)
 *
-*     I/O units for control input, image output, info output
-      INTEGER INPUT, INPUT0, NOISE
-      PARAMETER (INPUT0=5, NOISE=0)
+*     I/O units for control input, info output, label processing
+      INTEGER INPUT, INPUT0, NOISE, LUNIT
+      PARAMETER (INPUT0=5, NOISE=0, LUNIT=4)
 *     Allowable levels of file indirection.
       PARAMETER (MAXLEV=5)
 *
@@ -361,11 +354,7 @@
       INTEGER	 VCOLS,     CLIPPED
       PARAMETER	(VCOLS=512, CLIPPED=1024)
 *
-*     Bit definitions for status word returned by local(0,...)
-      INTEGER   OTMODE
-      INTEGER    AAMODE,    INVERT,    DEBUGGING
-      PARAMETER (AAMODE=7,  INVERT=8,  DEBUGGING=16)
-*     More bit definitions, these ones passed to local(1,...)
+*     Bit definitions for OTMODE passed to local(1,...)
       INTEGER    ALPHACHANNEL
       PARAMETER (ALPHACHANNEL=32)
 *
@@ -416,6 +405,13 @@
 *
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
+*     Command line options (Aug 1999) NB: nax,nay,quality MUST be integer*2
+      COMMON /OPTIONS/ NSCHEME, NAX, NAY, INVERT, OTMODE, QUALITY
+     &               , LFLAG, FONTSCALE
+      INTEGER          NSCHEME
+      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      LOGICAL          INVERT, LFLAG
+      REAL             FONTSCALE
 *
 *     Title for run
       CHARACTER*80 TITLE
@@ -424,7 +420,7 @@
       COMMON /RASTER/ NTX,NTY,NPX,NPY
       INTEGER         NTX,NTY,NPX,NPY
 *     Total image size in pixels (MUST BE INTEGER*2!)
-      INTEGER*2 NX,  NY
+      INTEGER*2 NX, NY
 *
 *     One lonely tile
       REAL TILE(3,MAXNPX,MAXNPY)
@@ -459,11 +455,14 @@
 *     Input transformation
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
-*     Transformation matrix, inverse, and transponsed inverse
+*     Transformation matrix, inverse of transpose, and transposed inverse
       REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
 *     Shortest rotation from light source to +z axis
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
+*     Post-hoc transformation on top of original TMAT
+      REAL   RAFTER(4,4), TAFTER(3)
 *
 *     Distance (in +z) of viewing eye
       REAL   EYEPOS
@@ -509,7 +508,7 @@
 *     Keep a separate list of special materials
 *     and remember any special props of current material on input
       INTEGER MLIST(MAXMAT)
-      LOGICAL MATCOL, BACKFACE, ISOLATE
+      LOGICAL MATCOL, BACKFACE
       LOGICAL CLIPPING, MAYCLIP, JUSTCLIPPED
       REAL    RGBMAT(3)
 *
@@ -572,18 +571,21 @@
 *     EAM May 1990 invert index order for packing efficiency on IRIS
       INTEGER*2 OUTBUF(OUTSIZ,4)
 *
-*     Also keep track of command line options and output mode
-      CHARACTER*64 ARG1, ARG2, ARG3, ARG4
-*
 *     Copy of NOISE for ASSERT to see
       INTEGER ASSOUT
       LOGICAL VERBOSE
       COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
 *
+*     For label processing
+      COMMON /LABELS/ LABOUT
+      INTEGER         LABOUT
+*
 *     Keep track of actual coordinate limits
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
+     &                , ISOLATE
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
+      LOGICAL           ISOLATE
 *
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
@@ -631,10 +633,12 @@
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
-      WRITE (NOISE,*) 'Raster3D V2.4j'
 *
 *     Initialize to level 0 of file indirection
       INPUT = INPUT0
+*
+*     Initialize unit number for label processing
+      LABOUT = LUNIT
 *
 *     Initialize to no special material properties
       MSTATE  = 0
@@ -652,6 +656,9 @@
 *
 *     Initialize global properties
       FOGTYPE = -1
+*
+*     EAM Aug 1999 - break out command line parsing into new routine
+	call parse
 *
 *     Get title
   100 CONTINUE
@@ -674,25 +681,35 @@
 	CALL EXIT
   102	CONTINUE
       ENDIF
-      WRITE (NOISE,*) 'title=',TITLE
+      DO K = 80,1,-1
+        IF (TITLE(K:K).NE.' ') GOTO 103
+      ENDDO
+  103 CONTINUE
+      WRITE (NOISE,1103) TITLE(1:K)
+ 1103 FORMAT('title="',A,'"')
 *
 *     Get number of tiles
-      READ (INPUT,*,ERR=103,END=103) NTX,NTY
+      READ (INPUT,*,ERR=104,END=104) ITX,ITY
+      IF (NTX.LE.0) NTX = ITX
+      IF (NTY.LE.0) NTY = ITY
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
-      GOTO 104
-103   CALL ASSERT(.FALSE.,
+      GOTO 105
+104   CALL ASSERT(.FALSE.,
      &           '>>> This doesnt look like a Raster3D input file! <<<')
-104   CONTINUE
+105   CONTINUE
 *
 *     Get number of pixels per tile
-      READ (INPUT,*) NPX,NPY
+      READ (INPUT,*) IPX,IPY
+      IF (NPX.LE.0) NPX = IPX
+      IF (NPY.LE.0) NPY = IPY
       CALL ASSERT (NPX.GT.0, 'npx.le.0')
       CALL ASSERT (NPY.GT.0, 'npy.le.0')
       ZSLOP = SLOP * MAX(NPX,NPY)
 *
 *     Get pixel averaging scheme
       READ (INPUT,*) SCHEME
+      if (nscheme.ge.0) scheme = nscheme
       CALL ASSERT (SCHEME.GE.0 .AND. SCHEME.LE.4, 'bad scheme')
       IF (SCHEME.LE.1) THEN
         NOX = NPX
@@ -728,33 +745,23 @@
 *
       NX = NOX*NTX
       NY = NOY*NTY
-*
-*	EAM Nov 1993 - optional command line args passed to local
-	arg1 = ' '
-	arg2 = ' '
-	arg3 = ' '
-	arg4 = ' '
-	if (iargc() .gt. 0) call getarg( 1, arg1 )
-	if (iargc() .gt. 1) call getarg( 2, arg2 )
-	if (iargc() .gt. 2) call getarg( 3, arg3 )
-	if (iargc() .gt. 3) call getarg( 4, arg4 )
-	otmode = local(0, arg1, arg2, arg3, arg4)
 C
-      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
-	VERBOSE = .TRUE.
+      IF (VERBOSE) THEN
 	WRITE (NOISE,*) 'ntx=',NTX,' nty=',NTY
 	WRITE (NOISE,*) 'npx=',NPX,' npy=',NPY
 	WRITE (NOISE,*) 'scheme=',SCHEME
 	WRITE (NOISE,*) 'nox=',NOX,' noy=',NOY
 	WRITE (NOISE,*) 'nx= ',NX,' ny= ',NY
-      ELSE
-	VERBOSE = .FALSE.
       END IF
-      WRITE (NOISE,*) 'Output raster size =',NX,' x',NY
+      if (nax.lt.0) nax = nx
+      if (nay.lt.0) nay = ny
+      LINOUT = 0
+      WRITE (NOISE,*) 'Rendered raster size =',NX,' x',NY
+      WRITE (NOISE,*) '  Output raster size =',NAX,' x',NAY
 C
 C	Header records and picture title
       IF (SCHEME.EQ.0) OTMODE = OR(OTMODE,ALPHACHANNEL)
-      IERR = LOCAL(1, NX, NY, OTMODE)
+      IERR = LOCAL(1, NAX, NAY, OTMODE, QUALITY)
       IERR = LOCAL(4, TITLE)
 *
 *     Some derived parameters
@@ -769,7 +776,7 @@ C	Header records and picture title
 *
 *     Get background colour
       READ (INPUT,*) BKGND
-      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      IF (VERBOSE) THEN
       	WRITE (NOISE,*) 'bkgnd=',BKGND
       END IF
       CALL ASSERT (BKGND(1).GE.0., 'bkgnd(1) < 0')
@@ -781,7 +788,7 @@ C	Header records and picture title
 *
 *     Get "shadows" flag
       READ (INPUT,*) SHADOW
-      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      IF (VERBOSE) THEN
       	WRITE (NOISE,*) 'shadow=',SHADOW
       END IF
 *
@@ -813,7 +820,7 @@ C	Header records and picture title
       CALL ASSERT (SPECLR.GE.0., 'speclr < 0')
       CALL ASSERT (SPECLR.LE.1., 'speclr > 1')
 *
-      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      IF (VERBOSE) THEN
      	WRITE (NOISE,*) 'iphong=',IPHONG,'   strait=',STRAIT,
      &                '   ambien=',AMBIEN,'   speclr=',SPECLR
       END IF
@@ -832,7 +839,7 @@ C	Header records and picture title
       SOURCE(1) = SOURCE(1) / SMAG
       SOURCE(2) = SOURCE(2) / SMAG
       SOURCE(3) = SOURCE(3) / SMAG
-      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      IF (VERBOSE) THEN
      	WRITE (NOISE,*) 'eyepos=',EYEPOS
      	WRITE (NOISE,*) 'source=',SOURCE
      	WRITE (NOISE,*) 'normalized source=',SOURCE
@@ -842,7 +849,7 @@ C	Header records and picture title
       DO I=1,4
         READ (INPUT,*) (TMAT(I,J),J=1,4)
       END DO
-      IF (AND(OTMODE,DEBUGGING).NE.0) THEN
+      IF (VERBOSE) THEN
      	WRITE (NOISE,*) 'tmat (v'' = v * tmat):'
      	DO I=1,4
             WRITE (NOISE,*) (TMAT(I,J),J=1,4)
@@ -856,12 +863,23 @@ C	Header records and picture title
 *     here.  
 *     The actual decision whether or not to invert is done in local.c
 *     and returned as a bit in the status word returned by local(0,...)
-      IF (AND(OTMODE,INVERT).EQ.0) THEN
+      IF (INVERT) THEN
 	DO I = 1,4
 	  TMAT(I,2) = -TMAT(I,2)
 	ENDDO
 	SOURCE(2) = -SOURCE(2)
       ENDIF
+*
+*     By popular demand, add a post-hoc rotation/translation option
+*     that uses matrices of the form used by O and molscript
+*     Initialized here to identity matrix; set by GPROP options.
+      DO I = 1,4
+      DO J = 1,4
+        RAFTER(I,J) = 0.0
+      ENDDO
+      RAFTER(I,I) = 1.0
+      TAFTER(I)   = 0.0
+      ENDDO
 *
 *     Compute the rotation matrix which takes the light
 *     source to the +z axis (i.e., to the viewpoint).
@@ -951,16 +969,26 @@ C         WRITE (NOISE,*) INFMTS(I)
       ENDIF
 c
 c     Done with header records
+c	Do we force-close the input file, so that we can borrow headers,
+c	or should we keep going as long as the file continues?
+c	The following 4 lines implement the former, so that the initial
+c	@file command essentially means 'use his header records for me too'.
 c
       IF (INPUT.NE.INPUT0) THEN
 	CLOSE(INPUT)
 	INPUT = INPUT0
       ENDIF
+c
+c     End of header processing
 *
 *     Give them a notice to stare at while the program cranks along
       WRITE (NOISE,'(/)')
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
+      WRITE (NOISE,*) '%                      Raster3D V2.5b      ',
+     &                '                    %'
+      WRITE (NOISE,*) '%            -------------------------',
+     &                '-------------            %'
       WRITE (NOISE,*) '% If you publish figures generated by this ',
      &                'program please cite %'
       WRITE (NOISE,*) '%   Merritt & Bacon (1997)  ',
@@ -975,6 +1003,14 @@ c
      &                '        merritt@u.washington.edu %'
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
+*
+*     If label processing is selected on command line, 
+*     initialize PostScript output file
+*
+      IF (LFLAG) THEN
+        PSSCALE = 2.0 * MIN( NTX*NOX/2., NTY*NOY/2. )
+      	CALL LSETUP( PSSCALE, BKGND, TITLE )
+      ENDIF
       WRITE (NOISE,'(/)')
 *
 *
@@ -1019,7 +1055,7 @@ c     Read in next object
       ENDIF
 C
 C     READ (INPUT,*,END=50) INTYPE
-      READ (INPUT,'(A)',END=50) LINE
+      READ (INPUT,'(A)',END=50,ERR=46) LINE
 c     Nov 1997 - allow # comments
       IF (LINE(1:1) .EQ. '#') THEN
       	GOTO 7
@@ -1039,7 +1075,10 @@ c     May 1996 - allow file indirection
    71	CALL LIBLOOKUP( LINE(J:K), FULLNAME )
 	OPEN (UNIT=INPUT+1,ERR=73,STATUS='OLD',FILE=FULLNAME)
    72	CONTINUE
-	WRITE (NOISE,'(A,A)') '  + Opening input file ',FULLNAME
+	DO I=80,2,-1
+	  IF (FULLNAME(I:I).EQ.' ') J = I
+	ENDDO
+	WRITE (NOISE,'(A,A)') '  + Opening input file ',FULLNAME(1:J)
 	INPUT = INPUT + 1
 	CALL ASSERT(INPUT-INPUT0.LE.MAXLEV, 
      &	            'Too many levels of indirection')
@@ -1062,17 +1101,25 @@ c     May 1996 - allow file indirection
 	CLIPPING= .FALSE.
 	GOTO 7
       ELSEIF (INTYPE .EQ. FONT) THEN
-        READ (INPUT,'(A)',END=50) LINE
+	IF (LFLAG) THEN
+	  CALL LINP( INPUT, INTYPE )
+	ELSE
+          READ (INPUT,'(A)',END=50) LINE
+	ENDIF
 	GOTO 7
       ELSEIF (INTYPE .EQ. LABEL) THEN
 	NLABELS = NLABELS + 1
-        READ (INPUT,'(A)',END=50) LINE
-        READ (INPUT,'(A)',END=50) LINE
+	IF (LFLAG) THEN
+	  CALL LINP( INPUT, INTYPE )
+	ELSE
+          READ (INPUT,'(A)',END=50) LINE
+          READ (INPUT,'(A)',END=50) LINE
+	ENDIF
 	GOTO 7
       ELSEIF (INTYPE .EQ. NOTRANS) THEN
 	ISOLATE = .TRUE.
 	GOTO 7
-c     Currently the only documented global propery is FOG
+c     Global Properties
       ELSEIF (INTYPE .EQ. GPROP) THEN
 	READ (INPUT,'(A)',END=50) LINE
 	IF (LINE(1:3).EQ.'FOG') THEN
@@ -1091,14 +1138,38 @@ c     Currently the only documented global propery is FOG
 	ELSE IF (LINE(1:8).EQ.'BACKCLIP') THEN
 	  READ (LINE(10:72),*) BACKCLIP
 	  BACKCLIP = BACKCLIP * SCALE / TMAT(4,4)
+	ELSE IF (LINE(1:8).EQ.'ROTATION') THEN
+	  READ (INPUT,*,ERR=75) ((RAFTER(I,J),J=1,3),I=1,3)
+	  WRITE (NOISE,775) ((RAFTER(I,J),J=1,3),I=1,3)
+  775	  FORMAT('Post-rotation matrix:  ',3(/,3F10.4))
+CCCCCCCC  Should check determinant and type error if not 1.0
+	  IF (INVERT) THEN
+	    RAFTER(1,2) = -RAFTER(1,2)
+	    RAFTER(2,1) = -RAFTER(2,1)
+	    RAFTER(2,3) = -RAFTER(2,3)
+	    RAFTER(3,2) = -RAFTER(3,2)
+	  ENDIF
+	  CALL QSETUP
+	ELSE IF (LINE(1:11).EQ.'TRANSLATION') THEN
+	  READ (INPUT,*,ERR=75) (TAFTER(I),I=1,3)
+	  WRITE (NOISE,776) (TAFTER(I),I=1,3)
+  776	  FORMAT('Post-translation:      ',1(/,3F10.4))
+	  IF (INVERT) TAFTER(2) = -TAFTER(2)
+	ELSE IF (LINE(1:5).EQ.'DUMMY') THEN
 	ELSE
-	WRITE(NOISE,'(A,A)') 
-     &         'Unrecognized or incomplete GPROP option ',LINE
+	  GOTO 75
 	ENDIF
+	GOTO 7
+
+   75	CONTINUE
+	WRITE(NOISE,'(A,A)') 
+     &         '>> Unrecognized or incomplete GPROP option ',LINE
 	GOTO 7
 *
       ENDIF
-      CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
+*
+COLD  CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
+      IF (INTYPE.LT.1 .OR. INTYPE.GT.MXTYPE) GOTO 46
       CALL ASSERT (INTYPE.NE.PEARLS,'sorry, no pearls yet')
 c
 c     Read in object details, now we know what kind it is.
@@ -1116,6 +1187,9 @@ c     side-effect of tape blocking or sloppiness or ...
       ELSE
         READ (INPUT,INFMT,END=50) (BUF(I),I=1,IDET(INTYPE))
       ENDIF
+c     15-Dec-1999 This was supposed to check for all-zero line and exit
+c                 but all zeros is legal for [at least!] LABELs
+      IF (INTYPE.EQ.LABEL) GOTO 9
       DO I=1,IDET(INTYPE)
         IF (BUF(I).NE.0.) GO TO 9
       ENDDO
@@ -1170,7 +1244,7 @@ C     20-Feb-1997 Save both object type and material type
 	ENDIF
 *	Isolated objects not transformed by TMAT, but still subject to inversion
 	IF (ISOLATE) THEN
-	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	  IF (INVERT) THEN
 	    Y1A = -Y1A
 	    Y2A = -Y2A
 	    Y3A = -Y3A
@@ -1184,9 +1258,9 @@ C     20-Feb-1997 Save both object type and material type
 	  TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A,Z3A)
 	  TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A,Z3A)
 *       modify the input, so to speak
-	  CALL TRANSF (X1A,Y1A,Z1A, TMAT)
-	  CALL TRANSF (X2A,Y2A,Z2A, TMAT)
-	  CALL TRANSF (X3A,Y3A,Z3A, TMAT)
+	  CALL TRANSF (X1A,Y1A,Z1A)
+	  CALL TRANSF (X2A,Y2A,Z2A)
+	  CALL TRANSF (X3A,Y3A,Z3A)
 	ENDIF
 *       perspective factor for each corner
 	IF (EYEPOS.GT.0) THEN
@@ -1382,7 +1456,7 @@ C     20-Feb-1997 Save both object type and material type
 	ENDIF
 *	Isolated objects not transformed by TMAT, but still subject to inversion
 	IF (ISOLATE) THEN
-	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	  IF (INVERT) THEN
 	    YA = -YA
 	  ENDIF
 	ELSE
@@ -1394,7 +1468,7 @@ C     20-Feb-1997 Save both object type and material type
 	  TRULIM(3,1) = MIN( TRULIM(3,1), ZA )
 	  TRULIM(3,2) = MAX( TRULIM(3,2), ZA )
 *       modify the input, as it were
-          CALL TRANSF (XA,YA,ZA, TMAT)
+          CALL TRANSF (XA,YA,ZA)
           RA = RA / TMAT(4,4)
 	ENDIF
 *       perspective
@@ -1532,7 +1606,7 @@ C     20-Feb-1997 Save both object type and material type
 	ENDIF
 *	Isolated objects not transformed by TMAT, but still subject to inversion
 	IF (ISOLATE) THEN
-	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	  IF (INVERT) THEN
 	    Y1A = -Y1A
 	    Y2A = -Y2A
 	  ENDIF
@@ -1545,8 +1619,8 @@ C     20-Feb-1997 Save both object type and material type
 	  TRULIM(3,1) = MIN( TRULIM(3,1), Z1A,Z2A)
 	  TRULIM(3,2) = MAX( TRULIM(3,2), Z1A,Z2A)
 *       modify the input, so to speak
-          CALL TRANSF (X1A,Y1A,Z1A, TMAT)
-          CALL TRANSF (X2A,Y2A,Z2A, TMAT)
+          CALL TRANSF (X1A,Y1A,Z1A)
+          CALL TRANSF (X2A,Y2A,Z2A)
           R1A = R1A / TMAT(4,4)
           R2A = R2A / TMAT(4,4)
 	ENDIF
@@ -1694,7 +1768,7 @@ c	with specs for the current object; we just need to set flags.
         Z3A = BUF(9)
 *	Isolated objects not transformed by TMAT, but still subject to inversion
 	IF (ISOLATE) THEN
-	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	  IF (INVERT) THEN
 	    Y1B = -Y1B
 	    Y2B = -Y2B
 	    Y3B = -Y3B
@@ -1902,12 +1976,12 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	CALL CHKRGB (RED,GRN,BLU,'invalid glow light color')
 *	Isolated objects not transformed by TMAT, but still subject to inversion
 	IF (ISOLATE) THEN
-	  IF (AND(OTMODE,INVERT).EQ.0) THEN
+	  IF (INVERT) THEN
 	    GLOWSRC(2) = -GLOWSRC(2)
 	  ENDIF
 	ELSE
 *	transform coordinates and radius of glow source
-	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
+	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3))
 	  GLOWRAD = GLOWRAD / TMAT(4,4)
 	ENDIF
 	IF (EYEPOS.GT.0) PFAC = PERSP( GLOWSRC(3) )
@@ -1973,6 +2047,14 @@ c
       NCLIP = NCLIP + 1
       N = N - 1
       GO TO 7
+
+c
+c     26-Aug-1999 attempt error recovery and reporting 
+c		  if input line is not recognized
+46    continue
+      write (noise,'(A,A)') 'Unrecognized line: ',LINE
+      goto 7
+
 *
 *     here for end of objects
 *
@@ -1989,11 +2071,11 @@ c
 	XA = (TRULIM(1,1) + TRULIM(1,2)) / 2.0
 	YA = (TRULIM(2,1) + TRULIM(2,2)) / 2.0
 	ZA = (TRULIM(3,1) + TRULIM(3,2)) / 2.0
-	CALL TRANSF( XA, YA, ZA, TMAT )
+	CALL TRANSF( XA, YA, ZA )
 	XA = TMAT(4,1) - XA * TMAT(4,4)
 	YA = TMAT(4,2) - YA * TMAT(4,4)
 	ZA = TMAT(4,3) - ZA * TMAT(4,4)
-	IF (AND(OTMODE,INVERT).EQ.0) YA = -YA
+	IF (INVERT) YA = -YA
       WRITE (NOISE,*) 'To center objects in rendered scene, ',
      &                'change translation to:'
       WRITE (NOISE,*) XA, YA, ZA
@@ -2045,17 +2127,17 @@ c
 	  J = LIST(IPREV)
 	  K = LIST(I)
 	  L = LIST(INEXT)
-	  DO 51 II = 1, 3
+	  DO II = 1, 3
 	    KK = K+II
 	    IF   (DETAIL(KK).NE.DETAIL(J+II+3)
      &      .AND. DETAIL(KK).NE.DETAIL(J+II+6)) GOTO 54
-51	  CONTINUE
+	  END DO
 *         leading vertex must match one in following triangle
-	  DO 52 II = 7, 9
+	  DO II = 7, 9
 	    KK = K+II
 	    IF   (DETAIL(KK).NE.DETAIL(L+II-3)
      &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
-52	  CONTINUE
+	  END DO
 	  FLAG(I) = OR(FLAG(I),RIBBON)
 54	  CONTINUE
 	  IF (AND(FLAG(I),RIBBON).NE.0)  NRIB = NRIB + 1
@@ -2086,8 +2168,14 @@ c
       WRITE(NOISE,57)                   'total objects     =',N
       WRITE(NOISE,*)'-------------------------------'
       IF (NGLOWS.GT.0)  WRITE(NOISE,57) 'glow lights       =',NGLOWS
-      IF (NLABELS.NE.0) WRITE(NOISE,57) 'labels (ignored)  =',NLABELS
-      IF (NLABELS.NE.0) WRITE(NOISE,*)'-------------------------------'
+      IF (LFLAG) THEN
+	CALL LCLOSE( NLABELS )
+      	WRITE(NOISE,57)                 'PostScript labels =',NLABELS
+        WRITE(NOISE,*)'-------------------------------'
+      ELSEIF (NLABELS.NE.0) THEN
+        WRITE(NOISE,57) 'labels (ignored)  =',NLABELS
+        WRITE(NOISE,*)'-------------------------------'
+      ENDIF
 57    FORMAT(2X,A,I8)
 *
       WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
@@ -2138,19 +2226,21 @@ c
 60    CONTINUE
       CALL HSORTD (N, ZTEMP, ZINDEX)
       KNTTOT = 0
-      DO 70 J = 1, NTY
-      DO 70 I = 1, NTX
+      DO J = 1, NTY
+      DO I = 1, NTX
         KNTTOT = KNTTOT + KOUNT(I,J)
-70    CONTINUE
+      ENDDO
+      ENDDO
       WRITE (NOISE,*) 'knttot=',KNTTOT,' MAXSHR=',MAXSHR
       CALL ASSERT (KNTTOT.LE.MAXSHR,'short list overflow')
       K = 0
-      DO 75 J = 1, NTY
-      DO 75 I = 1, NTX
+      DO J = 1, NTY
+      DO I = 1, NTX
         KSTART(I,J) = K+1
         KSTOP(I,J) = K
         K = K + KOUNT(I,J)
-75    CONTINUE
+      ENDDO
+      ENDDO
       CALL ASSERT (K.EQ.KNTTOT,'k.ne.knttot')
       DO 90 I = 1, N
         IND = ZINDEX(N-I+1)
@@ -3399,6 +3489,8 @@ C
 *     Ready to write when we have completed a row of tiles
       K = 0
       DO 550 J=1,NOY
+	LINOUT = LINOUT + 1
+	IF (LINOUT.GT.NAY) GOTO 600
 	IERR = LOCAL ( 2, OUTBUF(K+1,1), OUTBUF(K+1,2), OUTBUF(K+1,3),
      &                    OUTBUF(K+1,4) )
         K = K + NX
@@ -3420,17 +3512,35 @@ C
 *
       END
 
-      SUBROUTINE TRANSF (X,Y,Z, T)
-      REAL   X,Y,Z,T(4,4)
-      REAL   H(4)
-      H(1) = X*T(1,1) + Y*T(2,1) + Z*T(3,1) + T(4,1)
-      H(2) = X*T(1,2) + Y*T(2,2) + Z*T(3,2) + T(4,2)
-      H(3) = X*T(1,3) + Y*T(2,3) + Z*T(3,3) + T(4,3)
-      H(4) = X*T(1,4) + Y*T(2,4) + Z*T(3,4) + T(4,4)
+      SUBROUTINE TRANSF (X,Y,Z)
+*     Input transformation
+      COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
+      REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
+*     Transformation matrix, inverse of transpose, and transposed inverse
+      REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
+*     Shortest rotation from light source to +z axis
+      REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
+*     Post-hoc transformation on top of original TMAT
+      REAL   RAFTER(4,4), TAFTER(3)
+      REAL   X,Y,Z
+      REAL   G(4),H(4)
+      H(1) = X*TMAT(1,1) + Y*TMAT(2,1) + Z*TMAT(3,1) + TMAT(4,1)
+      H(2) = X*TMAT(1,2) + Y*TMAT(2,2) + Z*TMAT(3,2) + TMAT(4,2)
+      H(3) = X*TMAT(1,3) + Y*TMAT(2,3) + Z*TMAT(3,3) + TMAT(4,3)
+      H(4) = X*TMAT(1,4) + Y*TMAT(2,4) + Z*TMAT(3,4) + TMAT(4,4)
+*     Apply post-hoc rotation and translation also
+      G(1) = RAFTER(1,1)*H(1) + RAFTER(1,2)*H(2) + RAFTER(1,3)*H(3)
+     &     + TAFTER(1)
+      G(2) = RAFTER(2,1)*H(1) + RAFTER(2,2)*H(2) + RAFTER(2,3)*H(3)
+     &     + TAFTER(2)
+      G(3) = RAFTER(3,1)*H(1) + RAFTER(3,2)*H(2) + RAFTER(3,3)*H(3)
+     &     + TAFTER(3)
       CALL ASSERT (H(4).NE.0.,'infinite vector')
-      X = H(1) / H(4)
-      Y = H(2) / H(4)
-      Z = H(3) / H(4)
+      X = G(1) / H(4)
+      Y = G(2) / H(4)
+      Z = G(3) / H(4)
       RETURN
       END
 

@@ -1,0 +1,24 @@
+<STYLE TYPE="type/css">
+<!--
+ BODY { 
+ 	background-color:white; 
+ 	margin-left: 8%; margin-right: 8%; 
+        background-image: url(r3d_docbkg.jpg);
+      }
+ H1   { text-align: center; text-decoration: underline; }
+ H4   { color:#009900; margin-left: -5%; }
+ H5   { color:#006600; margin-left: -2%; }
+
+ DT   { font-weight: bold; }
+
+ div.box	{ border: solid; border-width: thin; 
+ 		  margin-top: 5; margin-bottom: 5; margin-right: 0%;
+		}
+ div.color1	{ border: none;  background: #AADDFF; padding: 0.5em; }
+ div.footer	{ border: solid; border-width: thin; 
+ 		  margin-top: 20; 
+		  margin-left: -5%; margin-right: -5%;
+		  padding: 10;
+		}
+ -->
+</STYLE>

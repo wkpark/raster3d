@@ -26,7 +26,7 @@ Three intermediate files are produced by normal3d:
 Any existing files by these names will be destroyed.
 
 .SH ENVIRONMENT
-This script requires TIFF support in render, the unix utility nawk,
+This script requires TIFF support in render, the unix utility sed,
 the ImageMagick image processing package, and ghostscript. 
 
 .SH BUGS
@@ -39,9 +39,6 @@ at 300 dpi (r3dtops is called with \fI-fontscale 3.0\fP).
 
 Labels always appear on top of the molecular graphics image,
 even labels which should be occluded by a foreground object.
-
-At the moment the stereo3d script does not know to call label3d
-if there are labels present.
 
 .SH SOURCE
 .B anonymous ftp site:	

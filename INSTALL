@@ -49,9 +49,11 @@
 	make install
    If the installation part doesn't work, just copy the executables to 
    wherever you want them to live (usually /usr/local/bin/), 
-   and copy the manual pages to /usr/local/man/manl/.
+   copy the manual pages to /usr/local/man/manl/,
+   and copy the html documentation to its proper home (/usr/local/man/html?).
 
-5) [Optional] add R3D_LIB to your system-wide initialization of environmental
+
+5) Add R3D_LIB to your system-wide initialization of environmental
    variables, or instruct users to insert one of the following into their
    login shell initialization. Of course if you are installing Raster3D
    somewhere other than /usr/local/src then you need to modify the examples
@@ -91,6 +93,7 @@ A sample installation on a DEC Alpha might go:
 	./example2.script
 	./example3.script
 	... and so on ...
+	cp html/* /usr/local/man/html/ # install the HTML documentation
 
 Notes -
 
@@ -130,18 +133,11 @@ from the independent JPEG development group ftp://ftp.uu.net/graphics/jpeg/
 
 linux
 =====
-I run this package on a Pentium Pro under redhat linux 4.2, and I have 
+I run this package on a Pentium Pro under redhat linux, and I have 
 included a Makefile for that platform.  I have "f77" aliased to the
 fort77 script, which then feeds into f2c and gcc.  All straight from
 the redhat distribution except for the f77 alias.
 There are some gotchas, however:
-	- "nawk" is installed as "awk" in redhat, so you need to either
-	  define nawk as an alias for awk or just change "nawk" to "awk"
-	  in the stereo3d and label3d scripts.
-	- Sometimes the TIFF library dumps core after closing an image
-	  file in TIFFClose().  Very annoying, but other than producing
-	  a core dump it doesn't hurt anything - the image file has 
-	  already been successfully created at that point.
 	- The pre-built linux binaries for ImageMagick 3.8.8 get confused
 	  by the byte order in AVS files.  To work around this problem I
 	  added a conditional compilation flag -DNETWORKBYTEORDER in

@@ -1,0 +1,41 @@
+HTML documentation for Raster3D package Version 2.5
+===================================================
+
+Files
+	avs2ps.html      r3d_animation.html    r3dtops.html   rods.html
+	balls.html       r3d_examples.html     rastep.html    stereo3d.html
+	label3d.html     r3d_hints.html        raster3d.html
+	normal3d.html    r3d_labels.html       render.html
+	pdb_anisou.html  r3d_transparent.html  ribbon.html
+
+These are hypertext versions of the PostScript documentation.  I do not 
+know of any truly general conventions for where to install them, but
+/usr/local/man/html seems a likely bet.
+
+Files
+        r3d_docbkg.jpg  r3d_docstyle.css 
+
+These are files to support a cascading-stylesheet format for the html
+documentation files.  They should go in the same directory as the other
+files (I think, but it's possible you need to put them somewhere else
+on your web server).
+
+
+Files
+	example1.jpeg        example7.jpeg        r3d_colorpicker.gif
+	example2.jpeg        example8.jpeg        r3d_icon.gif
+	example5.jpeg        example9.jpeg        rastep_options.gif
+	example6.jpeg        index_button.gif
+
+These are images refered to by the hypertext documenation.
+They need to go into the same directory as the html files.
+
+
+Files
+	r3d_colorpicker.html    rgbtext.html
+	r3d_colors.html         rgb_black.jpeg
+	rgbmap_black.html       rgb_white.jpeg
+	rgbmap_white.html
+	                                          
+These files constitute an interactive HTML tool for selecting colors 
+in Raster3D images.

@@ -11,7 +11,7 @@ ribbon - Raster3D molecular graphics package ribbon-drawer
    "ribbon" [\fI-h\fP] \fI-d[0123456]\fP -     (to take PDB records from stdin)
 
 .PP
-\fIRibbon\fP reads a Brookhaven PDB coordinate file and 
+\fIRibbon\fP reads a PDB coordinate file and 
 produces a file on stdout containing Raster3D descriptor
 records for a ribbon representation constructed from a triangular mesh.
 The file produced by \fIribbon\fP
@@ -70,7 +70,7 @@ records at the head of the input file
 .SH DESCRIPTION
 .PP 
 The input to \fIribbon\fP consists of a single text file
-containing colour information [optional] and atomic coordinates in Brookhaven
+containing colour information [optional] and atomic coordinates in 
 PDB data bank format. 
 Only CA and carbonyl O atom records are required;
 all other input atoms are ignored.

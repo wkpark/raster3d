@@ -1,0 +1,117 @@
+<html>
+<head>
+<title> balls (a.k.a. setup) - Raster3D package </title>
+   <LINK REL=stylesheet HREF="r3d_docstyle.css" TEXT="text/css">
+</head>
+<body>
+
+<h1 align=center>
+<a name="RTFToC30">BALLS</a></h1>
+<h4>
+<a name="RTFToC31">SYNOPSIS</a></h4>
+balls is a preprocessor which prepares a description of a space-filling model
+for the 
+<a href="raster3d.html">Raster3D</a> molecular graphics package <p>
+<listing>
+balls [-h]
+</listing>
+balls
+reads a file describing atom colours and/or a PDB coordinate file
+and produces a stream of Raster3D object descriptors on stdout, one sphere
+for each atom in the input file. 
+The file produced by balls may be fed directly to render or it may be 
+combined with descriptor files produced by other Raster3D utilities.
+<h4>
+<a name="RTFToC32">EXAMPLES</a></h4>
+To describe a simple space-filling model coloured by residue type:
+
+<listing>
+cat mycolours.pdb protein.pdb | balls | render &gt; mypicture.avs
+</listing>
+To
+include a pre-selected view matrix with the same model:
+
+<listing>
+cp view1.matrix setup.matrix 
+cat mycolours.pdb protein.pdb | balls | render &gt; mypicture.avs
+</listing>
+To
+prepend header records describing a pre-selected scale and view:
+
+<listing>
+cat mycolours.pdb protein.pdb | balls -h &gt; balls.r3d 
+cat header.r3d balls.r3d | render &gt; mypicture.avs
+</listing>
+<dl>
+<dt><H4>OPTIONS</H4></dl><dl>
+<dt><i>-h</i><dd>Suppress header records in output. By default balls will
+produce an output file which starts with header records containing a default
+set of scaling and processing options. The -h flag will suppress these header
+records so that the output file contains only sphere descriptors. This option
+is useful for producing files which describe only part of a scene, and which
+are to be later combined with descriptor files produced by other
+programs.</dl><h4>
+<a name="RTFToC33">DESCRIPTION</a></h4>
+The input to balls consists of a single text file containing colour information
+and atomic coordinates in PDB data bank format. Coordinates are
+output as Raster3D descriptor records with colours and sphere radii assigned
+according to the COLO records described below. By default atoms are assigned
+CPK colours.
+<p>
+By default the output file
+contains a set of header records as required by the render program. The header
+is constructed to include a TMAT matrix corresponding to the transformation
+matrix contained in file setup.matrix (if it exists), or to the Eulerian angles
+contained in file setup.angles (if it exists).<p>
+Colours are assigned to atoms using a matching process, using COLOUR records
+prepended to the input PDB file. Raster3D uses a pseudo-PDB record type with
+COLO in the first 4 columns:
+<dl>
+<dt><b><i></i></b><dd>Columns		Contents
+<br> 1 - 4 		COLO
+<br> 7 - 30 		Mask (described below)
+<br> 31 - 38 		Red component
+<br> 39 - 46 		Green component
+<br> 47 - 54 		Blue component
+<br> 55 - 60 		van der Waals radius in Angstroms
+<br> 61 - 80 		Comments</dl>Note that the Red, Green, and Blue components are
+in the same positions as the X, Y, and Z components of a PDB ATOM or HETA record,
+and the van der Waals radius goes in place of the Occupancy. The Red, Green,
+and Blue components must all be in the range 0 to 1.<p>
+The Mask field is used in the matching process as follows. First the program
+reads in and stores all the ATOM, HETA, and COLO records in input order. Then
+it goes through each stored ATOM/HETA record in turn, and searches for a COLO
+record that matches the ATOM/HETA record in all of columns 7 through 30. The
+first such COLO record to be found determines the colour and radius of the
+atom.<p>
+In order that one COLO record can provide colour and radius specifications for
+more than one atom (e.g., based on residue or atom type, or any other criterion
+for which labels can be given somewhere in columns 7 through 30), the # symbol
+is treated as a wildcard. I.e., a # in a COLO record matches any character
+found in the corresponding column in an ATOM or HETA record. All other
+characters must match exactly. Note that the very last COLO record in the input
+should have # symbols in all of columns 7 through 30 in order to provide a
+colour for any atom whose ATOM/HETA record fails to match any previous COLO
+record. This idea of matching masks for colour specifications is due to Colin
+Broughton.<p>
+Several files of COLO records, including one based on Bob Fletterick's
+``Shapely Models'' and another mimicking CPK model parts, are provided as
+samples.
+<h4>
+<a name="RTFToC34">ENVIRONMENT</a></h4>
+The files setup.matrix and setup.angles, if they exist, affect the header
+records produced by balls.
+<h4>
+<a name="RTFToC35">AUTHORS
+</a></h4>
+Originally written by David J. Bacon and Wayne F. Anderson. Extensions and
+revisions by Ethan A Merritt.<p>
+<p>
+
+<hr>
+<a href="raster3d.html">
+<img src="index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
+
+</body></html>

@@ -1,48 +1,102 @@
-#!/bin/csh
+#!/bin/csh -f
 #
-# Raster3D Version 2.3 utility script "stereo3d" renders
-# a single Raster3D scene description as a side-by-side stereo pair.
-# Requires ImageMagick utilities identify, mogrify, and montage.
-# As written requires TIFF support, although this could be changed.
-# As written also requites nawk, although perl would do fine I'm sure.
-# This script was tested using ImageMagick version 3.8.0
+#	Raster3D utility script "stereo3d" V2.5 (labels version)
 #
-# Usage:	stereo3d render_input_file
+# Renders a single Raster3D scene description as a side-by-side stereo pair.
+#
+# This version will attempt label processing by calling the label3d script.
+# If you have not installed the label3d script, then don't use this version 
+# of stereo3d.
+#
+# Requires:
+#	ImageMagick utilities identify, mogrify, and montage.
+#	Ghostscript (if labels are present).
+# 	requires TIFF support, although this could be changed.
+# 	requires sed (previous versions used awk/nawk).
+# This script was tested using ImageMagick version 4.9.2
+#
+# Ethan A Merritt November 1999
+#
+# Usage:
+#		stereo3d render_input_file
+# Output:
+#		stereo.tiff	composite side-by-side stereo pair
+#
 # Temporary files:
 # 		left.r3d	header records for left eye view
 #		right.r3d	header records for right eye view
 #		stereo3d.tmp	normalization of render_input_file
 #		left.tiff	rendered image for left eye
 #		right.tiff	rendered image for right eye
-# Output:
-#		stereo.tiff	composite side-by-side stereo pair
+#		label3d.tiff	intermediate output from label3d
+#		label3d.tmp 	intermediate output from label3d
+#		label3d.ps  	intermediate output from label3d
 #
-# Ethan A Merritt March 1997
 #
-if ($1 == '') then
+if ($#argv < 1) then
    echo "Usage:"
-   echo "	stereo3d render_input_file"
+   echo "	stereo3d [-border] render_input_file"
    exit
 endif
 #
-if ($1 == ''-'') then
-   normal3d -stereo -expand > stereo3d.tmp
+if ("ARG$1" == "ARG-border") then
+   setenv STEREOBORDER
+   if ("ARG$2" == "ARG-") then
+      normal3d -stereo -expand > stereo3d.tmp
+   else
+      normal3d -stereo -expand < $2 > stereo3d.tmp
+   endif
 else
-   normal3d -stereo -expand < $1 > stereo3d.tmp
+   unsetenv STEREOBORDER
+   if ("ARG$1" == "ARG-") then
+      normal3d -stereo -expand > stereo3d.tmp
+   else
+      normal3d -stereo -expand < $1 > stereo3d.tmp
+   endif
 endif
 #
 echo "@stereo3d.tmp" >> left.r3d
 echo "@stereo3d.tmp" >> right.r3d
-render -tiff left.tiff  < left.r3d
-render -tiff right.tiff < right.r3d
-mogrify -bordercolor black -border 2x2 left.tiff
-mogrify -bordercolor black -border 2x2 right.tiff
-setenv SIZE `identify left.tiff | nawk '{for(i=1;i<=NF;i++){if ($i~"[0-9]*x[0-9]*") {print $i}}}'`
-printenv SIZE
-montage -geometry $SIZE+0+0! -borderwidth 0 +frame -scene 0 -label "" left.tiff right.tiff stereo.tiff
-mogrify -bordercolor black -border 2x2 stereo.tiff
+#
+# Render left and right panels separately
+# Old code (without label processing) was
+#    render -tiff left.tiff  < left.r3d
+#    render -tiff right.tiff < right.r3d
+rm -f label3d.tiff
+label3d left.r3d  || mv render.tiff left.tiff  
+if (-e label3d.tiff) mv label3d.tiff left.tiff
+label3d right.r3d || mv render.tiff right.tiff
+if (-e label3d.tiff) mv label3d.tiff right.tiff
+#
+# Find image size
+setenv IMAGESIZE `identify left.tiff | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
+setenv WIDTH  `echo $IMAGESIZE | sed -e 's/x.*//'`
+setenv HEIGHT `echo $IMAGESIZE | sed -e 's/.*x//'`
+setenv IMAGESIZE `echo "$WIDTH x $HEIGHT" | sed -e 's/ //g'`
+printenv IMAGESIZE
+#
+if ($?STEREOBORDER) then
+   montage +frame +label -background black -geometry $IMAGESIZE+2+0! -scene 0 left.tiff right.tiff stereo.tiff
+else
+   montage +frame +label -background white -geometry $IMAGESIZE+0+0! -scene 0 left.tiff right.tiff stereo.tiff
+endif
+#
+# This next bit is only necessary because ImageMagick _always_ writes a label
+# field at the bottom of the picture. Even with a font size of 0, you still get
+# two extra rows of pixels at the bottom. So we crop back to the original height.
+#
+if ($?STEREOBORDER) then
+   setenv NEWWIDTH `identify stereo.tiff | sed -e 's/.* \([0-9]*\)x[0-9]* .*/\1/'`
+   setenv IMAGESIZE `echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
+   mogrify -crop $IMAGESIZE+0+0 -bordercolor black -border 2x4 stereo.tiff
+#else
+#   setenv NEWWIDTH `identify stereo.tiff | sed -e 's/.* \([0-9]*\)x[0-9]* .*/\1/'`
+#   setenv IMAGESIZE `echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
+#   mogrify -crop $IMAGESIZE+0+0 stereo.tiff
+endif
 #
 # clean up
 #
 rm -f left.r3d right.r3d stereo3d.tmp
 rm -f left.tiff right.tiff
+rm -f label3d.tmp label3d.ps

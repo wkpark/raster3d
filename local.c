@@ -1,12 +1,11 @@
 /*
- * Raster3D V2.4j
+ * Raster3D V2.5
  * local.c
  *
- * Output from render.f is performed by calls to routine LOCAL,
- * which is implemented here.
+ * Output from render.f is performed by calls to routine LOCAL.
  *
- * This version of local.c supports 5 output modes, 3 of which
- * are controlled by conditional compilation directives
+ * This version of local.c supports 6 output modes, 4 of which
+ * are controlled by conditional compilation directives.
  *
  *	mode 0	AVS image file sent to stdout
  *		(2 integer header followed by AlphaRGB bytes)
@@ -29,22 +28,13 @@
  *		AVS image file piped to ImageMagick for conversion to
  *		some other image type determined by suffix
  *
- * V2.4(alpha)  These are for debugging, not intended for general use
- *	command line options
- *		-debug  passes flag back to render
- *		-aaN, 	where N=(0,1,2,3,4) forces anti-aliasing option
- *		-invert	invert y coordinate axis
- * additional parameter passed in mode 1 calls to inform local() of options
- * set in render code (e.g. alpha channel)
- *
- * V2.4d	Set TIFF resolution flag to 300dpi
- *		This may be incorrect, of course, but it's more likely to
- *		be correct than the default treatment of 72dpi in programs
- *		like PhotoShop
- * V2.4e	Bugfix for TIFF output image (blue channel shifted by 1 pixel)
- * V2.4j	Major re-working of code
- *		-jpeg folded back into main render version
- *		-out file.xxx  to pipe output to ImageMagick
+ * V2.5 Command line switches other than output file format handled elsewhere
+ *	here we recognize
+ *		-invert	         invert y coordinate axis
+ *		-jpeg            for jpeg output
+ *		-out file.xxx    pipe output to ImageMagick
+ *		-sgi [filename]  SGI libimage format output
+ *		-tiff [filename] TIFF output format
  */
 
 #include	<stdio.h>
@@ -85,7 +75,7 @@
 #define		ALPHACHANNEL	040
 
 int		alpha_channel = 0;
-char *version = "Raster3D V2.4j" ;
+char *version = "Raster3D V2.5b" ;
 
 /* HPUX lacks Fortran intrinsic functions AND and OR for some reason, */
 /* so I put a copy here. On the other hand HPUX has an unusually sane */
@@ -105,12 +95,12 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
   /* Everyone needs these */
   static int	xsize, ysize;
   static int	mode    = -1;
-  static int	quality = 95;
   int	        i;
   static char	*ofile;
   int		status = 0;
   int		invert = 0;
   int		bits;
+  int		quality;
   
   /* For -original output mode only */
   static int header[8] = { 3, 1, 1, 0, 0, 0, 0, 0 };
@@ -151,40 +141,12 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 if (*option == 0) 
     {
     
-    if (strncmp( (char *)buffer1, "-debug", 6) ==0)
-      {
-      fprintf(stderr,"\nDebugging mode selected\n");
-      status |= DEBUGGING;
-      buffer1 = buffer2;   buffer2 = buffer3;   buffer3 = buffer4;
-      }
-
-    if (strncmp( (char *)buffer1, "-aa",3) ==0)
-      {
-      if (((char *)buffer1)[3] == '1') status |= 1;
-      if (((char *)buffer1)[3] == '2') status |= 2;
-      if (((char *)buffer1)[3] == '3') status |= 3;
-      if (((char *)buffer1)[3] == '4') status |= 4;
-      if (status & ANTIALIAS == 0) status |= 4;
-      buffer1 = buffer2;   buffer2 = buffer3;   buffer3 = buffer4;
-      }
-
-    else if (strncmp( (char *)buffer1, "-invert", 7) ==0)
+    if (strncmp( (char *)buffer1, "-invert", 7) ==0)
       {
       invert = !invert;
       buffer1 = buffer2;   buffer2 = buffer3;   buffer3 = buffer4;
       }
 
-    if (strncmp( (char *)buffer1, "-quality", 8) == 0)
-      {
-      i = sscanf((char *)buffer2,"%d",&quality);
-      if (i != 1 || quality <= 0 || quality > 100) {
-	fprintf(stderr,"\n JPEG quality must be an integer from 1 to 100\n");
-	exit(-1);
-	}
-      buffer1 = buffer3;   buffer2 = buffer4;
-      }
-    
-    
     if (strncmp( (char *)buffer1, "-tiff", 5) == 0)
       {
 #ifdef TIFF_SUPPORT
@@ -245,18 +207,34 @@ if (*option == 0)
       }
     else if (strncmp( (char *)buffer1, "  ", 2) != 0)
       {
+	fprintf(stderr, "\nVersion 2.5b");
+      	if (strncmp( (char *)buffer1, "-help", 5) != 0)
+	    fprintf(stderr, "\n Unfamiliar switch: %12.12s", buffer1);
+	fprintf(stderr, "\n\n Usage:");
+	fprintf(stderr, "\n   input from stdin; output mode controlled from command line \n");
 	fprintf(stderr,
-		"\n Unfamiliar switch: %12.12s", buffer1);
+		"\n     render                        AVS image to stdout");
 	fprintf(stderr,
-		"\n Usage: render < infile                       (AVS image to stdout)");
+		"\n     render [-quality NN] -jpeg    JPEG image to stdout");
 	fprintf(stderr,
-		"\n    or  render [-quality NN] -jpeg < infile   (JPEG image to stdout)");
+		"\n     render -sgi [outfile]         output to SGI libimage file (defaults to render.rgb)");
 	fprintf(stderr,
-		"\n    or  render -out outfile.xxx < infile      (pipe output to ImageMagick");
+		"\n     render -tiff [outfile]        output to TIFF file (defaults to render.tif)");
 	fprintf(stderr,
-		"\n                                               for conversion to image type xxx)");
+		"\n     render -out outfile.xxx       pipe output to ImageMagick for");
 	fprintf(stderr,
-		"\n    or  render [-sgi outfile] [-tiff outfile] < infile");
+		"\n                                   conversion to image type xxx");
+	fprintf(stderr,"\n");
+	fprintf(stderr,"\n Options:");
+	fprintf(stderr,"\n   these over-ride contents of input stream header records \n");
+	fprintf(stderr,"\n    -aa                   anti-aliasing (SCHEME 4)");
+	fprintf(stderr,"\n    -alpha                alpha channel in output image (SCHEME 0)");
+	fprintf(stderr,"\n    -debug                verbose output while running");
+	fprintf(stderr,"\n    -draft                no anti-aliasing (SCHEME 1)");
+	fprintf(stderr,"\n    -fontscale FF         multiplier for PostScript font size");
+	fprintf(stderr,"\n    -labels               write labels to PostScript file label3d.ps");
+	fprintf(stderr,"\n    -invert               invert y axis");
+	fprintf(stderr,"\n    -size HHHxVVV         specify size of output image in pixels");
 	fprintf(stderr,"\n\n");
 	exit(-1);
       }
@@ -283,9 +261,10 @@ if (mode < 0)
 /****************************************************************/
 else if (*option == 1)
     {
-    xsize = *buffer1;
-    ysize = *buffer2;
-    bits  = *buffer3;
+    xsize   = *buffer1;
+    ysize   = *buffer2;
+    bits    = *buffer3;
+    quality = *buffer4;
 
     if (bits & ALPHACHANNEL) alpha_channel = 1;
       

@@ -8,7 +8,7 @@ rods - Raster3D preprocessor for ball-and-stick models
 
 .HB rods [\fI-h\fP] [\fI-b\fP] [\fI-radius R\fP] \fI[-Bcolor Bmin Bmax\fP]
 .PP
-\fIRods\fP reads a file describing atom colours and/or a Brookhaven 
+\fIRods\fP reads a file describing atom colours and/or a 
 PDB coordinate file and produces a file containing Raster3D descriptor
 records.
 The file produced by \fIrods\fP
@@ -59,7 +59,7 @@ colors shading smoothly through the spectrum from blue to red.
 .SH DESCRIPTION
 .PP 
 The input to \fIrods\fP consists of a single text file
-containing colour information and atomic coordinates in Brookhaven
+containing colour information and atomic coordinates in 
 PDB data bank format.
 Coordinates are output as Raster3D descriptor records
 with colours and sphere radii assigned according to the COLO

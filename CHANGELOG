@@ -1,3 +1,24 @@
+ 1-Feb-2000	V2.5b general release
+15-Dec-99	Oops. all-zero input line is legal for LABELs
+11-Nov-99	V2.5alpha
+		Fold r3dtops label-processing code into render itself.
+		Add command line parsing (parse.f) to render, so that
+		image size, anti-aliasing scheme, and label-handling
+		can all be specified externally.
+		Modify label3d and stereo3d scripts to expect render to
+		handle labels, and to use sed rather than awk/nawk.
+		Remove (finally!) (Q) formats from ribbon1.f
+ 9-Sep-99	correct bug introduced in V2.4j of rastep (-Bcol coloring
+		varies with value of -prob)
+26-Aug-99	V2.4m of rastep writes auto-orientation matrix as a post-hoc
+		rotation to render, 
+		requires render version at least 2.4l for compatibility
+28-Jul-99	(rastep,rods) don't draw bonds across alternate conformations
+12-Jul-99	rastep 2.4l fixes bug in reporting mean B_iso
+28-Jun-99	modify rastep to color by anisotropy,
+		also to deal gracefully with 4-digit residues + chainid
+14-Jun-99	fix bug (lack of sqrt) in rastep -iso processing 
+		add -bradius option to rods
 18-May-99	V2.4j
 		Re-worked label processing; new versions of r3dtops/label3d
 		Sample code r3d_label.c illustrating use of GLUT stroke font.

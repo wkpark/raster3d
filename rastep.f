@@ -11,6 +11,7 @@
 *			ellipsoids) even if ANISOU cards present
 *	-Bcolor Bmin Bmax 
 *			color by Biso values; Bmin = dark blue, Bmax = light red
+*	-Acolor		color by anisotropy;  red < white (A=0.5) < green
 *	-prob xx	draws ellipsoids to enclose this 
 *			probability level (default = 0.50)
 *	-radius		draws bonds with this radius in Angstroms
@@ -21,13 +22,21 @@
 *			fancy2	equatorial planes only
 *			fancy3  equatorial planes + transparent ellipsoid
 *			fancy4  longest principle axis only
+*			========================================================
 *	-tabulate [file]instead of creating a Raster3D input file, 
 *			list all atoms with principle axes and anisotropy.
 *			Optionally write a histogram of anisotropy to speficied 
 *			output file; otherwise output is to stderr 
 *
+*                       V2.4l output from -tabulate:
+*			ATOM RESNAME RESNUM  EIGEN1 EIGEN2 EIGEN3 ANISOTROPY Uiso
+*			========================================================
+*
 * The following options are under development
 *	-com [file]	find <anisotropy> in shells from center of mass
+*	-nohydrogens	don't plot hydrogens even if present
+*	-auto		auto-orientation
+*	-mini		small size plot (176x208) with auto-orientation
 *
 ********************************************************************************
 *
@@ -35,6 +44,18 @@
 * EAM Dec 97	- version 2.4b release
 * EAM Jan 98	- add tabulation option
 * EAM May 98	- integrate with PARVATI script
+* EAM Jun 99	- fix bug (lack of sqrt) in -iso processing, trap read errors
+*		  -Acolor flag to color by anisotropy (not yet entirely satisfactory)
+* EAM Jul 99	- V2.4l -tab output revised slightly, 
+*		  NPD ellipsoids colored magenta
+*		  -nohydro flag to suppress drawing hydrogens
+*		  -mini    flag to generate smaller pictures
+*		  don't draw bonds between atoms with different ALT flags
+* EAM Aug 99	- V2.4m 
+*		  work harder at suppressing hydrogens
+*		  add auto-orientation (NB: scaling is wrong in this case!)
+* EAM Dec 99	- V2.5
+*		  clean up output formats a little
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
@@ -46,10 +67,15 @@
       CHARACTER*24 MASK(MAXCOL),TEST
       CHARACTER*80 ATOM(MAXATM),CARD
       character*3  resname
+      character*1  spacer
       LOGICAL MATCH
       logical		hflag, ellipses, bcflag, tflag, atflag, comflag
+      logical		acflag, nohydro, mini, auto
       integer           fancy
       character*80	flags
+c
+c     Data structures used for auto-orientation
+      real	Rr(3,3), U(4,4), Xmom(5)
 c
       COMMON /ASSCOM/ assout, verbose
       integer         assout
@@ -71,7 +97,7 @@ c
       real	Uprin(3), Umean, Usigma, anisotropy, ellipticity
       integer	histogram(20), hislun
       real	anisi(MAXATM), sum_a, sum_a2, anis_mean, anis_sigma
-      real	sum_b, sum_b2, sum_ab
+      real	Biso(MAXATM), sum_b, sum_b2, sum_ab
       integer	nanis, niso, nhyd, nonpos
       logical	hwhacky
 c
@@ -84,8 +110,10 @@ c
       integer	hdist(100), comlun, dshells
 c
 c     Default to CPK colors and VDW radii
-      character*60 defcol(7)
+      character*60 defcol(9)
       data defcol /
+     & 'COLOUR###### CA ##############   0.175   0.175   0.175  1.70',
+     & 'COLOUR###### C  ##############   0.175   0.175   0.175  1.70',
      & 'COLOUR#######C################   0.625   0.625   0.625  1.70',
      & 'COLOUR#######N################   0.125   0.125   1.000  1.60',
      & 'COLOUR#######O################   0.750   0.050   0.050  1.50',
@@ -116,12 +144,16 @@ c
 	assout   = noise
 	verbose  = .false.
 	hflag    = .false.
+	acflag   = .false.
 	bcflag   = .false.
 	tflag    = .false.
 	atflag   = .false.
 	comflag  = .false.
 	ellipses = .true.
 	hwhacky  = .false.
+	nohydro  = .false.
+	mini     = .false.
+	auto     = .false.
 	fancy    = 0
 	prob     = 0.50
 	radius   = 0.10
@@ -149,8 +181,13 @@ c
 *		If prob > 1 assume they meant it in percent
 		if (prob.gt.1.) prob = prob / 100.
 	    end if
+	    if (flags(1:5) .eq. '-Acol') then
+	    	acflag = .true.
+		bcflag = .false.
+	    end if
 	    if (flags(1:5) .eq. '-Bcol') then
 		bcflag = .true.
+		acflag = .false.
 		i = i + 1
 		if (i.gt.narg) goto 701
 		call getarg( i, flags )
@@ -178,6 +215,7 @@ c
 	    if (flags(1:4) .eq. '-tab') then
 	    	tflag  = .true.
 	    	hflag  = .true.
+		acflag = .false.
 		bcflag = .false.
 		fancy  = 0
 		do j=1,MAXATM
@@ -209,6 +247,16 @@ c
 	    if (flags(1:8) .eq. '-by_atom') then
 		atflag = .true. 
 	    endif
+	    if (flags(1:8) .eq. '-nohydro') then
+		nohydro = .true. 
+	    endif
+	    if (flags(1:8) .eq. '-mini') then
+		mini = .true. 
+		auto = .true. 
+	    endif
+	    if (flags(1:8) .eq. '-auto') then
+		auto = .true. 
+	    endif
 c
 	i = i + 1
 	if (i.le.narg) goto 5
@@ -232,8 +280,8 @@ c Table 6.1 of the ORTEP manual
 c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
-     &                  'V2.4j'
-	write (noise,*) 'E A Merritt - 26 Apr 1999'
+     &                  'V2.5b'
+	write (noise,*) 'E A Merritt -  15 Jan 2000'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -247,21 +295,29 @@ c
 	write (noise,803) pradius
   803	format(' Corresponding critical value           ', f7.4)
 c
+      if (acflag) then
+      	write (noise,*) 'Atoms will be colored based on Anisotropy'
+      endif
+c
       if (bcflag) then
 	write (noise,*) 'Atom colors will be assigned based on Biso'
 	write (noise,*) '    from dark blue = Bmin =', Bmin
 	write (noise,*) '      to light red = Bmax =', Bmax
 	Umin = Bmin / (8. * 3.14159*3.14159)
 	Umax = Bmax / (8. * 3.14159*3.14159)
-	Umin = Umin * pradius
-	Umax = Umax * pradius
+	Umin = Umin
+	Umax = Umax
       endif
 c
       if (.not. hflag) then
 	WRITE(OUTPUT,'(A,I5,A)') 
-     &     'Raster3D thermal ellipsoid program V2.4j',
+     &     'Raster3D thermal ellipsoid program V2.5b',
      &     INT(prob*100.+0.5), '% probability bounds'
-	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
+     	if (mini) then
+	  WRITE(OUTPUT,'(A)') '22  26    tiles in x,y'
+	else
+	  WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
+	endif
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         3x3 virtual pixels -> 2x2 pixels'
 	WRITE(OUTPUT,'(A)') '1 1 1     white background'
@@ -273,8 +329,14 @@ c
 	WRITE(OUTPUT,'(A)') '0.0       No perspective'
 	WRITE(OUTPUT,'(A)') '1 1 1     main light source position'
       end if
+
 c
-	ASPECT = 1280./1024.
+	if (auto) then
+	  ASPECT = 22./26.
+	else
+	  ASPECT = 80./64.
+	endif
+c
 	NCOL = 0
 	NATM = 0
 	NANI = 0
@@ -317,7 +379,7 @@ c
       ENDIF
 *     Load default colors after any that were read in
       IF (NCOL.LT.MAXCOL-8) THEN
-        DO i = 1,7
+        DO i = 1,9
 	  NCOL = NCOL + 1
           READ(defcol(i),'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
      &          (RGB(J,NCOL),J=1,3), VDW(NCOL)
@@ -342,6 +404,8 @@ c
 c	Do a little pre-processing to make later bookkeeping easier
 c	At least screen out non-conformant PDB files that contain
 c	something obviously not an element type in columns 77:78
+c	Hydrogen naming conventions are totally messed up.
+c	
      	if (atflag) then
 	    resname = card(18:20)
 c	    if (resname.eq.'MET' .and. card(14:15).eq.'SD') then
@@ -354,18 +418,34 @@ c	    end if
 	    if (atom(iatm)(78:78).ge.'0' .and. atom(iatm)(78:78).le.'9')
      &		atom(iatm)(77:78) = '  '
 	end if
+	if (nohydro .and. atom(iatm)(77:78).eq.'  ') then
+	    do 70 i = 13,16
+	    	if (atom(iatm)(i:i).eq.' ') goto 70
+	    	if (atom(iatm)(i:i).ge.'1' 
+     &		    .and. atom(iatm)(i:i).le.'4') goto 70
+		if (atom(iatm)(i:i).ne.'H') goto 71
+		atom(iatm)(77:78) = ' H'
+   70	    continue
+   71	    continue
+	end if
+	    
 c
         TEST = CARD(7:30)
         DO 80 ICOL=1,NCOL
           IF (MATCH(TEST,MASK(ICOL))) THEN
-            READ(CARD,'(30X,3F8.3,6X,F8.2)') X,Y,Z, BISO
-            RAD = BISO / (8. * 3.14159*3.14159)
-	    RAD = RAD * PRADIUS
+            READ(CARD,'(30X,3F8.3,6X,F8.2)') X,Y,Z, Biso(IATM)
+	    IF (Biso(IATM).LE.0.0) THEN
+	    	write(noise,*) '*** Illegal Biso ',Biso(IATM),' - ',
+     &				atom(iatm+1)(13:27)
+		Biso(IATM) = 0.0
+	    ENDIF
+            Uiso = Biso(IATM) / (8. * 3.14159*3.14159)
             SPAM(1,IATM) = X
             SPAM(2,IATM) = Y
             SPAM(3,IATM) = Z
-	    SPAM(4,IATM) = RAD
+	    SPAM(4,IATM) = Uiso
             SPAM(5,IATM) = ICOL
+	    RAD  = sqrt(Uiso) * PRADIUS
             XMAX = MAX(XMAX,X+RAD)
             XMIN = MIN(XMIN,X-RAD)
             YMAX = MAX(YMAX,Y+RAD)
@@ -413,6 +493,10 @@ c	    else
       SCALE = MAX(XSPAN/XROOM,YSPAN/YROOM,ZSPAN/ZROOM)
 *     Leave a little extra room as a border:
       SCALE = SCALE / 0.90
+      if (mini) then
+          scale = sqrt(xspan**2+yspan**2+zspan**2) * aspect
+          if (scale .lt. 9.) scale = 9.
+      end if
 *     
 *     These are for the center-of-mass table
       DMAX  = MAX( ABS(XMAX-XCOM), ABS(XMIN-XCOM) )**2
@@ -432,9 +516,106 @@ c	    else
 	WRITE(OUTPUT,'(A)') '*'
 	WRITE(OUTPUT,'(A)') '*'
       end if
+c
+c Auto-orientation
+c 25-Aug-1999 
+c	Find Eigenvectors of moment of inertia tensor.
+c	Arrange smallest Eigenvalue along Y, largest along Z.
+c Problems:
+c	- Could emphasize side-chain over backbone by ignoring 
+c	  atoms O and N, but in practice this doesn't seem to help much.
+c	- Scaling is wrong, because it was done before rotation.
+c
+      if (auto) then
+      	do 125 iatm = 1, natm
+	  if   (atom(iatm)(1:4).ne.'ATOM' 
+     &	  .and. atom(iatm)(1:4).ne.'HETA') goto 125
+C         if (atom(iatm)(13:15).eq.' O ')  goto 125
+C         if (atom(iatm)(13:15).eq.' N ')  goto 125
+	  if (atom(iatm)(77:78).eq.' H' .and. nohydro) goto 125
+     	  x = spam(1,iatm) - xcom
+	  y = spam(2,iatm) - ycom
+	  z = spam(3,iatm) - zcom
+	  Rq = (x*x + y*y + z*z)
+	  Rv = sqrt(Rq)
+	  Rr(1,1) = Rr(1,1) + x*x
+	  Rr(1,2) = Rr(1,2) + x*y
+	  Rr(1,3) = Rr(1,3) + x*z
+	  Rr(2,1) = Rr(2,1) + y*x
+	  Rr(2,2) = Rr(2,2) + y*y
+	  Rr(2,3) = Rr(2,3) + y*z
+	  Rr(3,1) = Rr(3,1) + z*x
+	  Rr(3,2) = Rr(3,2) + z*y
+	  Rr(3,3) = Rr(3,3) + z*z
+	  Xmom(1) = Xmom(1) + 1.
+	  Xmom(2) = Xmom(2) + Rv
+	  Xmom(3) = Xmom(3) + Rq
+	  Xmom(4) = Xmom(4) + Rv*Rq
+	  Xmom(5) = Xmom(5) + Rq*Rq
+  125	continue
+  	if (verbose) then
+	  write (NOISE,'(/,A,5G13.5)') ' Radial moments:',Xmom
+	  write (NOISE,'(A)')        ' Moment of inertia tensor'
+	end if
+	Rg = sqrt(Xmom(3)/Xmom(1))
+	U(1,1) = Xmom(3)
+	U(2,2) = Xmom(3)
+	U(3,3) = Xmom(3)
+	do k = 1,3
+	  do l = 1,3
+	    U(k,l) = (U(k,l) - Rr(k,l)) / Xmom(1)
+	  end do
+	  if (verbose) write (NOISE,'(3G13.6)') (U(k,l),l=1,3)
+	end do
+	call jacobi( U, 3, 4, Eigens, Evecs )
+c	Re-order so that long axis is vertical, short axis towards viewer
+	  kmax = 1
+	  if (Eigens(2).gt.Eigens(kmax)) kmax = 2
+	  if (Eigens(3).gt.Eigens(kmax)) kmax = 3
+	  kmin = 1
+	  if (Eigens(2).le.Eigens(kmin)) kmin = 2
+	  if (Eigens(3).le.Eigens(kmin)) kmin = 3
+	  kmid = 6 - (kmin + kmax)
+	if (verbose) then
+	  write (NOISE,'(A,/,3F13.5,10X,3i2)') ' Eigenvalues:', 
+     &		Eigens(kmin),Eigens(kmid),Eigens(kmax)
+     &		,kmin,kmid,kmax
+	  write (NOISE,'(A)') ' Eigenvectors:'
+	  do k = 1,3
+	    write (NOISE,'(3F13.5)') 
+     &		Evecs(k,kmin),Evecs(k,kmid),Evecs(k,kmax)
+	  enddo
+	end if
+     	do k = 1,3
+	  U(k,1) = Evecs(k,kmid)
+	  U(k,2) = Evecs(k,kmin)
+	  U(k,3) = Evecs(k,kmax)
+	  U(k,4) = 0.0
+	  U(4,k) = 0.0
+	enddo
+	U(4,4) = 1.0
+c	Beware! may be left-handed at this point!
+	det = tinv4( evecinv, U )
+	if (det .lt. 0.0) then
+	  do k = 1,3
+	    U(k,3) = -U(k,3)
+	  enddo
+	endif
+c	OK, now it should be right-handed
+	WRITE(OUTPUT,'(A)') '# Auto-orientation matrix'
+	WRITE(OUTPUT,'(A)') '16'
+	WRITE(OUTPUT,'(A)') 'ROTATION'
+	do k = 1,3
+ 	  write (OUTPUT,'(3F13.5)') U(1,k),U(2,k),U(3,k)
+	enddo
+	WRITE(OUTPUT,'(A)') '# End auto-orientation'
+      end if
+c
+c Label output records
+c
       if (.not. tflag) then
 	WRITE(OUTPUT,'(A)') 
-     &	      '# Thermal ellipsoids from Rastep Version 2.4j'
+     &	      '# Thermal ellipsoids from Rastep Version 2.5b'
 	WRITE(OUTPUT,'(A,F5.2)') '# Probability level',float(iprob)/50.
       end if
 c
@@ -457,13 +638,18 @@ c
 	    RED   = RED*RED
 	    GREEN = GREEN*GREEN
 	    BLUE  = BLUE*BLUE
-	else
+	else if (acflag) then
+	    call A2RGB( 1.0, RED, GREEN, BLUE )
+	    RED   = RED*RED
+	    GREEN = GREEN*GREEN
+	    BLUE  = BLUE*BLUE
+	else 
 	    RED   = RGB(1,ICOL)
 	    GREEN = RGB(2,ICOL)
 	    BLUE  = RGB(3,ICOL)
 	endif
 	IF (ellipses .and.(ATOM(IATM+1)(1:6).EQ.'ANISOU')) THEN
-	    read (atom(iatm+1)(29:70),*) (anisou(i),i=1,6)
+	    read (atom(iatm+1)(29:70),*,err=131) (anisou(i),i=1,6)
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
@@ -473,6 +659,11 @@ c
 		nonpos = nonpos + 1
 		goto 138
 	    endif
+	    goto 132
+  131	    write(noise,*) '*** Format problem - ',
+     &				atom(iatm+1)(13:70)
+     	    goto 138
+  132	    continue
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
 	    radlim = radlim * MARGIN
 c
@@ -524,7 +715,7 @@ c	  But don't count atoms which are perfectly isotropic
 	    else
 	    	anisi(iatm) = anisotropy
 	    	sum_A = sum_A + anisotropy
-		sum_B = sum_B + SPAM(4,iatm)
+		sum_B = sum_B + Biso(iatm)
 	    	nanis = nanis + 1
 	    end if
 c
@@ -569,14 +760,17 @@ c	      do i = 18,19
 c		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
 c	      enddo
 c	    endif
+	    spacer = ' '
 	    if (ATOM(iatm)(22:22) .ne. ' ') then
+	      spacer = '_'
 	      do i = 23,25
 		if (ATOM(iatm)(i:i) .eq. ' ') ATOM(iatm)(i:i) = '_'
 	      enddo
 	    endif
-	    write (output,905) ATOM(iatm)(13:17),ATOM(iatm)(18:27),
-     &            Uprin(1),Uprin(2),Uprin(3),anisotropy,alonghi,Uiso
-905	  format(A5,1X,A10,3F9.4,2X,F9.4,F9.4,F9.4)
+	    write (output,905) ATOM(iatm)(13:17),
+     &            ATOM(iatm)(18:22),spacer,ATOM(iatm)(23:27),
+     &            Uprin(1),Uprin(2),Uprin(3),anisotropy,Uiso
+905	  format(A5,1X,A5,A1,A5,3F9.4,2X,F9.4,F9.4,F9.4)
 c
 c	  Also make a histogram of anisotropies
 	    i = anisotropy * 20. + 1
@@ -594,6 +788,11 @@ c	  And a table of <anis> by distance from center of mass
 c
 c	  End tabulation code
 	  endif
+
+c
+c	Skip hydrogens if requested
+     	  if (nohydro .and. ATOM(IATM)(77:78).eq.' H') goto 138
+
 c
 c	Draw principal axes inside bounding ellipsoid
 	  if (fancy.eq.1) then
@@ -607,7 +806,7 @@ c	Draw principal axes inside bounding ellipsoid
 	      end(3)   = z + size*evecs(3,i)
 	      write (output,907) start, end
 907	      format(' 3',/,
-     &             3f8.4,' 0.02',3f8.3,' 0.02','  0.5 1.0 0.3')
+     &             3f9.3,' 0.02',3f9.3,' 0.02','  0.5 1.0 0.3')
 	    enddo
 	  endif
 c
@@ -650,6 +849,12 @@ c	through the center of our ellipsoid
 	  QQ(4,4) = -pradius*pradius
 	  call tmul4( TEMP, QQ, evecinv )
 	  call tmul4( QP, evecit, TEMP )
+	  if (acflag) then
+	    call A2RGB( anisotropy, red, green, blue )
+	    red   = red*red
+	    green = green*green
+	    blue  = blue*blue
+	  endif
 	  write (output,151) 14, X,Y,Z, radlim, red, green, blue
 	  write (output,152) QP(1,1),QP(2,2),QP(3,3),QP(1,2),QP(2,3),
      &                       QP(1,3),QP(1,4),QP(2,4),QP(3,4),QP(4,4)
@@ -710,12 +915,11 @@ c       Calculate mean and sigma of distribution
 	do i = 1,NATM
 	    if (anisi(i).ne.0) then
 		sum_a2 = sum_a2 + (anisi(i) - anis_mean)**2
-		sum_b2 = sum_b2 + (SPAM(4,i) - biso_mean)**2
+		sum_b2 = sum_b2 + (Biso(i)  - biso_mean)**2
 		sum_ab = sum_ab 
-     &		       + (anisi(i)-anis_mean) * (SPAM(4,i)-biso_mean)
+     &		       + (anisi(i)-anis_mean) * (Biso(i)-biso_mean)
 	    end if
 	end do
-	biso_mean  = biso_mean * (3.14159*3.14159*8.0) / PRADIUS
 	if (nanis.gt.1) then
 	    anis_sigma = sqrt( sum_a2 / float(nanis-1) )
 	    ccoef = sum_ab / sqrt(sum_a2 * sum_b2)
@@ -777,13 +981,12 @@ c
 	do i = 1, NATM
 	    if (anisi(i).ne.0.0 .and. atomtype.eq.atom(i)(77:78)) then
 		sum_a2 = sum_a2 + (anisi(i)-anis_mean)**2
-		biso_mean = biso_mean + SPAM(4,i)
+		biso_mean = biso_mean + Biso(i)
 		atom(i)(77:78) = '  '
 	    end if
 	end do
 	if (natype.gt.1) anis_sigma = sqrt( sum_a2 / float(natype-1) )
 	biso_mean  = biso_mean / float(natype)
-	biso_mean  = biso_mean * (3.14159*3.14159*8.0) / PRADIUS
 
 	write (hislun,'(A,4X,A,F7.3,F7.3,F7.2,I8)')    
      &       '#|   ',atomtype,anis_mean,anis_sigma,biso_mean,natype
@@ -821,6 +1024,7 @@ c
   150 CONTINUE
       IF (ATOM(IATM)(1:4).EQ.'ATOM' .OR.
      &    ATOM(IATM)(1:4).EQ.'HETA') THEN
+     	if (nohydro .and. ATOM(IATM)(77:78).eq.' H') goto 154
 	X = SPAM(1,IATM)
 	Y = SPAM(2,IATM)
 	Z = SPAM(3,IATM)
@@ -830,32 +1034,53 @@ c
 	    RED   = RED*RED
 	    GREEN = GREEN*GREEN
 	    BLUE  = BLUE*BLUE
+	else if (acflag) then
+	    call A2RGB( 1.0, RED, GREEN, BLUE )
+	    RED   = RED*RED
+	    GREEN = GREEN*GREEN
+	    BLUE  = BLUE*BLUE
 	else
 	    RED   = RGB(1,ICOL)
 	    GREEN = RGB(2,ICOL)
 	    BLUE  = RGB(3,ICOL)
 	endif
 	IF (.not. ellipses) THEN
-            WRITE(OUTPUT,151) 2, X,Y,Z,SPAM(4,IATM),RED,GREEN,BLUE
+	    RAD  = sqrt(SPAM(4,IATM)) * PRADIUS
+            WRITE(OUTPUT,151) 2, X,Y,Z,RAD,RED,GREEN,BLUE
 	ELSE IF (ATOM(IATM+1)(1:6).EQ.'ANISOU') THEN
-	    read (atom(iatm+1)(31:80),*) (anisou(i),i=1,6)
+	    read (atom(iatm+1)(31:80),*,err=153) (anisou(i),i=1,6)
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
 	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:26)
+		red   = 1.0
+		green = 0.0
+		blue  = 1.0
 	    endif
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
 	    radlim = radlim * MARGIN
+	    if (acflag) then
+	      anisotropy = min( eigens(1),eigens(2),eigens(3) )
+     &	                 / max( eigens(1),eigens(2),eigens(3) )
+     	      anisotropy = anisotropy * anisotropy
+	      call A2RGB( anisotropy, red, green, blue )
+	      red   = red*red
+	      green = green*green
+	      blue  = blue*blue
+	    endif
 	    write (output,151) 14, x,y,z,radlim,red,green,blue
 	    write (output,152) (quadric(i),i=1,10)
 	ELSE
-            WRITE(OUTPUT,151) 2, X,Y,Z,SPAM(4,IATM),RED,GREEN,BLUE
+	    RAD  = sqrt(SPAM(4,IATM)) * PRADIUS
+            WRITE(OUTPUT,151) 2, X,Y,Z,RAD,RED,GREEN,BLUE
   151	FORMAT(I2,/,7F8.3)
   152	FORMAT(10F12.4)
 	ENDIF
+  153 continue
       ENDIF
+  154 continue
       IATM = IATM + 1
       IF (IATM.LE.NATM) GOTO 150
       IF (fancy.eq.1 .or. fancy.eq.3) then
@@ -873,9 +1098,13 @@ c
       DO 202 IATM=1,NATM
 	IF (ATOM(IATM)(1:4).NE.'ATOM'.AND.ATOM(IATM)(1:4).NE.'HETA') 
      &      GOTO 202
+     	IF (nohydro .AND. ATOM(IATM)(77:78).EQ.' H') GOTO 202
       DO 201 JATM=IATM+1,NATM
 	IF (ATOM(JATM)(1:4).NE.'ATOM'.AND.ATOM(JATM)(1:4).NE.'HETA') 
      &      GOTO 201
+     	IF (nohydro .AND. ATOM(JATM)(77:78).EQ.' H') GOTO 201
+	IF (ATOM(IATM)(17:17).ne.' '.and.ATOM(JATM)(17:17).ne.' '
+     &     .and. ATOM(IATM)(17:17).ne.ATOM(JATM)(17:17)) goto 201
 	DX = SPAM(1,IATM) - SPAM(1,JATM)
 	DY = SPAM(2,IATM) - SPAM(2,JATM)
 	DZ = SPAM(3,IATM) - SPAM(3,JATM)
@@ -930,17 +1159,8 @@ c
       RETURN
       END
 
-      SUBROUTINE TRANSF (X,Y,Z, T)
-      REAL   X,Y,Z,T(4,4)
-      REAL   H(4)
-      H(1) = X*T(1,1) + Y*T(2,1) + Z*T(3,1) + T(4,1)
-      H(2) = X*T(1,2) + Y*T(2,2) + Z*T(3,2) + T(4,2)
-      H(3) = X*T(1,3) + Y*T(2,3) + Z*T(3,3) + T(4,3)
-      H(4) = X*T(1,4) + Y*T(2,4) + Z*T(3,4) + T(4,4)
-      CALL ASSERT (H(4).NE.0.,'infinite vector')
-      X = H(1) / H(4)
-      Y = H(2) / H(4)
-      Z = H(3) / H(4)
+C     Dummy routine to make linker happy (called by QINP in quadric.f)
+      SUBROUTINE TRANSF (X,Y,Z)
       RETURN
       END
 
@@ -968,6 +1188,29 @@ c
 	h = 240. * (1.-fraction)
 	s = 0.95
  	v = 0.75 + fraction/4.
+	call hsv2rgb( h, s, v, r, g, b )
+	return
+	end
+
+
+CCC	Return RGB triple that runs from 
+CC	red for A=0.0 -> white for A=0.5 -> green for A=1.0
+C
+	subroutine A2rgb( A, r, g, b )
+	real              A, r, g, b
+c
+	real    fraction, h, s, v
+c
+	if (A .lt. 0.5) h = 0.0
+	if (A .ge. 0.5) h = 120.
+	fraction = abs( (A-0.5)*2.0 )
+c	s = fraction**2
+	s = fraction
+	v = 1.0 - s/2.0
+	if (A .le. 0.0) then
+	    h = 300.
+	    v = 1.0
+	endif
 	call hsv2rgb( h, s, v, r, g, b )
 	return
 	end

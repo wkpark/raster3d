@@ -1,0 +1,37 @@
+#!/bin/csh -f
+#
+#	Raster3D labeling script label3d V2.5
+#
+# Notes:
+#	- Assumes label support in render (in previous version
+#	  label support was from separate program r3dtops).
+#	- This version uses sed to find image size 
+#	  (previous versions used awk/nawk).
+#	- Requires ghostscript and ImageMagick.
+#	- Depending on what size images you typically produce, 
+#	  you might want to change the FONTSCALE definition below
+#
+setenv FONTSCALE "3.0"
+#
+if ($1 == ''-'') then
+   cat > label3d.tmp
+else
+   cp $1 label3d.tmp
+endif
+#
+rm -f render.tiff label3d.ps label3d.ppm
+render -labels -fontscale $FONTSCALE -tiff render.tiff < label3d.tmp
+if (! -e render.tiff) exit(-1)
+if (! -e label3d.ps) then
+   mv render.tiff label3d.tiff
+   exit(0)
+endif
+setenv IMAGESIZE `identify render.tiff | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
+alias gs3d gs -sDEVICE=ppm -dNOPAUSE -q -sOutputFile=label3d.ppm
+gs3d -g$IMAGESIZE label3d.ps -c quit || echo "GhostScript error" && goto cleanup 
+combine -compose over render.tiff label3d.ppm label3d.tiff
+#
+cleanup:
+rm -f label3d.ps 
+rm -f label3d.tmp label3d.ppm render.tiff
+#

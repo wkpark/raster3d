@@ -55,7 +55,13 @@ clean:
 install: $(PROGS)
 	$(INSTALL) -m 755 $(PROGS) $(bindir)
 	$(INSTALL) -m 755 stereo3d $(bindir)
-	$(INSTALL) -m 644 doc/*.l $(mandir)
+	$(INSTALL) -m 755 label3d  $(bindir)
+	$(INSTALL) -m 644 doc/*.l  $(mandir)
+	@echo "	*******************************************"
+	@echo "	* The examples/ subdirectory contains     *"
+	@echo "	* files to verify your installation and   *"
+	@echo "	* to serve as examples of use.            *"
+	@echo "	*******************************************"
 
 tar:
 	(cd ..; tar -zcvvf raster3d.tgz raster3d)
@@ -88,8 +94,8 @@ balls:
 local.o: local.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o quadric.o
-	$(FC) $(FFLAGS) render.f quadric.o local.o  \
+render:	render.f local.o quadric.o parse.o r3dtops.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o \
 	$(LIBS) -o render
 	$(RM) local.o
 

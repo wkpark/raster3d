@@ -73,7 +73,7 @@ FOPTS = -O -OPT:Olimit=4000
 #
 
 INCLUDES = -I/usr/local/include
-DEFINES  = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT -DIMAGE_PIPE
+DEFINES  = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT -DIMAGEPIPE
 LIBS     =  -limage -ltiff
 
 #
@@ -92,7 +92,13 @@ clean:
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
-	cp stereo3d /usr/local/bin
+	cp stereo3d /usr/local/bin/
+	cp label3d  /usr/local/bin/
+	@echo "	*******************************************"
+	@echo "	* The examples/ subdirectory contains     *"
+	@echo "	* files to verify your installation and   *"
+	@echo "	* to serve as examples of use.            *"
+	@echo "	*******************************************"
 
 tar:
 	(cd ..; tar -cvf Raster3D_$(VERSION).tar raster3d)
@@ -114,8 +120,8 @@ local.o: local.c
 render.o: render.f
 	$(FC) $(FOPTS) -c render.f
 
-render:	render.o local.o quadric.o
-	$(FC) $(FFLAGS) render.o quadric.o local.o  \
+render:	render.o local.o quadric.o parse.o r3dtops.o
+	$(FC) $(FFLAGS) render.o quadric.o local.o parse.o r3dtops.o \
 	$(LIBS) -o render $(LDFLAGS)
 
 avs2ps:	avs2ps.c

@@ -13,6 +13,10 @@
 * EAM Sep 1997
 *	-default colors; option for coloring by B-value
 *	-more generous output formats (FORMATs 130 and 140)
+* EAM Jun 1999
+*	-brad XX to set ball radius as fraction of Van der Waals radius
+* EAM Jul 1999
+*	don't draw bonds across alternate chain locations
 *
 *------------------------------------------------------------------------------
 *     I/O units for colour/co-ordinate input, specs output, user output
@@ -26,13 +30,15 @@
       CHARACTER*80 ATOM(MAXATM),CARD
       LOGICAL MATCH
 C
-C	Ethan Merritt flags include -b (ball and stick)
-C				    -h (suppress header records in output)
-C				    -radius XX (set cylinder radius)
+C	flags include 
+C		-b (ball and stick)
+C		-h (suppress header records in output)
+C		-radius XX (set cylinder radius)
+C		-brad XX (set ball radius as fraction of VdW)
 C
       character*64 options
-      logical      bflag, hflag, bcflag
-      real	   cylrad
+      logical      bflag, hflag, bcflag, brflag
+      real	   cylrad, ballrad
 c
 c	Read in 3x3 view matrix from file setup.matrix.  
 c	Matrix is applied before finding translation, center, and scale.  
@@ -58,7 +64,9 @@ c
 	bflag  = .FALSE.
 	bcflag = .FALSE.
 	hflag  = .FALSE.
+	brflag = .FALSE.
 	cylrad = 0.2
+	ballrad= 0.2
 	narg  = iargc()
 	i = 1
   500	continue
@@ -83,6 +91,14 @@ c
 		read (options,*,err=701) cylrad
 		if (cylrad.le.0) stop 'illegal radius value'
 	    end if
+	    if (options(1:3) .eq. '-br') then
+		i = i + 1
+		if (i.gt.narg) goto 701
+		call getarg( i, options )
+		read (options,*,err=701) ballrad
+		if (ballrad.le.0) stop 'illegal ball radius value'
+		bflag = .true.
+	    end if
 	i = i + 1
 	if (i.le.narg) goto 500
 c
@@ -92,7 +108,7 @@ c
 	call exit(-1)
   799	continue
 c
-      write (noise,*) 'Raster3D rods program V2.4f'
+      write (noise,*) 'Raster3D rods program V2.5b'
       if (bcflag) then
         write (noise,*) 'Atom colors will be assigned based on Biso'
         write (noise,*) '    from dark blue = Bmin =', Bmin
@@ -109,7 +125,7 @@ C
 	call view_matrix
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'rods V2.4f'
+	WRITE(OUTPUT,'(A)') 'rods V2.5b'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         anti-aliasing'
@@ -254,12 +270,10 @@ C	If two atoms of different colors are bonded, make half-bond
 C	cylinders with each color.
 C
       CLOSE = 1.6 * 1.6
-C     CYLRAD = 0.2
-      SHRINK = 0.2
 C
       IF (BFLAG) THEN
       DO 135 IATM=1,NATM
-	RAD  = SPAM(4,IATM) * SHRINK
+	RAD  = SPAM(4,IATM) * ballrad
 	ICOL = SPAM(5,IATM)
 	if (bcflag) then
 	    call B2RGB( SPAM(6,IATM), Bmin, Bmax, RED, GREEN, BLUE )
@@ -287,6 +301,8 @@ C
 	DIST  = DX*DX + DY*DY + DZ*DZ
 	CLOSE = 0.6 * (SPAM(4,IATM) + SPAM(4,JATM)) 
 	CLOSE = CLOSE**2
+	IF (ATOM(IATM)(17:17).NE.' ' .AND. ATOM(JATM)(17:17).NE.' '
+     &     .AND. ATOM(IATM)(17:17).NE.ATOM(JATM)(17:17)) GOTO 150
 	IF (DIST .LE. CLOSE) THEN
 	  if (bcflag) then
 	    ICOL = 1

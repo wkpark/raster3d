@@ -1,0 +1,44 @@
+#
+# Test isolation of labels
+#
+15
+#
+# Test for default font
+11
+-.45 .35 -.5   .3 .4 .9
+This is the default font.
+#
+# Now a title in a fancier font
+# First character is big
+10
+"ZapfChancery-MediumItalic" 20. "Left-align"
+#
+11
+-0.45 0.40 0.0     1.0 1.0 1.0
+R
+#
+# Remaining characters are smaller, but follow on the same line
+10
+"Palatino-BoldItalic" 12. "Offset"
+11
+0.0 0.0 0.0        1.0 1.0 1.0
+aster3D now does
+11
+0.0 0.0 0.0        1.0 1.0 1.0
+ labels!
+#
+# Symbols and superscripts
+#
+10
+"Symbol" 10. "Left-align"
+11
+-.45 -.35 .0  .6 .8 .1
+abc DEF
+10
+"Helvetica-Bold" 7. "Offset"
+11
+.0 .025 .0  .5 .5 .5
+super
+#
+# End isolation
+9

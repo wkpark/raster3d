@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH Raster3D 1 "28 February 1999" "Raster3D V2.4j"
+.TH Raster3D 1 "10 November 1999" "Raster3D V2.5"
 .SH NAME
 .PP
 Raster3D molecular graphics package

@@ -1,0 +1,207 @@
+<html>
+
+<head>
+<title>Using Raster3D for animation</title>
+   <LINK REL=stylesheet HREF="r3d_docstyle.css" TEXT="text/css">
+</head>
+
+<body>
+<h1 align=center>Using Raster3D for Animation</h1>
+
+<h4>Example</h4>
+The basic idea here is to repeatedly render a scene with small shifts in the
+contents between renderings. Here is an example of animating a 360 degree
+rotation of a scene described by Molscript and rendered in Raster3D.
+<p>
+
+<ol>
+<li> Create a Molscript description file for your scene, and make sure it
+     works. Run it through Molscript once and note down the "window" and "slab"
+     parameters reported to the terminal output.  Add these to the top of
+     your Molscript file so that they will be the same for all the rendered
+     images.  Also add a single line "@frame_rotation.mol" at the end of the 
+     coordinate transformation section of the Molscript input, 
+     as in the following example:
+     <listing>
+    !
+    ! File  "animate.mol"
+    ! MOLSCRIPT V1.4 description file for an animation
+    !
+    plot
+        <font color=#AA0000><b>window 100. ;
+        slab   100. ;</b></font>
+    !
+    ! Read in protein coordinates, center and rotate to desired viewpoint
+    !
+    read PROTEIN   "protein.pdb";
+    transform atom *
+	by centre position atom *
+ 	by rotation z    5.0
+	by rotation x   33.0
+        <font color=#AA0000><b>@frame_rotation.mol</b></font>
+	;
+    !
+    ! Secondary structure 
+    !
+        set planecolour  hsb 0.52 0.8 1.0 ;
+        set plane2colour hsb 0.52 0.9 0.6 ;
+        set linecolour   hsb 0.52 1.0 0.9 ;
+
+	strand from A4   to A9   ;	turn from A9   to A13  ;
+	helix  from A13  to A19  ;	coil from A19  to A41  ;
+	
+    [and so on and so forth]
+    </listing>
+    <p>
+
+<li> Remember to create a file "header.r3d" that contains the 
+     <a href="/man/render.html#sample_header">header records</a>
+     passed by Molscript to the Raster3D rendering program. Molscript will
+     use its own header records by default if this file does not exist, but
+     the defaults are not appropriate for your animated image.
+    <p>
+     Your picture may look very beautiful when it fills the whole screen, but
+     remember that most people looking at your animation will be using a
+     machine+viewer combination that is very slow.  It is best not to make
+     your animated image large than, say, 256x256 pixels.  Size is somewhat
+     less of a problem for MPEG animations than for animated GIF images.
+     <p>
+
+<li> Now you want to run this input file through both Molscript and Raster3D
+     repeatedly, with a different rotation in the file rotation.mol each time.
+     Here is a perl script that does a complete 360 degree rotation in 
+     increments of 3 degrees.  
+     <listing>
+    #!/usr/local/bin/perl
+    #
+    #
+	open (STDERR, ">animate.log");
+    #
+    Frame: for ($i = 0.0; $i < 360.0; $i += 3.0)
+	{
+	open(ROTATION, "> frame_rotation.mol");
+	printf ROTATION "by rotation y %6.1f \n", $i;
+	close(ROTATION);
+
+	$outfile = sprintf( "frame_%3.3d.jpeg", $i ) ;
+	$molscript = '/usr/local/bin/molscript -r' ;
+	$render = '/usr/local/bin/renderjpeg' ;
+
+	$command = "$molscript < animate.mol | $render > $outfile" ;
+	system '/bin/echo', $command ;
+	system "/bin/csh", "-c", "$command" ;
+
+	}
+     </listing>
+    <p>
+
+<li> You now should have a series of rendered frames called
+     frame_000.jpeg, frame_003.jpeg, etc, where the rotation angle is
+     coded into the file name.
+    <p>
+
+<li> You can convert the entire series of frames into an animated GIF
+     file using the ImageMagick convert command:
+     <listing>
+     convert -delay 15 -loop 0 frame_*.jpeg movie.gif
+     </listing>
+     The <i>-delay</i> parameter sets a minimum display time per frame in
+     0.01 seconds. The <i>-loop 0</i> sets a flag requesting a display
+     program to loop over the frames repeatedly.
+    <p>
+
+<li> Alternatively, you can convert the series of frames into an MPEG
+     animation.  This process is rather arcane (and <i>I</i> certainly
+     don't understand it very well), but the command will look something
+     like this:
+     <listing>
+     mpeg_encode mpeg_encoding.dat
+     </listing>
+     The mpeg_encode program is available from the
+     <a href="http://bmrc.berkeley.edu/projects/mpeg/">
+     Berkeley Multimedia Research Center</a>.
+     The entire process, including input file names, encoding parameters,
+     output file name, etc, etc, is all specified in the *.dat file.
+     Here is one that worked for me, but I don't guarantee that the 
+     parameters are at all optimal!
+     <listing>
+    #
+    # file "mpeg_encoding.dat"
+    #
+      INPUT_DIR .
+      INPUT
+      frame_*.jpeg [000-360+3]
+      END_INPUT
+      OUTPUT movie.mpeg
+      BASE_FILE_FORMAT JPEG
+      INPUT_CONVERT    *
+      PATTERN          IBPBB
+      FORCE_ENCODE_LAST_FRAME
+      SLICES_PER_FRAME 1
+      GOP_SIZE 10
+      PIXEL    HALF
+      RANGE    2
+      IQSCALE  5
+      PQSCALE  10
+      BQSCALE  15
+      REFERENCE_FRAME DECODED
+      PSEARCH_ALG     LOGARITHMIC
+      BSEARCH_ALG     CROSS2
+    </listing>
+    <p>
+
+<li> Depending on which method of animation you chose, 
+    the command to play back your new movie is either
+    <listing> animate movie.gif </listing>
+    or
+    <listing> mpeg_play -quiet -dither color movie.mpeg </listing>
+    Netscape is capable of displaying animated GIF files also, but the
+    performance is much slower than the ImageMagick animate command.
+    (Actually the animate command also is slow during the first couple of
+    loops through the movie, but once all the frames are in local cache
+    memory it whips right along.  Netscape rereads the file each time,
+    so it never speeds up due to repetition).
+    You can configure Netscape to trigger mpeg_play as a helper
+    application.
+    <p>
+
+<li> That's it!
+
+</ol>
+
+<h4>Bells &amp; Whistles</h4>
+    The example above is specific to the use of Molscript, but the same basic
+    idea could be used to animate a figure composed using other tools.  In this
+    case you would probably want to write a perl script that, instead of simply
+    writing a single line for Molscript, writes out the full set of Raster3D
+    header records.  That would allow a zoom effect through changing the scale
+    parameter in TMAT(4,4), general rotation and translation by changing the
+    full TMAT orientation matrix,  and many other special effects.  
+    <p>
+    This approach works nicely with file indirection in the render input file.
+    One could, for example, fade a surface in or out by gradually changing 
+    its degree of transparency.  To do this you would describe the surface
+    in the main input file as <listing>
+    @transparent.r3d
+    @surface.r3d
+    9 End transparent</listing>
+    And successive iterations of the animation script would overwrite the
+    degree of transparency sepecified in "transparent.r3d" in much the same
+    way that the rotation angle was changed in the example listed above.
+    <p>
+    Before getting <i>too</i> fancy you might want to look into
+    molecular graphics packages specifically designed for animation, 
+    for example the GRAMPS language by TJ O'Donnell and AJ Olson (1981) 
+    [<i>Computer Graphics</i> 15:133-142]. The perl+Raster3D combination is probably
+    sufficient for animations simple enough to view via the web, however.
+    <p>
+<i> - Ethan A Merritt, Sept 1997
+
+<hr>
+<a href="raster3d.html">
+<img src="index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
+
+</body>
+</html>

@@ -46,8 +46,14 @@ clean:
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
-	cp stereo3d /usr/local/bin
 	cp doc/*.l /usr/local/man/manl
+	cp stereo3d /usr/local/bin/
+	cp label3d  /usr/local/bin/
+	@echo "	*******************************************"
+	@echo "	* The examples/ subdirectory contains     *"
+	@echo "	* files to verify your installation and   *"
+	@echo "	* to serve as examples of use.            *"
+	@echo "	*******************************************"
 
 tar:
 	(cd ..; tar -cvf Raster3D_$(VERSION).tar raster3d)
@@ -66,8 +72,8 @@ ribbon:	$(RIBOBJS)
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o quadric.o 
-	$(FC) $(FFLAGS) render.f quadric.o local.o \
+render:	render.f local.o quadric.o parse.o r3dtops.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o \
 	$(LIBS) -o render $(LDFLAGS)
 
 avs2ps:	avs2ps.c

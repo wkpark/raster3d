@@ -7,7 +7,7 @@ stereo3d - render a Raster3D scene as a side-by-side stereo pair
 
 .SH SYNOPSIS
 
-   stereo3d render_input_file
+   stereo3d [-border] render_input_file
    display stereo3d.tiff
 
 .PP
@@ -15,7 +15,8 @@ stereo3d - render a Raster3D scene as a side-by-side stereo pair
 file as a side-by-side stereo pair. The resulting image is placed in 
 file stereo.tiff. 
 
-stereo3d uses the Raster3D utilities \fInormal3d\fP and \fIrender\fP, 
+stereo3d uses the Raster3D utilities \fIlabel3d\fP,
+\fInormal3d\fP and \fIrender\fP, 
 and the utility programs identify, mogrify, and montage from John Cristy's 
 ImageMagick image processing package. Three
 intermediate files are produced by normal3d: 
@@ -23,22 +24,35 @@ intermediate files are produced by normal3d:
  	left.r3d - header records for left eye view 
  	right.r3d - header records for right eye view 
 
+Additional intermediate files may be produced by \fIlabel3d\fP.
+
 The two views are separately rendered to yield images left.tiff and
-right.tiff (deleted upon completion), given black borders, and merged to
-form a single side-by-side stereo pair stereo.tiff.
+right.tiff (deleted upon completion), optionally given black borders, 
+and merged to form a single side-by-side stereo pair stereo.tiff.
 
 .PP
 .SH EXAMPLES
 
 If the following line would render and display a single image: 
+
  	render -tiff single.tiff < input.r3d;  display single.tiff
+
 then the following line would render and display the same scene as a 
 stereo pair instead: 
+
  	stereo3d input.r3d; display stereo.tiff
 
 NB: The output image is always called stereo.tiff; there is no provision at
 present to specify some other name. 
 .PP
+.SH OPTIONS
+
+.B "-border"
+.PP
+By default the left and right images are placed next to each other with
+no intervening space and no frame around them.  The \fI-border\fP option
+requests a 4 pixel wide black border separating and surrounding the 
+component images.
 .SH ENVIRONMENT
 
 This script requires TIFF support in render, the unix utility nawk, and
@@ -62,7 +76,7 @@ named left.tiff, right.tiff, or stereo.tiff will be destroyed.
 
 
 .SH SEE ALSO
-normal3d(l), render(l), Raster3D(l)
+label3d(l), normal3d(l), render(l), Raster3D(l)
 .PP
 .SH AUTHORS
 

@@ -30,6 +30,15 @@ range from 300 to 1200 dpi. The parameter \fIxx\fP is a scale
 factor by which the number of pixels per PostScript unit should
 be increased.
 
+.SH SPECIAL CHARACTERS
+
+A small number of escaped characters are allowed in the label text string. 
+These may be useful for tweaking the position of your labels: 
+
+ \\n      new line
+ \\b      backspace
+ \\v      vertical tab (move up 1/2 line)
+
 .SH BUGS
 The whole nature of label handling in Raster3D is not yet settled.
 It would be much nicer if all the label processing would be taken

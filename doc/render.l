@@ -4,16 +4,15 @@
 .SH NAME
 render - Raster3D molecular graphics package rendering program
 .SH SYNOPSIS
-.B "render" [\fI-invert\fP] < infile.r3d > outfile.avs
+.B "render"  < infile.r3d > outfile.avs
 
-.B "render" [\fI-invert\fP] [\fI-quality NN\fP] 
--jpeg < infile.r3d > outfile.jpeg
+.B "render"  [\fI-quality NN\fP] -jpeg < infile.r3d > outfile.jpeg
 
-.B "render" [\fI-invert\fP]  -tiff outfile.tiff < infile.r3d 
+.B "render"   -tiff outfile.tiff < infile.r3d 
 
-.B "render" [\fI-invert\fP]  -sgi "[outfile.rgb]" < infile.r3d
+.B "render"   -sgi "[outfile.rgb]" < infile.r3d
 
-.B "render" [\fI-invert\fP]  -out outfile.xxx   < infile.r3d
+.B "render"   -out outfile.xxx   < infile.r3d
 .PP
 \fIRender\fP reads an ascii file consisting of several header lines
 followed by individual object descriptors. 
@@ -26,16 +25,41 @@ with 24 bits of color information per pixel.
 
 .SH OPTIONS
 .TP 5
-.B "-invert"
+.B "-aa"
 
-Invert image top-to-bottom.
+Force anti-aliasing (SCHEME 4)
 
 .TP 5
-.B "-quality"
+.B "-alpha"
 
-Only meaningful in conjunction with -jpeg option; sets the 
-quality (compression level) of the output image.
-Allowable values 1 - 100 (default 90).
+Force output of transparency information (SCHEME 0). This only works
+if the output image format supports an alpha channel (AVS, TIFF, but
+not JPEG). Note that this turns off anti-aliasing.
+
+.TP 5
+.B "-draft"
+
+Turn off anti-aliasing (SCHEME 1) to increase rendering speed.
+
+.TP 5
+.B "-fontscale"
+
+Only meaningful in conjunction with the -labels option.
+Modifies the interpretation of font sizes during label processing.
+Defaults to -fontscale 3.0, which will generate PostScript
+labels that are at the correct nominal fint size when printed
+at 300 dpi.
+
+.TP 5
+.B "-help"
+
+Prints a short summary of command line options.
+
+.TP 5
+.B "-invert"
+
+Invert image top-to-bottom. This may be necessary if you are using
+some odd viewing program.
 
 .TP 5
 .B "-jpeg"
@@ -45,11 +69,34 @@ By default \fIrender\fP will produce an AVS-compatible image on stdout.
 The -jpeg flag will cause it to output a JPEG image stream to stdout instead.
 
 .TP 5
-.B "-tiff filename"
+.B "-labels [outfile.ps]"
 
-Only if compiled with -DTIFF_SUPPORT.
-The -tiff flag will cause render to output a TIFF image to the specified
-file instead of writing to stdout.
+Process labels (object types 10, 11, 12) and create a PostScript
+output file label3d.ps in addition to the rendered image file.
+Output filename defaults to \fIlabel3d.ps\fP.
+This option is used by the \fIlabel3d\fP script.
+
+.TP 5
+.B "-out filename.xxx"
+
+Only if compiled with -DIMAGE_PIPE.
+The -out flag causes \fIrender\fP to pipe output to the ImageMagick
+command convert, with instructions to convert it to an image file
+whose type is determined by the filename extension xxx.
+
+.TP 5
+.B "-quality"
+
+Only meaningful in conjunction with -jpeg option; sets the 
+quality (compression level) of the output image.
+Allowable values 1 - 100 (default 90).
+
+.TP 5
+.B "-size HHHxVVV"
+
+Override the image size parameters (NTX,NTY,NPX,NPY) in file header
+and produce an output image that is exactly HHH pixels in the
+horizontal and VVV pixels in the vertical.
 
 .TP 5
 .B "-sgi [filename.rgb]"
@@ -61,12 +108,12 @@ The filename defaults to render.rgb, but specifying a file
 on the command line will override this default.
 
 .TP 5
-.B "-out filename.xxx"
+.B "-tiff filename"
 
-Only if compiled with -DIMAGE_PIPE.
-The -out flag causes \fIrender\fP to pipe output to the ImageMagick
-command convert, with instructions to convert it to an image file
-whose type is determined by the filename extension xxx.
+Only if compiled with -DTIFF_SUPPORT.
+The -tiff flag will cause render to output a TIFF image to the specified
+file instead of writing to stdout.
+
 
 .SH HEADER RECORDS
 .TP 5 

@@ -49,16 +49,18 @@ C
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
       REAL   EYEPOS
       REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
+      REAL   RAFTER(4,4), TAFTER(3)
 *
       COMMON /ASSCOM/ noise, verbose
       integer         noise
       logical         verbose
 *
-	real   TRAN(4,4), det
+	real   TRAN(4,4), POST(4,4), det
 *
 *	TMAT is a post-multiplier matrix, but unfortunately the
 *	quadric surface math was worked out for pre-multipliers
@@ -74,7 +76,11 @@ C
 	tran(1,4) = 0.0
 	tran(2,4) = 0.0
 	tran(3,4) = 0.0
-	det = tinv4( TINV, TRAN ) / TMAT(4,4)
+*
+*	July 1999 - Allow post-hoc rotation matrix also
+	call tmul4( POST, RAFTER, TRAN )
+*
+	det = tinv4( TINV, POST ) / TMAT(4,4)
 	call trnsp4( TINVT, TINV )
 *
 *	While we're at it, check for legality of rotation matrix
@@ -134,17 +140,21 @@ C
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
       REAL   EYEPOS
       REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
+      REAL   RAFTER(4,4), TAFTER(3)
 *
       COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
       INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
       INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
+     &                , ISOLATE
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
+      LOGICAL           ISOLATE
 *
 * Assume this is legitimate
 	qinp = .TRUE.
@@ -180,7 +190,7 @@ C
 * Transform center before saving
 * (But can we deal with perspective????)
 *
-	call transf (xq, yq, zq, TMAT)
+	call transf (xq, yq, zq)
 	radlim = radlim / TMAT(4,4)
 	if (eyepos.gt.0) then
 c	    pfac = 1./(1.-zq/eyepos)
@@ -353,10 +363,12 @@ C
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
       REAL   EYEPOS
       REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
+      REAL   RAFTER(4,4), TAFTER(3)
 *
 	real    QA,QB,QC,QD,QE,QF,QG,QH,QI,QJ
 	real    AA,BB,CC,DD,EE
@@ -788,10 +800,12 @@ C
 	REAL PERSP, Z
 	COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
 	REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
 	REAL   EYEPOS
 	REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
 	REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
+	REAL   RAFTER(4,4), TAFTER(3)
 	IF (Z/EYEPOS .GT. 0.999) THEN
 	    PERSP = 1000.
 	ELSE

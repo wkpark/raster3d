@@ -6,6 +6,8 @@ Most of the example scripts assume that ImageMagick is installed
 on your system as an image viewer.  If it is, then executing these 
 shell scripts should produce an image on your X-windows screen.
 
+There is a small picture gallery of the example images included 
+in the HTML documentation  ../html/r3d_examples.html
 
 Example 1
 =========
@@ -74,23 +76,36 @@ example illustrates the support for rendering transparent objects in Raster3D.
 Note:  It would be a more informative figure if the accessible surface
 of the protein were shown, rather than that of the bound sugar.  However
 this would have required inclusion of an absolutely huge surface
-description file so I judged it impractical.  You should be able to find
-a JPEG figure illustrating Raster3D rendering of a protein surface on the
+description file so I judged it impractical.  A JPEG figure illustrating
+Raster3D rendering of a protein surface should be available on the
 Raster3D distribution site.
+
+
+Example 6
+=========
+
+Example 6 demonstrates the Version 2.5 command line options to render.
 
 
 Example 7
 =========
 
-Example 7 uses the ribbon utility to draw a quick picture of a
-pentamer with separate colours for each chain.  I'm sure you
-could do a better job of picking colour schemes.
+Example 7 demonstrates support for PostScript labels added to the
+render program in version 2.5.  Label commands in the input file are
+converted to PostScript while the scene is being rendered. The resulting
+PostScript file is fed through ghostscript to produce a raster image 
+containing the labels. Finally the two raster images, one containing 
+the molecular graphics and the second containing the labels, are 
+composited to yield a single image file with both molecules and labels.
+This procedure is automated by the label3d script.
 
 
 Example 8
 =========
 
-Demonstrates the creation of a stereo pair.
+Demonstrates the creation of a stereo pair using the stereo3d command.
+It also illustrates the use of the ribbon command to draw a minimal
+representation of the protein backbone.
 
 
 Example 9

@@ -52,6 +52,7 @@ C	from file.  Matrix is applied before
 C	finding translation, center, and scale.  Afterwards the input matrix
 C	to RENDER is therefore the identity matrix.
 C EAM Aug 1997 - Honor COLOUR requests
+C EAM Nov 1999 - remove all (q) formats
 C                                                     
 c
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
@@ -64,6 +65,7 @@ c
 	character*64	in_file, out_file
 	character*8	mode
 	character*32	flags
+	character*80	line
 	common /matrix/ matrix, coords
 	real*4		matrix(3,3), coords(3)
 	data		matrix / 1.,0.,0.,0.,1.,0.,0.,0.,1. /
@@ -106,7 +108,7 @@ c
 c
 	if (hflag) goto 10
 c
-      WRITE(OUTPUT,'(A)') 'A colour C-alpha ribbon'
+      WRITE(OUTPUT,'(A)') 'C-alpha ribbon - Raster3D V2.5'
       WRITE(OUTPUT,'(A)') '80 64     tiles in x,y'
       WRITE(OUTPUT,'(A)') ' 8  8     pixels (x,y) per tile'
       WRITE(OUTPUT,'(A)') '4         anti-aliasing 3x3 into 2x2 pixels'
@@ -235,11 +237,11 @@ C
       end if
   129	continue
 	write (noise,'(/)')
-	write (noise,156) 'X  min max:', XMIN, XMAX
-	write (noise,156) 'Y  min max:', YMIN, YMAX
-	write (noise,156) 'Z  min max:', ZMIN, ZMAX
-	write (noise,156) '     scale:', SCALE
-  156	format(1x,a,3f8.2)
+	write (noise,153) 'X  min max:', XMIN, XMAX
+	write (noise,153) 'Y  min max:', YMIN, YMAX
+	write (noise,153) 'Z  min max:', ZMIN, ZMAX
+	write (noise,153) '     scale:', SCALE
+  153	format(1x,a,3f8.2)
 c
 c
 	if (dflag) then
@@ -253,18 +255,23 @@ c
 	else
 	width = 0
 	write (noise,3) 'Width of ribbon (default 1.5A): '
-	read  (5,157) nq,width
-  157	format(q,9f8.0)
-	if (width .le. 0) width = 1.5
+	read  (5,'(A80)') line
+	read  (line,*,end=154,err=154) width
+  154	continue
+	if (width.le.0) width = 1.5
 c	Original RIBBON used bspline smoothing, which requires "offset"
 c	because smoothed curve doesn't go through guide points.  
 	write (noise,3) 'Offset from CA position (default 1.2A): '
-	read  (5,157) nq,offset
-	if (nq .eq. 0) offset = 1.2
+	read  (5,'(A80)') line
+	read  (line,*,end=156,err=156) offset
+  156	continue
+	if (offset.le.0) offset = 1.2
 	write (noise,3) 'Chords per residue (default = 10): '
-	read  (5,158) nq,nchord
-	if (nchord .le. 0 .or. nq .eq. 0) nchord = 10
-  158	format(q,i5)
+	read  (5,'(A80)') line
+	read  (line,*,end=158,err=158) nchord
+  158	continue
+	if (nchord.le.1) nchord = 10
+  159	continue
 	write (noise,160)
   160	format(' Coloring schemes available:',
      1	/,' 0 or 1: solid color (RGB values from color1 below)',
@@ -273,8 +280,10 @@ c	because smoothed curve doesn't go through guide points.
      4	/,'      4: shade front as in scheme 2, back is color 3',
      5	/,'      5: new color for each chain (requires COLOUR cards)')
 	write (noise,3) 'Coloring scheme: '
-	read  (5,158) nq,ischeme
-	if (nq.eq.0 .or. ischeme.le.0 .or. ischeme.gt.6) ischeme = 1
+	read  (5,'(A80)') line
+	read  (line,*,end=161,err=161) ischeme
+  161	continue
+	if (ischeme.le.0 .or. ischeme.gt.6) ischeme = 1
 	if (ischeme .eq. 1) write (noise,3)
      1      'COLOR1 (RGB values, 3f8.0): '
 	if (ischeme .eq. 2) write (noise,3)
@@ -283,13 +292,17 @@ c	because smoothed curve doesn't go through guide points.
      1      'COLOR1, COLOR2 (RGB values, 6f8.0): '
 	if (ischeme .eq. 4) write (noise,3) 
      1      'COLOR1, COLOR2, COLOR3 (RGB values, 9f8.0): '
-	if (ischeme .lt. 5)
-     1      read  (5,157) nq,color1,color2,color3
-	if (nq .eq. 0) then
+	if (ischeme .lt. 5) then
+	    read  (5,'(A80)') line
+	    if (line.eq.' ') goto 163
+	    read  (line,*,end=163,err=163) color1,color2,color3
+        endif
+	goto 164
+  163	continue
 	     call vload( color1, 0.0, 0.0, 0.4 )
 	     call vload( color2, 0.5, 0.0, 0.0 )
 	     call vload( color3, 0.6, 0.6, 0.6 )
-	end if
+  164	continue
 	if (ischeme .eq. 3) then
 		color3(1) = color2(1)
 		color3(2) = color2(2)
@@ -297,8 +310,8 @@ c	because smoothed curve doesn't go through guide points.
 	end if
 c	end of -d suppression
 	end if
-	write (noise,159) ischeme,color1,color2,color3
-  159	format(' color scheme',i3,/,3(3x,3f6.3))
+	write (noise,169) ischeme,color1,color2,color3
+  169	format(' color scheme',i3,/,3(3x,3f6.3))
 	cindex = 1
 c
 	call ribbon( 2, width, nchord, offset, natm )
