@@ -3,20 +3,39 @@
 <title> Raster3D package for photorealistic molecular graphics </title>
 </head>
 <body>
+<hr>
 <h1 align=center>Raster3D</h1>
-<h4>
-<a name="RTFToC1">SYNOPSIS</a></h4>
+<img src="r3d_icon.gif" alt="" align=left hspace=10>
 The Raster3D molecular graphics package consists of a core program 
 <a href="render.html">render</a> 
-and a number of ancillary programs (
-<a href="avs2ps.html">avs2ps</a>,
-<a href="balls.html">balls</a>,
-<a href="ribbon.html">ribbon</a>,
-<a href="rods.html">rods</a>
-) which produce input files
+and a number of ancillary programs
+which produce input files
 for rendering from Brookhaven PDB files of atomic coordinates. Raster3D can
-also render images composed using version 1.4 of Molscript [Per Kraulis (1991)
-J. Appl. Cryst. 24, 946-950].<p>
+also render images composed using version 1.4 of 
+<a href="#refs">Molscript</a>
+<p>
+
+    <ul>
+    <li><a href="#general">Synopsis</a>
+    <li><a href="#examples">Brief examples of use</a>
+    <li><a href="#hints">Suggestions for better pictures</a>
+    <li>Individual programs in the Raster3D package
+	<ul>
+	<li><a href="avs2ps.html">avs2ps</a>
+	<li><a href="balls.html">balls</a>
+	<li><a href="normal3d.html">normal3d</a>
+	<li><a href="render.html">render</a> 
+	<li><a href="ribbon.html">ribbon</a>
+	<li><a href="rods.html">rods</a>
+	</ul>
+    <li><a href="#source">Distribution site</a>
+    <li><a href="#authors">Authors</a>
+    <li><a href="#cite">Citing the program</a>
+    <li><a href="#refs">References</a>
+    </ul>
+<hr>
+
+<h4><a name="general">SYNOPSIS</a></h4>
 Raster3D uses a fast Z-buffer algorithm to produce high quality pixel images
 featuring two light sources, specular highlighting, Phong shaded surfaces, and
 shadowing. Output is in the form of a pixel image with 24 bits of color
@@ -26,28 +45,42 @@ formats are supported: AVS, TIFF, SGI libimage, and a private format which is
 backwards-compatible with earlier versions of Raster3D. To actually view or
 manipulate the images produced, you must also have installed an image viewing
 package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).<p>
-Although the rendering program is not specific to molecular graphics, Raster3D
-is not intended as a general purpose ray-tracing program. Ancillary programs
-are provided only for the generation of object descriptions based on atomic
-coordinates stored in Brookhaven PDB format.<p>
-Raster3D Version 2.1 supports rendering of five object types: spheres,
-triangles, planes, smooth-ended cylinders, and round-ended cylinders. 
-New in version 2.1 is support for two additional "object types"
-which are really modifiers for characteristic properties of existing objects.  
-One of these allows specification
-of explicit surface normals at triangle vertices; the other allows specification
-of surface reflectance properties specific to individual objects.  
-Neither of these features is used by the current version of the auxilliary
-programs distributed with Raster3D, but their inclusion may encourage use
-of the Raster3D rendering program in conjunction with other code which depends
-on these capabilities. The provision for explicit surface normals, for example,
-should allow the use of Raster3D to render general molecular surfaces.<p>
 
-If you use the package to prepare figures for
-publication, please give proper credit to the authors: (Bacon and Anderson,
-1988; Merritt and Murphy, 1994).
+Ancillary programs are provided for the generation of object
+descriptions based on atomic coordinates stored in Brookhaven PDB format.
+Although the rendering program is not specific to molecular graphics, Raster3D
+is not intended as a general purpose ray-tracing program. 
+Some of the algorithms used have been chosen for speed rather than generality;
+that is, they happen to work well for the types of images the program is 
+intended for, but may produce odd results if used for very different types of
+image.
+<p>
+
+Raster3d currently supports rendering five object types: spheres,
+triangles, planes, smooth-ended cylinders, and round-ended cylinders.
+Version 2.1 added support for two additional "object types" which are
+really modifiers for characteristic properties of existing objects. One
+of these allows specification of explicit surface normals at triangle
+vertices; the other allows specification of surface reflectance
+properties specific to individual objects.<p>
+
+<b>Version 2.2</b>: The major new feature in Raster3D Version 2.2 is support
+for transparent objects.
+This permits Raster3D rendering of transparent molecular surfaces
+in combination with the existing provisions for depicting molecular structures.
+In keeping with the philosophy of the package, the intention is not to
+duplicate the power of more general programs for composing or describing
+such surfaces. The idea rather is to provide a tool for creating images with
+greater resolution and photorealism than is generally possible using a
+graphics workstation screen.<p>
+
+Also new in this version is the 
+<a href="normal3d.html">normal3d</a>
+utility, a tool to facilitate merging Raster3D input files created by different
+programs.<p>
+
 <h4>
-<a name="RTFToC2">EXAMPLES</a></h4>
+<a name="examples">EXAMPLES</a></h4>
 Using only programs included in the Raster3D distribution one can create and
 render space-filling models, ball-and-stick models, ribbon models, and figures
 composed of any combination of these. The following set of commands would
@@ -99,205 +132,47 @@ render &lt; description.r3d | avs2ps &gt; picture.ps
 
 </listing>
 <h4>
-<a name="RTFToC3">SUGGESTIONS
-FOR BETTER PICTURES
-</a></h4>
-<b><i>Shadowing:</i></b> The primary purpose of shadowing is to convey a feeling of depth in
-the rendered image. This can be particularly effective when there are a
-relatively small number of elements in the scene, or when there is a grouping
-of foreground objects which cast shadows onto a separate grouping of background
-objects. However if there are a large number of elements in the scene, e.g. a
-ribbon and arrow representation of a large molecular assembly, the use of
-shadows may actually complicate the visual impact and make the image less
-satisfactory. In this case you may wish to try rendering the image both with
-and without shadows, or you might experiment with the location of the primary
-light source (the SOURCE parameter in the 12th header record input to
-<b><i>render</i></b>). Finally, you can de-emphasize the shadows by increasing
-the secondary (straight-on) light source contribution parameter.<p>
-<b><i>Tailoring your image to the output device:</i></b> The quality of pictures generated by
-Raster3D is ultimately limited by the output device. Although you will probably
-compose and preview your figures on a workstation screen, you will probably
-want to re-render the final version with a larger number of pixels before
-sending it to a film recorder or high performance color printer. For example, a
-typical film recorder can produce slides with a resolution of roughly 4000x3000
-pixels (much larger than can be displayed on a workstation screen). The number
-of pixels in your rendered image is controlled by the parameters (NTX,NTY) and
-(NPX,NPY) in the 2nd and 3rd header records input to the render program. You
-should also be aware that color balance and particularly the appropriate
-``gamma correction'' varies from one device to another. Raster3D itself applies
-no gamma correction; if you need one you will have to apply it to the generated
-image files afterwards. This is a standard image processing procedure, and may
-be a selectable print option for your output device. If you will be using a
-particular output device regularly, it is worth an initial round of
-experimentation to determine the best gamma value for future runs. The
-appropriate gamma correction can then be applied to the each rendered picture
-before sending it for printing.<p>
-<b><i>Side-by-side figures and stereo pairs:</i></b> The EYEPOS parameter input to the render
-program specifies a viewing distance for the resulting image. You may think of
-this as equivalent to the distance between a camera and the object being
-photographed. Generally the sense of depth conveyed by the rendered image is
-slightly increased by positioning the virtual camera reasonably close to the
-object; the default recommended value for EYEPOS is 4, which means that
-distance from the camera to the center of the object is four times the width of
-the field of view. However, if you are composing a figure containing two or
-more similar objects which are next to each other, e.g. a comparison of two
-variants of the same protein structure, the resulting parallax may be more of a
-hindrance than a help. Since the virtual camera is centered it will ``see'' the
-right hand object slightly from the left, and the left hand object slightly
-from the right. This results in different effective viewpoints for paired
-objects which would otherwise be identical. To overcome this effect you may
-wish to set EYEPOS to some large value, which will generate an image with
-effectively no parallax. The same considerations apply for the production of
-stereo pairs.<p>
-<b><i>Stereo pairs and Molscript:</i></b> Unfortunately Molscript does not pass any
-information about area, page layout, or even aspect ratio, on to the Raster3D
-input file. This means that all objects emitted by a Molscript run are simply
-placed into a single raster grid description. I.e., the pairs of ``plot'' and
-``end plot'' statements in a Molscript input file have no effect in Raster3D
-mode. Note that the header records controlling this grid are taken from file
-header.r3d if it exists, otherwise there is an internal set of header records
-which Molscript uses by default. Therefore a Molscript file which describes a
-stereo pair as two separate plots will not work correctly when fed through to
-render. To produce a Raster3D stereo pair starting from a Molscript file you
-have a number of options:
-<ul>
-<li>	Describe the pair within a single Molscript plot rather than as two
-separate plots.
-<li>	Use two Molscript plots, but split them into separate runs. You can then
-generate two separate Raster3D images which may be pasted side-by-side either
-electronically (see below) or physically.
-<li>	Work from a single Molscript image and generate the stereo pair by
-manipulating the header records for render. This is what I normally do. The
-steps of the process are:
-    <ol>
-    <li>Run Molscript to generate an input file for render. Molscript
-transforms all coordinates so that the view matrix is an identity matrix with
-scale 1.0
-    <li>Run this input file through render. You now have the right half of a
-stereo pair.
-    <li>Edit the header records so that the view matrix described by TMAT (see
-render documentation) is the one given below. This matrix describes a shear
-operation, which is more correct than a pure rotation matrix for the purpose of
-generating stereo images.
+<a name="hints">SUGGESTIONS FOR BETTER PICTURES</a></h4>
 
-<listing>
-	1&nbsp; &nbsp; &nbsp; 0&nbsp; &nbsp; &nbsp; 0&nbsp; &nbsp; &nbsp; 0
-	0&nbsp; &nbsp; &nbsp; 1&nbsp; &nbsp; &nbsp; 0&nbsp; &nbsp; &nbsp; 0
-	.05&nbsp; 0&nbsp; &nbsp; &nbsp; 1&nbsp; &nbsp; &nbsp; 1
-	0.&nbsp; &nbsp; 0.&nbsp; &nbsp; 0.&nbsp; &nbsp; 1.0
-</listing>
-    <li>Run the edited input file through render. You now have the left half of
-a stereo pair.
-    <li>You can either print the two images separately and mount them side by
-side, or merge them electronically before printing. I use the montage command
-of ImageMagick to combine the separate raster images into a single double-width
-image containing the stereo pair. Here is an ImageMagick command which will
-combine a left and a right image, each 500x500 pixels, into a single stereo
-pair:
-<listing>
-montage -geometry 500x500+0+0! -borderwidth 0 +frame -label ```` \ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; left.tiff right.tiff stereo.tiff
-</listing>
-    <li>If you compose separate header files in advance, one in which the TMAT
-records describe the identity matrix and another in which TMAT describes the
-shear matrix, then this procedure can be automated. Note that creating an empty
-file header..r3d will cause Molscript to produce an output file with no header
-records. Here is a sample shell script:
-<listing>
-#
-# Make sure header file is empty
-#
-rm header.r3d
-touch header.r3d
-#
-# render image twice, once with header for right, once for left
-#
-molscript -r &lt; image.mol &gt; image.r3d
-cat right_header.r3d image.r3d | render -tiff right.tiff
-cat left_header.r3d &nbsp; image.r3d | render -tiff left.tiff
-#
-# combine left and right images into single stereo pair
-#
-montage [...options...] left.tiff right.tiff stereo.tiff
-</listing>
-    </ol>
+Topics covered:
+<ul>
+    <li><a href="r3d_hints.html#shadowing">
+	Shadowing</a>
+    <li><a href="r3d_hints.html#output device">
+	Tailoring your image to the output device</a>
+    <li><a href="r3d_hints.html#stereo1">
+	Side-by-side figures and stereo pairs</a>
+    <li><a href="r3d_hints.html#stereo2">
+	Stereo pairs and Molscript</a>
+    <li><a href="r3d_hints.html#colours">
+	Creating your own colour descriptions</a>
+    <li><a href="r3d_hints.html#composing">
+	Composing figures in other programs</a>
+    <li><a href="r3d_hints.html#matrix">
+	Building up a figure from Molscript and other files</a>
+    <li><a href="r3d_hints.html#labels">
+	How can I keep the Moslcript labels in my Raster3D picture?</a>
+    <li><a href="r3d_hints.html#black-white">
+	Black &amp White figures</a>
+    <li><a href="r3d_transparent.html">
+	Transparent surfaces</a>
 </ul>
 
-<b><i>Creating your own colour descriptions:</i></b> 
-The Raster3D distribution contains a number of
-pre-defined colouring schemes (e.g. the shapely.colours file, cpk.colours, and
-mycolors.pdb). If you choose to modify these, or create your own, then you
-should be aware that render works internally with the square root of the
-specified colour values (yes it's a very strange concept!). To convert a normal
-RGB colour triple into a Raster3D color specification it is therefore necessary
-to square each component. For example, to specify a half-intensity yellow you
-would square the components of the pure RGB triplet (0.5, 0.5, 0.0) to yield
-(0.25, 0.25, 0.0) in the COLOUR record input to render. The Raster3D output
-option to Molscript performs this conversion automatically, so you should not
-have to alter the colour specifications to switch between PostScript and
-Raster3D modes.<p>
-<b><i>Composing figures in other programs:</i></b> Suppose you are already working in some
-interactive graphics program, FRODO for instance, and wish to reproduce the
-current viewpoint/orientation for a Raster3D picture.<b><i> </i></b>If the
-program will dump the current view matrix then you will probably be able to use
-it as a view matrix for Raster3D also. However many programs (including FRODO
-and Molscript) dump a matrix which is the transpose of the matrix used by
-Raster3D. In this case you need only transpose the 3x3 matrix (swap the entries
-about the diagonal from upper left to lower right) before copying it either in
-the file <i>setup.matrix</i> (for use by the <b><i>balls</i></b>,
-<b><i>rods</i></b>, and <b><i>ribbon</i></b> utilities) or directly into the
-header records input to <b><i>render</i></b>. Users of Alwyn Jones' program O
-should obtain a copy of the program <b><i>o2mol</i></b> from the O ftp site.
-Once you have composed your view in O you can convert to a Molscript/Raster3D
-viewpoint description by dumping the O datablock named .GS_REAL
-
-<listing>
-O&gt; write_form .gs_real omatrix.dat
-Heap&gt; Format: &lt;cr&gt;
-</listing>
-followed
-by a shell command
-
-<listing>
-o2mol &lt; omatrix.dat &gt; o2mol.out
-</listing>
-The
-file o2mol.out will now contain instructions for reproducing the O viewpoint in
-Molscript. Also, the 3x3 matrix which o2mol gives as ``for coordinate
-transforms'' is in the correct form to use directly as a Raster3D matrix if you
-aren't processing with Molscript first.<p>
-<b><i>Black &amp; White figures:</i></b> It is possible to use a general image
-processing program (e.g. ImageMagick) to convert a color figure to a monochrome
-figure. In general a straight conversion will produce an image which is much
-too dark. In order to improve the result you can try breaking the conversion up
-into several steps: first convert from full 24-bit color to a smaller number of
-colors (say 256), next apply a substantial gamma correction (e.g. gamma&nbsp;
-&nbsp; 2.0) to lighten the image, and finally convert the color image to
-monochrome being sure to select a dithering option if it is available. Some
-experimentation with this process can produce acceptable, although not ideal,
-monochrome images suitable for printing on a standard laser printer. You may
-have to repeat the color reduction and gamma correction steps before finally
-converting to monochrome. Better results can be obtained by using the auxiliary
-program <b><i>avs2ps</i></b> as a filter. This utility will convert any
-AVS-format image, including the default output stream from
-<b><i>render</i></b>, directly into a dithered black &amp; white PostScript
-image. As of this writing the <b><i>avs2ps</i></b> program is included with the
-Raster3D distribution.<p>
-
+<h4><a name="source">SOURCE</a></h4>
 <dl>
-<dt><b><i>SOURCE</i></b></dl><dl>
-<dt><i>anonymous ftp site:	</i><dd>ftp.bmsc.washington.edu
-<dt><i>via WWW:
-</i><dd><a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<dt><i>anonymous ftp site:	</i>
+<dd>ftp.bmsc.washington.edu /pub/raster3d/
+<dt><i>via WWW: </i>
+<dd><a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
 http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
-<dt><i>contact: 	</i><dd>Ethan A Merritt
-<br>Dept of Biological Structure SM-20
+<dt><i>contact: 	</i>
+<dd>Ethan A Merritt
+<br>Dept of Biological Structure
 <br>University of Washington,
-<br>Seattle WA 98195
+<br>Seattle WA 98195-7742
 <br>merritt@u.washington.edu</dl>
-<h4>
-<a name="RTFToC4">RELATED
-PROGRAMS
-</a></h4>
+
+<h4><a name="related">RELATED PROGRAMS </a></h4>
 In order to build in support for the direct output of TIFF image files, you
 must separately obtain and install a copy of the TIFF library (libtiff.a).
 Several implementations are available, including one by Sam Leffler which may
@@ -305,7 +180,9 @@ be obtained via anonymous ftp from
 <a href="ftp://ftp.sgi.com"> sgi.com</a>.<p>
 In order to view the rendered images on a workstation screen you must also
 obtain and install an image viewer. Two commonly available viewers are John
-Christy's ImageMagick (available via anonymous ftp from 
+Christy's 
+<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">ImageMagick</a> 
+(also available via anonymous ftp from 
 <a href="ftp://ftp.x.org"> ftp.x.org </a>) and John Bradley's xv.<p>
 The avs2ps utility for direct production of black &amp; white PostScript images
 is now included in the Raster3D distribution. It replaces earlier
@@ -319,18 +196,30 @@ was written specifically for SGI workstations, and may not transport well to
 other platforms.<p>
 
 <h4>
-<a name="RTFToC5">AUTHORS
-</a></h4>
+<a name="authors">AUTHORS </a></h4>
 Originally written by David J. Bacon and Wayne F. Anderson. Ancillary programs
 by Mark Israel, Stephen Samuel, Michael Murphy, Albert Berghuis, and Ethan A
 Merritt. Extensions, revisions, and modifications by Ethan A Merritt.
-<h4>
-<a name="RTFToC6">REFERENCES</a></h4>
-Bacon, D.J., &amp; Anderson, W.F. (1988). ``A Fast Algorithm for Rendering
+
+<h4><a name="cite">CITING THE PROGRAM</a></h4>
+If you use the package to prepare figures for
+publication, please give proper credit to the authors: (Bacon and Anderson,
+1988; Merritt and Murphy, 1994).
+
+<h4><a name="refs">REFERENCES</a></h4>
+Bacon, D.J., &amp; Anderson, W.F. (1988) ``A Fast Algorithm for Rendering
 Space-Filling Molecule Pictures''. (abstract of paper presented at the Seventh
 Annual Meeting of the Molecular Graphics Society). J. Molec. Graphics 6,
 219-220. <p>
+Kraulis, P.J. (1991) ``MOLSCRIPT: a program to produce both detailed and
+schematic plots of protein structures''. J. Appl. Cryst. 24, 946-950.<p>
 Merritt, E.A. &amp; Murphy, M.E.P. (1994) ``Raster3D Version 2.0 - A Program
 for Photorealistic Molecular Graphics''. Acta Cryst. D50, 869-873.<p>
+
+<hr>
+<a href="raster3d.html">
+<img src="/images/index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3d homepage </a>
 
 </body></html>

@@ -1,13 +1,13 @@
 #
-# Raster3D makefile for SGI
+# Raster3D makefile for SGI under Irix 6.1 (native 64-bit mode)
 #
 LDFLAGS =
 CFLAGS  = -g
+FC	= f77
 #
-# Optimization seems to break the Fortran I/O with the Irix compiler
-# If anyone figures out the cure for this I'd love to know - EAM
-#
-FFLAGS  = -g -static -w1 -Olimit 2000
+# If you want to build backward compatible 32-bit images (will run under
+# Irix 5.x), uncomment the following line.
+#FFLAGS  = -n32 -g -static -w1
 #
 # If you build Raster3D to use the Iris imagetools output format
 # (local.sgi), then add -DLIBIMAGE_SUPPORT to the DEFINES statement.
@@ -39,17 +39,17 @@ tar:
 	compress  ../raster3d.tar
 
 ribbon:	$(RIBOBJS)
-	f77 -O $(RIBOBJS) -o ribbon
+	$(FC) $(FFLAGS) $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
 render:	render.f local.o
-	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
+	$(FC) $(FFLAGS) render.f local.o  \
 	$(LIBS) -o render $(LDFLAGS)
 
 avs2ps:	avs2ps.c
-	cc -O avs2ps.c -o avs2ps -lm
+	cc -O avs2ps.c -o avs2ps
 
 setup:	balls
 	ln -s balls setup

@@ -1,6 +1,6 @@
 .l
 .nh
-.TH RENDER 1 "29 April 1995" "Raster3D"
+.TH RENDER 1 "7 February 1996" "Raster3D"
 .SH NAME
 render - image rendering program of Raster3D molecular graphics package
 .SH SYNOPSIS
@@ -215,11 +215,9 @@ Parameters are read in the order
 .TP 5
 .B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.1
 .PP
-Version 2.1 of the Raster3D supports a few new object types.
+Version 2.1 of Raster3D added support for a few new object types.
 These are intended to provide additional flexibility in adapting other
 molecular graphics tools to compose figures for Raster3D to render.
-These are mostly of interest to programmers, as the utilities supplied
-with the package currently make no use of them.
 
   Object type 7
     Explicit vertex normals for preceeding triangle object. This object 
@@ -236,8 +234,15 @@ with the package currently make no use of them.
         MPHONG - override global Phong power for specular highlighting
         MSPEC  - override global specular scattering contribution
         SR,SG,SB - RGB triple specifying color of reflected light
-                   (by default all specular highlights are white)
-        TEXMAP - texture map (not yet implemented)
+                (by default all specular highlights are white)
+                A negative value for any component will default to 
+                the base colour component of the object being rendered.
+        CLRITY - (floating point value between 0.0 and 1.0) The degree
+                of transparency for this material, with 0.0 indicating
+                an opaque surface and 1.0 a purely transparent one.
+        OPTS(4) - four additional fields are reserved for future 
+                expansion of the material properties list; as of now
+                these must be present, but are ignored.
   Object type 9
     Terminates previous set of special material properties.
     The rest of this record is ignored, so object type 9 may also
@@ -288,6 +293,12 @@ following lines of render.f:
  *
  *     Array elements available for sorted lists ("short" lists)
        PARAMETER (MAXSHR = 150 000, MAXSSL = 150 000)
+.PP
+You can use the normal3d utility to calculate how many objects and object
+details are needed for your picture.  The sorted list sizes are harder to
+calculate in advance, but the render program itself should indicate how much
+space would be required to complete a picture which it cannot currently
+handle.
 .PP
 Increase the appropriate PARAMETER values by editing render.f, and
 recompile the render program by typing "make render".

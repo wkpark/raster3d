@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <title>Converting Molscript labels to Raster3D</title>
+    <!-- OWNER_NAME="Ethan A Merritt, Biological Structure" -->
+    <LINK rev=made href="mailto:merritt@u.washington.edu">
+    <!-- OWNER_INFO="University of Washington Box 357742, Seattle WA 98195" -->
+  </head>
+
+</body>
+	<h2 align=center>Converting Molscript labels to Raster3D</h2>
+<hr>
+
+The most frequent question I get about Raster3D is "How can I get the labels
+from Molscript into my Raster3D picture?".  It actually <i>is</i> possible to do
+this, but frankly I think it's more effort than the result is worth. 
+I recommend simply labelling your Raster3D output image using an interactive
+annotation tool on a workstation screen (e.g. the annotate mode of 
+ImageMagick's display program).  However, for anyone bound and determined to
+use Molscript for labelling I will describe how it can be done.
+
+<ol>
+<li>The first thing to do is to establish the size of your eventual image in
+pixels.  Let us say that you want a 3-inch by 2-inch print to be produced on
+a 300 dpi dye sublimation printer.  300 dpi (dots per inch) times the 
+desired size gives 900x600 pixels for the image size.  Construct a header
+file for the render program which describes this image size; e.g.
+<pre>
+	My new picture with no anti-aliasing
+	 45 30     NTX,NTY number of tiles in x, y
+	 20 20     NPX,NPY number of pixels per tile
+	     1     anti-aliasing scheme 1 (none)
+	 0 0 0     black background
+	(etc...)
+</pre>
+or
+<pre>
+	My new picture with anti-aliasing
+	 45 30     NTX,NTY number of tiles in x, y
+	 30 30     NPX,NPY number of pixels per tile
+	     3     anti-aliasing scheme 3 (3x3 becomes 2x2)
+	 0 0 0     black background
+	(etc...)
+</pre>
+Pay particular attention to the fact (yes, it's confusing) that if you use
+anti-aliasing schemes 2 or 3 then the eventual number of pixels is not
+simply the product NTX*NPX,NTY*NPY.  This is explained in the render manual.
+
+<li>Now make sure that your Molscript input file is actually drawing in a box
+of the shape you have just described.  To use the procedure I describe below,
+you must use the "area" command of Molscript to force the 
+lower left corner to (0,0) and the upper right corner to (900,600). Furthermore
+there must be no bordering frame drawn around the image.  So your Molscript
+input file will begin:
+<pre>
+	plot
+	noframe
+	area 0. 0. 900. 600. ;
+	background black ;
+</pre>
+<li>Run Molscript with the -raster3d option to produce an input file to render
+which uses the header you constructed in step 1.
+<pre>
+	molscript -r &lt; picture.mol | render | convert avs:- picture.ppm
+</pre>
+
+<li>Edit the molscript file to remove or comment out all drawing commands
+except for the labels.  Run molscript again, this time in PostScript mode,
+to produce a PostScript file containing only the labels.
+<pre>
+	molscript &lt; picture_labels.mol &gt; labels.ps
+</pre>
+
+<li>Use ghostscript to convert the PostScript file into a raster image exactly
+the same size as your Raster3D image.
+<pre>
+	gs -sDEVICE=ppm -sOutputFile=labels.ppm -g900x600 labels.ps
+</pre>
+At this point you have two images:
+<pre>
+	picture.ppm	900x600 Raster3D image from original Molscript file
+	labels.ppm	900x600 image containing only the labels
+</pre>
+
+<li>Use the combine program from ImageMagick to draw the labels on top of the
+Raster3D image.
+<pre>
+	combine -compose atop labels.ppm picture.ppm pic+labels.ppm
+</pre>
+<li> I used the ppm raster file format throughout this example just because
+it works in both ImageMagick and ghostscript. This may be installation
+dependent, however. I'll now convert it back to a TIFF file.
+<pre>
+	convert pic+labels.ppm beautiful.tiff
+</pre>
+As you see, this is a rather lengthy procedure.  Furthermore, the label
+positioning will be slightly off compared to the pure PostScript version
+because Raster3D and Molscript treat perspective differently. As I say,
+I prefer to just type the labels in interactively so that I can see where
+they are going.
+
+</ol>
+
+</body>
+
+<hr>
+<a href="raster3d.html">
+<img src="/images/index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3d homepage </a>
+
+<hr>
+<address>
+Ethan A Merritt / merritt@u.washington.edu / 
+    <a href="http://www.bmsc.washington.edu/index.html">
+    Biomolecular Structure Center at UW</a><br>
+</address>
+
+</html>

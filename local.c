@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.1
+ * Raster3D V2.2
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -9,6 +9,7 @@
  * are controlled by conditional compilation directives -
  *	AVS image file sent to stdout
  *		(2 integer header followed by AlphaRGB bytes)
+ *		====> As of V2.2 Alpha byte set to 255 <====
  *	original Raster3D file to stdout
  *              (8 integer header followed by RGB bytes)
  *	calls to the libimage library if LIBIMAGE_SUPPORT is defined
@@ -24,7 +25,7 @@
  * "render.rgb". As far as I know it is not possible to direct
  * libimage format files to stdout.
  * Output images may be viewed using the "ipaste" command, and
- * manuipulated using various other utilities provided under
+ * manipulated using various other utilities provided under
  * 4DGifts/iristools/imgtools.
  */
 
@@ -150,7 +151,7 @@ local_(option,buffer1,buffer2,buffer3)
 	    ofile = "render.tif";
 	  tfile=TIFFOpen(ofile,"w");
 	  TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.1");
+	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.2");
 	  TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,3);
 	  TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
@@ -247,7 +248,8 @@ local_(option,buffer1,buffer2,buffer3)
 	    {
 	      for (i=0; i<xsize; i++)
 		{
-		  putchar( 0 );
+/*		  putchar( 0 );	*/
+		  putchar( 255 );
 		  putchar( buffer1[i] );
 		  putchar( buffer2[i] );
 		  putchar( buffer3[i] );

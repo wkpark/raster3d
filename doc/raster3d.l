@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH Raster3D 1 "1 May 1995 "Raster3D"
+.TH Raster3D 1 "7 February 1996" "Raster3D"
 .SH NAME
 .PP
 Raster3D molecular graphics package
@@ -43,20 +43,25 @@ Although ancillary programs are provided only for the generation of object
 descriptions based on atomic coordinates stored in Brookhaven PDB
 format, the rendering program is not specific to molecular graphics.
 
-\fIRaster3D\fP Version 2.1
-supports rendering of five object types: 
+\fIRaster3D\fP currently supports rendering of five object types: 
 spheres, triangles, planes, smooth-ended cylinders, and round-ended
 cylinders.  
-New in version 2.1 is support for two additional "object types"
+Version 2.1 added support for two additional "object types"
 which are really modifiers for characteristic properties of existing objects.  
 One of these allows specification
 of explicit surface normals at triangle vertices; the other allows specification
 of surface reflectance properties specific to individual objects.  
-Neither of these features is used by the current version of the auxilliary
-programs distributed with Raster3D, but their inclusion may encourage use
-of the Raster3D rendering program in conjunction with other code which depends
-on these capabilities. The provision for explicit surface normals, for example,
-should allow the use of Raster3D to render general molecular surfaces.
+
+Version 2.2: The major new feature in Raster3D Version 2.2 is support
+for transparent objects. In conjunction with the provision for
+describing surfaces in terms of triangles with explicit surface normals
+this permits Raster3D rendering of transparent molecular surfaces
+jointly with the existing provisions for depicting molecular structures.
+In keeping with the philosophy of the package, the intention is not to
+duplicate the power of more general programs in composing or describing
+such surfaces, but rather to provide a tool for creating images with
+greater resolution and photorealism than is generally possible using a
+graphics workstation screen.
 
 .SH EXAMPLES
 

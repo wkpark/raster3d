@@ -1,3 +1,8 @@
+ 9-Feb-96	add utility programs normal3d and ungrasp
+ 8-Feb-96	V2.2beta has support for transparent materials 
+ 1-Feb-96	Fix major problems with explicit surface normals
+22-Jan-96	Makefile for Irix 6.1, added utility normal3d, 
+		OSF compile option -fast, bug fix in CYL1 to avoid divide by 0 
  3-Aug-95	V2.11 adds TIFF_INVERT workaround to local.c
 30-Jun-95	Version 2.1 release via ftp and www
 28-Apr-95	object types 7/8/9 folded back into regular distribution (V2.1)

@@ -1,0 +1,74 @@
+<html>
+<head>
+<title> normal3d - Raster3D package </title>
+</head>
+<body>
+
+<h1 align=center> NORMAL3D </h1>
+
+<h4>SYNOPSIS</a></h4>
+
+<b>normal3d</b> reads a Raster3D input file from <i>stdin</i>, applies
+any coordinate manipulations specified in the header, and writes the
+modified file to <i>stdout</i>.  <br>
+
+<listing>
+normal3d [-h] &lt; infile.r3d &gt; normalized.r3d
+</listing>
+
+The output file from <b>normal3d</b> describes exactly the same image as the
+original input file. Header records are left unchanged except for
+the transformation matrix (which becomes the identity matrix) and the
+format specifiers (which are set to *). The -h flag suppresses all header
+records in the output file.  All objects in the input file
+are also in the output file, but their coordinate descriptions have been
+normalized (i.e. the original transformation matrix has been
+applied).<p>
+
+<b>normal3d</b> also reports the total number of objects in the input file by
+object type, and gives the array sizes which would be required for the
+<b>render</b> program to process this file. It may therefore be used to
+determine how large the 
+<a href="render.html#arrays">array sizes in render</a> 
+should be set, should one
+of your image descriptions exceed the values compiled into <b>render</b>.<p>
+
+<h4> EXAMPLES</h4>
+Feed a large file through <b>normal3d</b> to judge array size requirements for rendering:
+
+<listing>
+
+normal3d < largeinputfile.r3d > /dev/null
+
+ tmat (v' = v * tmat):
+ -0.7543700     0.2779890     -0.6327600    0.0000000E+00
+  8.3310001E-02 0.9392580      0.3367110    0.0000000E+00
+  0.6530600     0.2012850     -0.6973090    0.0000000E+00
+  -54.14897     -48.99439      -13.01923     25.00000
+ -------------------------------
+ spheres   =    67
+ cylinders =  5128
+ triangles = 23402
+ -------------------------------
+ Compare these to the array dimensions in render:
+ special materials =      1 (check against MAXMAT)
+ total objects     =  47402 (check against MAXOBJ)
+ details           = 506943 (check against MAXDET)
+ shadow details    = 364323 (check against MAXSDT)
+ -------------------------------
+ True center of input coordinates (not used):
+ -0.7435400 3.0629992E-02 -0.4582600
+
+</listing>
+
+<h4>AUTHORS</h4>
+Ethan A Merritt.
+
+<hr>
+<a href="raster3d.html">
+<img src="/images/index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3d homepage </a>
+
+</body>
+</html>

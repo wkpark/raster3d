@@ -194,11 +194,10 @@ indicate free-format input. Parameters are read in the order
 </dl>
 
 <h4>Additional object types added in Version 2.1</h4>
-Version 2.1 of the Raster3D supports a few new object types.
+Version 2.1 of Raster3D added support for a few new object types.
 These are intended to provide additional flexibility in adapting other
 molecular graphics tools to compose figures for Raster3D to render.
-These are mostly of interest to programmers, as the utilities supplied
-with the package currently make no use of them.
+
 <dl>
 <dt>Object type 7
 <dd>Explicit vertex normals for preceeding triangle object. This object 
@@ -216,8 +215,15 @@ with the package currently make no use of them.
     <li>MPHONG - override global Phong parameter for specular highlighting
     <li>MSPEC - override global specular scattering contribution
     <li>SR,SG,SB - RGB triple specifying color of reflected light
-        (by default all specular highlights are white)
-    <li>TEXMAP - texture map (not yet implemented)
+        (by default all specular highlights are white).
+	A negative value for any colour component defaults to the corresponding
+	base colour component of the object being rendered.
+    <li>CLRITY - (floating point value between 0.0 and 1.0) The degree of 
+	transparency for this material, with 0.0 indicating an
+	opaque surface and 1.0 indicating a purely transparent one.
+    <li>OPTS(4) - four additional fields are reserved for future expansion
+	of the material properties list; as of now these must be
+	present, but are ignored.
     </ul>
 <dt>Object type 9
 <dd>Terminates previous set of special material properties.
@@ -263,7 +269,9 @@ The following records describe a single red triangle and a single blue sphere
 0
 </listing>
 
+<a name="arrays">
 <h4>INCREASING THE ARRAY SIZES IN RENDER:</h4>
+</a>
 If you are creating images of very large proteins, or if you are rendering
 surfaces with many facets, then you may fill the storage arrays in render.
 If so you will get an error message something like
@@ -282,6 +290,14 @@ following lines of <i>render.f</i>:
 *     Array elements available for sorted lists ("short" lists)
       PARAMETER (MAXSHR = 150 000, MAXSSL = 150 000)
 </listing>
+You can use the 
+<a href="normal3d.html">normal3d</a> 
+utility to calculate how many objects and object
+details are needed for your picture.  The sorted list sizes are harder to
+calculate in advance, but the render program itself should indicate how much
+space would be required to complete a picture which it cannot currently
+handle.<p>
+
 Increase the appropriate PARAMETER values by editing <i>render.f</i>, and
 recompile the render program by typing "make render".
 <p>
@@ -291,6 +307,12 @@ recompile the render program by typing "make render".
 <a name="RTFToC18">AUTHORS</a></h4>
 Originally written by David J. Bacon. Extensions, revisions, and modifications
 by Ethan A Merritt.
+
+<hr>
+<a href="raster3d.html">
+<img src="/images/index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3d homepage </a>
 
 </body>
 </html>

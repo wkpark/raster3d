@@ -61,3 +61,28 @@ surface properties.  Balls in the left column are rendered according to
 the values in the header records.  Balls in the right column are identical
 to those on the left except that they are rendered using explicit material 
 surface properties which override the header values.
+
+Example 6
+=========
+
+Example 6 adds a transparent molecular surface around the galactose
+molecule in example 3. This is a fairly complicated example which
+illustrates merging Raster3D input files created by two different
+programs, in this case Molscript and GRASP.  It also illustrates the use
+of the normal3d program to modify a render input file by applying the
+transformation matrix described in the header records. I have included a
+Raster3D input file produced from a GRASP V1.1 surface file by a
+conversion program. I have not included the actual GRASP file because
+the format of such files is both version and machine dependent. A copy
+of the "ungrasp" utility program I used for conversion is included in
+the directory ../grasp, but you may have to modify this source depending
+on your local installation.  Finally, the molecular surface in this
+example illustrates the newly added support for rendering transparent
+objects in Raster3D.
+
+Note:  It would be a more informative figure if the accessible surface
+of the protein were shown, rather than that of the bound sugar.  However
+this would have required inclusion of an absolutely huge surface
+description file so I judged it impractical.  A JPEG figure illustrating
+Raster3D rendering of a protein surface should be available on the
+Raster3D distribution site.

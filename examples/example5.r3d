@@ -28,17 +28,17 @@ F         no shadows cast
  -0.3 -0.5 0.0    0.2    0.4 0.2 0.9
 9 Now we specify material properties which override the header values
 8
-  5.0  0.5               1.0 1.0 0.0
+  5.0  0.5               1.0 1.0 0.0   0.0   0 0 0 0
 2
   0.3  0.0 0.0    0.2    0.7 0.3 0.1
 9 Another set of material properties which override the header values
 8
-  7.0  0.6               0.5 0.7 1.0
+  7.0  0.6               0.5 0.7 1.0   0.0   0 0 0 0
 2
   0.3  0.5 0.0    0.2    0.7 0.7 0.6
 9 Another set of material properties which override the header values
 8
-  1.0  0.0               0.0 0.0 0.0
+  1.0  0.0               0.0 0.0 0.0   0.0   0 0 0 0
 2
   0.3 -0.5 0.0    0.2    0.4 0.2 0.9
 9 This record is NOT just a comment; it terminates the special material

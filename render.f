@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.1 May 1995
+*     Version 2.2beta Feb 1996
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -19,16 +19,17 @@
 * EAM Apr 1994	- Version 2.0 release
 *		  TIFF output support in local.c
 *		  minor changes to fortran source to make IBM xlf compiler happy
-*
 * EAM Sep 1994	- EXPERIMENTAL VERSION WITH OBJECT TYPES 7, 8, 9
 * EAM Jan 1995	- move DATA statement to make linux happy
 * EAM Mar 1995	- fix bug in routine CYL1 which took bites out of cylinder ends
 * EAM May 1995	- fold object types 7/8/9 back into distributed code for V2.1
+* EAM Jan 1996	- Version 2.2
+*		  Add code for transparency and faster MATERIAL bookkeeping
+*		  Also fix major problems with explicit surface normals
+*		  object type 8 expanded to describe transparency
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
-*     The original code lines for generic unformatted binary output have
-*     been commented out.
 *
 *
 *     General organization:
@@ -46,6 +47,7 @@
 *     - for each tile:
 *       - for each pixel:
 *         - search objects to find highest point for pixel
+*	  - if it's transparent find the next one down as well
 *         - transform resulting (x,y,z) to shadow space
 *         - find closest z' for new x',y'
 *         - this tells you if the pixel is in shadow or not
@@ -120,9 +122,6 @@
 *
 *-----------------------------------------------------------------------------
 * EAM Sep 1994
-*	
-*	New object types added, first actual release to include these will
-*	probably be V2.1
 *
 *	1) Object type 7 signals an extra record giving explicit vertex normals
 *	for a single triangle. This extra record must directly follow the 
@@ -133,7 +132,10 @@
 *	    MPHONG	- overrides global Phong power for specular reflections
 *	    MSPEC	- overrides global specular scattering contribution
 *	    SR,SG,SB	- red/green/blue components for specular highlighting
-*	    TEXMAP	- pointer to texture map (Don't I wish!)
+*			  (values <0 cause highlights to match object colour)
+*           CLRITY	- 0.0 (opaque) => 1.0 (transparent)
+*	    CLROPT	- [reserved] suboption for transparency handling
+*	    OTHER(3)	- [reserved] three more fields for future expansion
 *	These material properties remain in effect for subsequent objects 
 *	until object type 9 appears to terminate the effect.
 *
@@ -263,8 +265,10 @@
       PARAMETER (MXTYPE   = 9)
 *
 *     Bit definitions for FLAG array
-      INTEGER    FLAT,   RIBBON,   SURFACE,   PROPS
-      PARAMETER (FLAT=2, RIBBON=4, SURFACE=8, PROPS=16)
+      INTEGER    FLAT,      RIBBON,    SURFACE,   PROPS
+      PARAMETER (FLAT=2,    RIBBON=4,  SURFACE=8, PROPS=16)
+      INTEGER    TRANSP,    HIDDEN,    INSIDE
+      PARAMETER (TRANSP=32, HIDDEN=64, INSIDE=128)
 *
 *     $$$$$$$$$$$$$   ARRAY SIZE LIMITS START HERE   $$$$$$$$$$$$$$
 *
@@ -294,16 +298,21 @@
 *
 *
 *     Maximum number of objects
-***   PARAMETER (MAXOBJ =  7500)
-      PARAMETER (MAXOBJ = 25000)
+***   PARAMETER (MAXOBJ =   7500)
+      PARAMETER (MAXOBJ = 200000)
 *
-*     Array elements available for object details
+*     Array elements available for object details 
+*     Should be roughly 10*MAXOBJ
 ***   PARAMETER (MAXDET = 150 000, MAXSDT = 150 000)
-      PARAMETER (MAXDET = 250 000, MAXSDT = 250 000)
+      PARAMETER (MAXDET = 2 000 000, MAXSDT = 2 000 000)
 *
 *     Array elements available for sorted lists ("short" lists)
+*     Increased requirements as more objects are stacked behind each other
 ***   PARAMETER (MAXSHR = 150 000, MAXSSL = 150 000)
-      PARAMETER (MAXSHR = 250 000, MAXSSL = 250 000)
+      PARAMETER (MAXSHR = 1 000 000, MAXSSL = 1 000 000)
+*
+*     Maximum number of MATERIAL definitions (object type 8)
+      PARAMETER (MAXMAT = 250)
 *
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
@@ -376,6 +385,9 @@
 *     (currently holds marker for RIBBON triangles or FLAT cylinders, etc)
       INTEGER FLAG(MAXOBJ)
 *
+*     Keep a separate list of special materials
+      INTEGER MLIST(MAXMAT)
+*
 *     Object details, shadow object details
       REAL*4 DETAIL(MAXDET), SDTAIL(MAXSDT)
 *
@@ -399,6 +411,16 @@
 *
 *     Where the permutation representing the sort is stored
       INTEGER ZINDEX(MAXOBJ)
+*
+*     Support for transparency
+      COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
+     &                        NORMTP, NORM2D, NORM3D
+      INTEGER NTRANSP, INDTOP, IND2ND, IND3RD
+      REAL    ZTOP, Z2ND, Z3RD
+      REAL    NORMTP(3), NORM2D(3), NORM3D(3)
+      REAL    RGBLND(3)
+      REAL    BLEND0, BLEND1, SBLEND
+      PARAMETER (EDGESLOP = 0.1)
 *
 *     Intermediate storage for output header
 C     INTEGER HEADER(8)
@@ -432,14 +454,14 @@ C     INTEGER HEADER(8)
       IDET(CYLIND) = 11
       IDET(PLANE)  = 12
       IDET(NORMS ) = 9
-      IDET(MATERIAL) = 5
+      IDET(MATERIAL) = 10
 *
       KDET(TRIANG) = 16
       KDET(SPHERE) = 7
       KDET(CYLIND) = 11
       KDET(PLANE)  = 7
-      KDET(NORMS ) = 6
-      KDET(MATERIAL) = 5
+      KDET(NORMS ) = 9
+      KDET(MATERIAL) = 7
 *
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
@@ -454,15 +476,8 @@ C     INTEGER HEADER(8)
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
-      WRITE (NOISE,*) 'Raster3D rendering program V2.1 May 1995'
-      WRITE (NOISE,*) 'If you publish figures generated by this ',
-     &                'program please cite '
-      WRITE (NOISE,*) 'Bacon & Anderson (1988) ',
-     &                'J. Molec. Graphics 6, 219-220 and ',
-     &                'Merritt & Murphy (1994) ',
-     &                'Acta Cryst. D50, 869-873.'
-      WRITE (NOISE,*) '         comments & suggestions to',
-     &                ' merritt@u.washington.edu'
+      WRITE (NOISE,*) ' '
+      WRITE (NOISE,*) 'Raster3D rendering program V2.2beta'
 *
 * !!! N.B. If, on your system, unit-file associations are not made
 *     externally, put statements something like this in:
@@ -570,7 +585,7 @@ C	Header records and picture title
 *
 *     Get Phong power
       READ (INPUT,*) IPHONG
-      WRITE (NOISE,*) 'iphong=',IPHONG
+C     WRITE (NOISE,*) 'iphong=',IPHONG
       CALL ASSERT (IPHONG.GE.0, 'iphong < 0')
 *     A derived constant for numerical purposes in applying the
 *     Phong power in the shading algorithm.
@@ -581,7 +596,7 @@ C	Header records and picture title
 *
 *     Get contribution of straight-on (secondary) light source
       READ (INPUT,*) STRAIT
-      WRITE (NOISE,*) 'strait=',STRAIT
+C     WRITE (NOISE,*) 'strait=',STRAIT
       CALL ASSERT (STRAIT.GE.0., 'strait < 0')
       CALL ASSERT (STRAIT.LE.1., 'strait > 1')
 *
@@ -590,15 +605,18 @@ C	Header records and picture title
 *
 *     Get contribution of ambient light
       READ (INPUT,*) AMBIEN
-      WRITE (NOISE,*) 'ambien=',AMBIEN
+C     WRITE (NOISE,*) 'ambien=',AMBIEN
       CALL ASSERT (AMBIEN.GE.0., 'ambien < 0')
       CALL ASSERT (AMBIEN.LE.1., 'ambien > 1')
 *
 *     Get component of specular reflection
       READ (INPUT,*) SPECLR
-      WRITE (NOISE,*) 'speclr=',SPECLR
+C     WRITE (NOISE,*) 'speclr=',SPECLR
       CALL ASSERT (SPECLR.GE.0., 'speclr < 0')
       CALL ASSERT (SPECLR.LE.1., 'speclr > 1')
+*
+      WRITE (NOISE,*) 'iphong=',IPHONG,'   strait=',STRAIT,
+     &                '   ambien=',AMBIEN,'   speclr=',SPECLR
 *
 *     Derive component of diffuse reflection
       CALL ASSERT (AMBIEN+SPECLR.LE.1., 'ambien+speclr > 1')
@@ -645,13 +663,13 @@ C	Header records and picture title
 *
 *     Get input mode
       READ (INPUT,*) INMODE
-      WRITE (NOISE,*) 'inmode=',INMODE
-      CALL ASSERT (INMODE.GE.1.AND.INMODE.LE.3,'bad inmode')
+C     WRITE (NOISE,*) 'inmode=',INMODE
+      CALL ASSERT (INMODE.GE.1,'bad inmode')
 *
 *     Get input format(s)
       IF (INMODE.EQ.1.OR.INMODE.EQ.2) THEN
         READ (INPUT,'(A)') INFMT
-        WRITE (NOISE,*) 'infmt=',INFMT
+C       WRITE (NOISE,*) 'infmt=',INFMT
         II = 0
 2       CONTINUE
         IF (INFMT(1:1).EQ.' ') THEN
@@ -665,11 +683,11 @@ C	Header records and picture title
         ELSE
           INFLG = .FALSE.
         ENDIF
-      ELSEIF (INMODE.EQ.3) THEN
-        WRITE (NOISE,*) 'infmts:'
+      ELSEIF (INMODE.GE.3) THEN
+C       WRITE (NOISE,*) 'infmts:'
         DO 4 I=1,3
           READ (INPUT,'(A)') INFMTS(I)
-          WRITE (NOISE,*) INFMTS(I)
+C         WRITE (NOISE,*) INFMTS(I)
           II = 0
 3         CONTINUE
           IF (INFMTS(I)(1:1).EQ.' ') THEN
@@ -692,6 +710,28 @@ C	Header records and picture title
       ELSE
         CALL ASSERT (.FALSE.,'crash 4')
       ENDIF
+*
+*     Give them a notice to stare at while the program cranks along
+      WRITE (NOISE,'(/)')
+      WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
+     &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
+      WRITE (NOISE,*) '% If you publish figures generated by this ',
+     &                'program please cite %'
+      WRITE (NOISE,*) '%   Bacon & Anderson (1988) ',
+     &                'J. Molec. Graphics 6, 219-220 and  %'
+      WRITE (NOISE,*) '%   Merritt & Murphy (1994) ',
+     &                'Acta Cryst. D50, 869-873.','          %'
+      WRITE (NOISE,*) '%            -------------------------',
+     &                '-------------            %'
+      WRITE (NOISE,*) '%                  Raster3D distribution site',
+     &                '                  %'
+      WRITE (NOISE,*) '%          http://www.bmsc.washington.edu/',
+     &                'raster3d.html        %'
+      WRITE (NOISE,*) '% comments & suggestions to:  ',
+     &                '        merritt@u.washington.edu %'
+      WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
+     &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
+      WRITE (NOISE,'(/)')
 *
 *     Compute the rotation matrix which takes the light
 *     source to the +z axis (i.e., to the viewpoint).
@@ -730,9 +770,12 @@ c
   662 CONTINUE
       nprops  = 0
       npropm  = 0
+      ntransp = 0
       nsphere = 0
       ncylind = 0
       nplanes = 0
+      nhidden = 0
+      ninside = 0
       mstate  = 0
 c
 c     Objects in, and count up objects that may impinge on each tile
@@ -743,7 +786,7 @@ c
 7     CONTINUE
       IF (INMODE.EQ.1.OR.INMODE.EQ.2) THEN
         INTYPE = INMODE
-      ELSEIF (INMODE.EQ.3) THEN
+      ELSEIF (INMODE.GE.3) THEN
         READ (INPUT,*,END=50) INTYPE
         IF (INTYPE.EQ.0) GO TO 50
 	IF (INTYPE .EQ. CYLFLAT) THEN
@@ -751,6 +794,8 @@ c
 		FLAG(N+1) = OR( FLAG(N+1), FLAT )
 	ELSEIF (INTYPE .EQ. MATEND) THEN
 		MSTATE = 0
+		CLRITY = 0
+		CLROPT = 0
 		GOTO 7
 	ENDIF
         CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
@@ -809,6 +854,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	IF (MSTATE.EQ.MATERIAL) THEN
 	  FLAG(N) = OR(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
+	  IF (CLRITY.GT.0) THEN
+	    FLAG(N) = OR(FLAG(N),TRANSP)
+	    NTRANSP = NTRANSP + 1
+	  ENDIF
 	ENDIF
 *	update true coordinate limits
 	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
@@ -852,6 +901,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 *       save results for PLANE object
 *	PLANE impinges on all tiles, but casts no shadows
 	IF (INTYPE.EQ. PLANE) THEN
+	    NPLANES = NPLANES + 1
 	    DETAIL(NDET+1) = A
 	    DETAIL(NDET+2) = B
 	    DETAIL(NDET+3) = C
@@ -988,6 +1038,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	IF (MSTATE.EQ.MATERIAL) THEN
 	  FLAG(N) = OR(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
+	  IF (CLRITY.GT.0) THEN
+	    FLAG(N) = OR(FLAG(N),TRANSP)
+	    NTRANSP = NTRANSP + 1
+	  ENDIF
 	ENDIF
 *	update true coordinate limits
 	TRULIM(1,1) = MIN( TRULIM(1,1), XA )
@@ -1100,6 +1154,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	IF (MSTATE.EQ.MATERIAL) THEN
 	  FLAG(N) = OR(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
+	  IF (CLRITY.GT.0) THEN
+	    FLAG(N) = OR(FLAG(N),TRANSP)
+	    NTRANSP = NTRANSP + 1
+	  ENDIF
 	ENDIF
 *	update true coordinate limits
 	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
@@ -1219,6 +1277,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 *
       ELSEIF (INTYPE.EQ.NORMS) THEN
 *	vertex normals as given (these belong to previous triangle)
+	CALL ASSERT (TYPE(N-1).EQ.TRIANG,'orphan normals')
         X1A = BUF(1)
         Y1A = BUF(2)
         Z1A = BUF(3)
@@ -1229,54 +1288,118 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         Y3A = BUF(8)
         Z3A = BUF(9)
 *	Apply rotation matrix, but not translation components
-	X1A = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
-	Y1A = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
-	Z1A = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
-	X2A = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
-	Y2A = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
-	Z2A = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
-	X3A = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
-	Y3A = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
-	Z3A = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
-*	Normalize vector (probably not necessary)
-	D = SQRT(X1A*X1A + Y1A*Y1A + Z1A*Z1A)
-	X1B = X1A / D
-	Y1B = Y1A / D
-	Z1B = Z1A / D
-	D = SQRT(X2A*X2A + Y2A*Y2A + Z2A*Z2A)
-	X2B = X2A / D
-	Y2B = Y2A / D
-	Z2B = Z2A / D
-	D = SQRT(X3A*X3A + Y3A*Y3A + Z3A*Z3A)
-	X3B = X3A / D
-	Y3B = Y3A / D
-	Z3B = Z3A / D
-*       We only need to save the first two components of the normal?
+	X1B = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
+	Y1B = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
+	Z1B = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
+	X2B = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
+	Y2B = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
+	Z2B = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
+	X3B = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
+	Y3B = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
+	Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+C
+C	If all 3 Z components are negative, it's facing away from us.
+C	For solid objects we can proceed to ignore it, 
+ 	IF (Z1B.GE.0 .AND. Z2B.GE.0 .AND. Z3B.GE.0) GOTO 718
+717	CONTINUE
+ 	IF (Z1B.LE.0 .AND. Z2B.LE.0 .AND. Z3B.LE.0) THEN
+	    IF (AND(FLAG(N-1),TRANSP).EQ.0) THEN
+ 		NHIDDEN = NHIDDEN + 1
+ 		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
+	    ELSE IF (INMODE.EQ.4) THEN
+ 		NHIDDEN = NHIDDEN + 1
+ 		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
+	    ELSE IF (AND(FLAG(N-1),TRANSP).NE.0) THEN
+ 		NINSIDE = NINSIDE + 1
+ 		FLAG(N-1) = OR( FLAG(N-1), INSIDE )
+		X1B = -X1B
+		Y1B = -Y1B
+		Z1B = -Z1B
+		X2B = -X2B
+		Y2B = -Y2B
+		Z2B = -Z2B
+		X3B = -X3B
+		Y3B = -Y3B
+		Z3B = -Z3B
+	    ENDIF
+	    GOTO 718
+	ENDIF
+C
+C	Mixed + and - Z means the triangle "wrapped around" the edge.
+C	For solid objects the best we can do is pretend the edge is right here.
+C	For transparent objects we need to invert the normals also.
+C	The value of EDGESLOP is purely empirical; setting it either too low
+C	or too high makes some edges get coloured wrongly.  Setting to HIDDEN
+C	flag for this record (NB: NORMALS, not the triangle itself) essentially
+C	causes the triangle to have flat shading.
+	IF (Z1B+Z2B+Z3B .LT. 0) THEN
+	    IF (Z1B .GT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z2B .GT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z3B .GT. EDGESLOP) FLAG(N) = HIDDEN
+	    Z1B = MIN(Z1B,0.)
+	    Z2B = MIN(Z2B,0.)
+	    Z3B = MIN(Z3B,0.)
+	    GOTO 717
+	ELSE
+	    IF (Z1B .LT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z2B .LT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z3B .LT. EDGESLOP) FLAG(N) = HIDDEN
+	    Z1B = MAX(Z1B,0.)
+	    Z2B = MAX(Z2B,0.)
+	    Z3B = MAX(Z3B,0.)
+	ENDIF
+C
+718	CONTINUE
 	DETAIL(NDET+1) = X1B
 	DETAIL(NDET+2) = Y1B
-	DETAIL(NDET+3) = X2B
-	DETAIL(NDET+4) = Y2B
-	DETAIL(NDET+5) = X3B
-	DETAIL(NDET+6) = Y3B
+	DETAIL(NDET+3) = Z1B
+	DETAIL(NDET+4) = X2B
+	DETAIL(NDET+5) = Y2B
+	DETAIL(NDET+6) = Z2B
+	DETAIL(NDET+7) = X3B
+	DETAIL(NDET+8) = Y3B
+	DETAIL(NDET+9) = Z3B
 	NDET = NDET + KDET(INTYPE)
 	IF (SHADOW) THEN
 	  MDET = MDET + SDET(INTYPE)
 	ENDIF
 *
-*	Material properties are saved with no further manipulation
+*	Material properties are saved after enforcing legality
 *
       ELSEIF (INTYPE .EQ. MATERIAL) THEN
+*	Phong power defaults to value in header
+	IF (BUF(1).LT.0) BUF(1) = IPHONG
 	DETAIL(NDET+1) = BUF(1)
-	DETAIL(NDET+2) = BUF(2)
+*	Specular reflection component defaults to value in header
+	IF (BUF(2).LT.0 .OR. BUF(2).GT.1) BUF(2) = SPECLR
+	DETAIL(NDET+2) = BUF(2) 
+*	Negative values for specular highlighting indicate default to object
+        CALL ASSERT (BUF(3).LE.1., 'red > 1 in material')
+        CALL ASSERT (BUF(4).LE.1., 'grn > 1 in material')
+        CALL ASSERT (BUF(5).LE.1., 'blu > 1 in material')
 	DETAIL(NDET+3) = BUF(3)
 	DETAIL(NDET+4) = BUF(4)
 	DETAIL(NDET+5) = BUF(5)
+	CLRITY = BUF(6)
+	CALL ASSERT (CLRITY.GE.0., 'clarity < 0 in material')
+	CALL ASSERT (CLRITY.LE.1., 'clarity > 1 in material')
+	DETAIL(NDET+6) = CLRITY
+*	Transparency processing is necessarily a compromise, and several
+*	possible approximations may be useful; allow a choice among them
+	DETAIL(NDET+7) = BUF(7)
+*	Three remaining fields are reserved for future expansion
+C	DETAIL(NDET+8) = BUF(8)
+C	DETAIL(NDET+9) = BUF(9)
+C	DETAIL(NDET+10)= BUF(10)
+*
 	NDET = NDET + KDET(INTYPE)
 	IF (SHADOW) THEN
 	  MDET = MDET + SDET(INTYPE)
 	ENDIF
 	MSTATE = MATERIAL
 	NPROPM = NPROPM + 1
+	CALL ASSERT(NPROPM.LT.MAXMAT,'too many materials')
+	MLIST(NPROPM) = N
 *
       ELSEIF (INTYPE.EQ.TRCONE) THEN
         CALL ASSERT(.FALSE.,'trcones coming soon...')
@@ -1308,8 +1431,8 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 *	  Allow IPHONG=0 to disable special processing of triangles
 	  IF (IPHONG.EQ.0) GOTO 54
 *	  Check for surface triangle (explicit normals in next record)
-	  IF (TYPE(I+1) .EQ. NORMS) THEN
-	    FLAG(I) = OR( FLAG(I), SURFACE )
+	  IF (TYPE(I+1).EQ.NORMS.AND.AND(FLAG(I+1),HIDDEN).EQ.0) THEN
+            FLAG(I) = OR( FLAG(I), SURFACE )
 	    GOTO 54
 	  END IF
 *	  Check for ribbon triangles,
@@ -1317,7 +1440,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	  IPREV = I - 1
 	  INEXT = I + 1
 	  IF (TYPE(IPREV).NE.TRIANG .OR. TYPE(INEXT).NE.TRIANG) THEN
-	    FLAG(I) = AND( FLAG(I), .NOT. RIBBON )
+	    FLAG(I) = AND( FLAG(I), NOT(RIBBON) )
 	    GOTO 54
 	  END IF
 *         trailing vertex must match one in previous triangle
@@ -1344,18 +1467,22 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 56    CONTINUE
 *
       WRITE(NOISE,*)'-------------------------------'
-      IF (NSPHERE.NE.0) WRITE(NOISE,*)'        spheres   =',NSPHERE
-      IF (NCYLIND.NE.0) WRITE(NOISE,*)'        cylinders =',NCYLIND
+      IF (NSPHERE.NE.0) WRITE(NOISE,*) 'spheres           =',NSPHERE
+      IF (NCYLIND.NE.0) WRITE(NOISE,*) 'cylinders         =',NCYLIND
       NTRI = NTRI - (NRIB + NSUR)
-      IF (NTRI.NE.0) WRITE(NOISE,*)   'normal triangles  =',NTRI
-      IF (NRIB.NE.0) WRITE(NOISE,*)   'ribbon triangles  =',NRIB
-      IF (NSUR.NE.0) WRITE(NOISE,*)   'surface triangles =',NSUR
-      IF (NPROPM.NE.0) WRITE(NOISE,*) 'special materials =',NPROPM
-      WRITE(NOISE,*)                  '    total objects =',N
+      IF (NPLANES.NE.0) WRITE(NOISE,*) 'planes            =',NPLANES
+      IF (NTRI.NE.0) WRITE(NOISE,*)    'plain triangles   =',NTRI
+      IF (NRIB.NE.0) WRITE(NOISE,*)    'ribbon triangles  =',NRIB
+      IF (NSUR.NE.0) WRITE(NOISE,*)    'surface triangles =',NSUR
+      IF (NPROPM.NE.0) WRITE(NOISE,*)  'special materials =',NPROPM
+      IF (NTRANSP.NE.0) WRITE(NOISE,*) 'transparent objs  =',NTRANSP
+      IF (NHIDDEN.NE.0) WRITE(NOISE,*) 'hidden surfaces   =',NHIDDEN
+      IF (NINSIDE.NE.0) WRITE(NOISE,*) 'inside surfaces   =',NINSIDE
+      WRITE(NOISE,*)                   'total objects     =',N
       WRITE(NOISE,*)'-------------------------------'
 *
-      WRITE (NOISE,*) 'ndet  =',NDET,' maxdet=',MAXDET
-      IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' maxsdt=',MAXSDT
+      WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
+      IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',MAXSDT
 *
 *
 *     Sort objects, fill in "short lists" as indices into main list
@@ -1399,7 +1526,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
       DO 70 I = 1, NTX
         KNTTOT = KNTTOT + KOUNT(I,J)
 70    CONTINUE
-      WRITE (NOISE,*) 'knttot=',KNTTOT,' maxshr=',MAXSHR
+      WRITE (NOISE,*) 'knttot=',KNTTOT,' MAXSHR=',MAXSHR
       CALL ASSERT (KNTTOT.LE.MAXSHR,'short list overflow')
       K = 0
       DO 75 J = 1, NTY
@@ -1527,7 +1654,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         DO 170 I = 1, NSX
           MNTTOT = MNTTOT + MOUNT(I,J)
 170     CONTINUE
-        WRITE (NOISE,*) 'mnttot=',MNTTOT,' maxssl=',MAXSSL
+        WRITE (NOISE,*) 'mnttot=',MNTTOT,' MAXSSL=',MAXSSL
         CALL ASSERT (MNTTOT.LE.MAXSSL,'shadow short list overflow')
         K = 0
         DO 175 J = 1, NSY
@@ -1643,6 +1770,12 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
           ZTOP = -SCALE-1.
 *         the index of the object that has it
           INDTOP = 0
+*         backups, in case highest is transparent
+	  Z2ND   = -SCALE-1.
+	  Z3RD   = -SCALE-1.
+	  IND2ND = 0
+	  IND3RD = 0
+	  ZHIGH  = ZTOP
 *         find the highest pixel, using the tile's sorted list
           DO 240 IK = KSTART(ITILE,JTILE), KSTOP(ITILE,JTILE)
             IND = KSHORT(IK)
@@ -1651,6 +1784,9 @@ C           CALL ASSERT (IND.LE.N,'ind>n')
             K = LIST(IND)
 C           CALL ASSERT (K.GE.0,'k<0')
 C           CALL ASSERT (K.LT.NDET,'k>=ndet')
+*           skip if hidden surface
+	    IF (NHIDDEN.GT.0 .AND. AND(FLAG(IND),HIDDEN).NE.0) GOTO 240
+*	    further test depend on object type
             IF (TYPE(IND).EQ.TRIANG) THEN
               X1 = DETAIL(K+1)
               Y1 = DETAIL(K+2)
@@ -1661,28 +1797,24 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               X3 = DETAIL(K+7)
               Y3 = DETAIL(K+8)
               Z3 = DETAIL(K+9)
+*             cheap check for done pixel
+              IF (MAX(Z1,Z2,Z3).LE.ZHIGH) GO TO 250
               A = DETAIL(K+10)
               B = DETAIL(K+11)
               C = DETAIL(K+12)
               D = DETAIL(K+13)
-*             cheap check for done pixel
-              IF (MAX(Z1,Z2,Z3).LE.ZTOP) GO TO 250
 *             skip object if degenerate triangle
               IF (D.EQ.0) GO TO 240
               IF (ABS(A)+ABS(B)+ABS(C).GT.1E5) GO TO 240
 *             skip object if z not a new high
               ZP = A*XP + B*YP + C
-              IF (ZP.LE.ZTOP) GO TO 240
+              IF (ZP.LE.ZHIGH) GO TO 240
 *             skip object if point exterior
               S = (X2-X1)*(YP-Y1) - (Y2-Y1)*(XP-X1)
               T = (X3-X2)*(YP-Y2) - (Y3-Y2)*(XP-X2)
               U = (X1-X3)*(YP-Y3) - (Y1-Y3)*(XP-X3)
               IF ( (S.LT.0. .OR. T.LT.0. .OR. U.LT.0.) .AND.
      &             (S.GT.0. .OR. T.GT.0. .OR. U.GT.0.) ) GO TO 240
-*             update values for object having highest z here yet
-              ZTOP = ZP
-              INDTOP = IND
-*	
 *	      Use Phong shading for surface and ribbon triangles.
 	      IF (AND(FLAG(IND),SURFACE).NE.0) THEN
 		V = (Y3-Y1)*(X2-X1) - (X3-X1)*(Y2-Y1)
@@ -1692,13 +1824,16 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 		CALL ASSERT(TYPE(IND+1).EQ.NORMS,'lost normals')
 		A1 = DETAIL(1 + LIST(IND+1))
 		B1 = DETAIL(2 + LIST(IND+1))
-		A2 = DETAIL(3 + LIST(IND+1))
-		B2 = DETAIL(4 + LIST(IND+1))
-		A3 = DETAIL(5 + LIST(IND+1))
-		B3 = DETAIL(6 + LIST(IND+1))
-		NORMAL(1) = -A1 -ALPHA*(A2-A1) -BETA*(A3-A1)
-		NORMAL(2) = -B1 -ALPHA*(B2-B1) -BETA*(B3-B1)
-		NORMAL(3) = 1.
+		C1 = DETAIL(3 + LIST(IND+1))
+		A2 = DETAIL(4 + LIST(IND+1))
+		B2 = DETAIL(5 + LIST(IND+1))
+		C2 = DETAIL(6 + LIST(IND+1))
+		A3 = DETAIL(7 + LIST(IND+1))
+		B3 = DETAIL(8 + LIST(IND+1))
+		C3 = DETAIL(9 + LIST(IND+1))
+		NORMAL(1) = A1 + ALPHA*(A2-A1) + BETA*(A3-A1)
+		NORMAL(2) = B1 + ALPHA*(B2-B1) + BETA*(B3-B1)
+		NORMAL(3) = C1 + ALPHA*(C2-C1) + BETA*(C3-C1)
 *	      For ribbon triangles we take this normal for "middle" vertex,
 *	      normal of previous triangle for "trailing" vertex normal,
 *	      normal of next triangle for "leading" vertex normal.
@@ -1724,13 +1859,20 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               	NORMAL(2) = -B
               	NORMAL(3) = 1.
 	      END IF
+*             update values for object having highest z here yet
+	      IF (NTRANSP.GT.0) THEN
+		ZHIGH = RANK( IND, ZP, NORMAL, FLAG )
+	      ELSE
+		ZHIGH  = ZP
+		INDTOP = IND
+	      ENDIF
             ELSEIF (TYPE(IND).EQ.SPHERE) THEN
               X = DETAIL(K+1)
               Y = DETAIL(K+2)
               Z = DETAIL(K+3)
               R = DETAIL(K+4)
 *             cheap check for done pixel
-              IF (Z+R.LE.ZTOP) GO TO 250
+              IF (Z+R.LE.ZHIGH) GO TO 250
 *             skip object if point exterior
               DX = XP-X
               DY = YP-Y
@@ -1741,13 +1883,17 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 *             skip object if z not a new high
               DZ = SQRT(R2-(DX2+DY2))
               ZP = Z+DZ
-              IF (ZP.LE.ZTOP) GO TO 240
+              IF (ZP.LE.ZHIGH) GO TO 240
 *             update values for object having highest z here yet
-              ZTOP = ZP
-              INDTOP = IND
               NORMAL(1) = DX
               NORMAL(2) = DY
               NORMAL(3) = DZ
+	      IF (NTRANSP.GT.0) THEN
+		ZHIGH = RANK( IND, ZP, NORMAL, FLAG )
+	      ELSE
+		ZHIGH  = ZP
+		INDTOP = IND
+	      ENDIF
 	    ELSEIF (TYPE(IND).EQ.CYLIND) THEN
 *             EAM May 1990
               X1 = DETAIL(K+1)
@@ -1760,11 +1906,11 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 	      R2 = R1
 *	      EAM Mar 1993 with a better understanding of how this works
 *	      add truly cheap test for cylinder entirely below current ZTOP
-	      IF (MAX( Z1+R1, Z2+R2 ) .LE. ZTOP) GOTO 250
+	      IF (MAX( Z1+R1, Z2+R2 ) .LE. ZHIGH) GOTO 250
 *             2nd (relatively cheap) test
 *	      is to check distance to cylinder axis in projection
 		IF (X1.EQ.X2 .AND. Y1.EQ.Y2) THEN
-			TEMP = 0.0
+			TEMP1 = 0.0
 		ELSE
 			TEMP1 = ((XP-X1)*(Y2-Y1) - (YP-Y1)*(X2-X1))**2
      &			      / ((X2-X1)*(X2-X1) + (Y2-Y1)*(Y2-Y1))
@@ -1776,13 +1922,17 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 		CALL CYL1( FLAG(IND),
      &			   X1,Y1,Z1, X2,Y2,Z2, XP,YP,ZP, R1, XA,YA,ZA )
 *             skip object if z not a new high
-              IF (ZP.LE.ZTOP) GO TO 240
-*             update values for object having highest z here yet
-              ZTOP = ZP
-              INDTOP = IND
+              IF (ZP.LE.ZHIGH) GO TO 240
               NORMAL(1) = XP - XA
               NORMAL(2) = YP - YA
               NORMAL(3) = ZP - ZA
+*             update values for object having highest z here yet
+	      IF (NTRANSP.GT.0) THEN
+		ZHIGH = RANK( IND, ZP, NORMAL, FLAG )
+	      ELSE
+		ZHIGH  = ZP
+		INDTOP = IND
+	      ENDIF
 	    ELSEIF (TYPE(IND).EQ.PLANE) THEN
 	      A = DETAIL(K+1)
 	      B = DETAIL(K+2)
@@ -1790,12 +1940,16 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 	      D = DETAIL(K+4)
 	      IF (D.EQ.0) GOTO 240
 	      ZP = A*XP + B*YP + C
-	      IF (ZP.LE.ZTOP) GOTO 240
-	      ZTOP = ZP
-	      INDTOP = IND
+	      IF (ZP.LE.ZHIGH) GOTO 240
 	      NORMAL(1) = -A
 	      NORMAL(2) = -B
 	      NORMAL(3) = 1.
+	      IF (NTRANSP.GT.0) THEN
+		ZHIGH = RANK( IND, ZP, NORMAL, FLAG )
+	      ELSE
+		ZHIGH  = ZP
+		INDTOP = IND
+	      ENDIF
             ELSE
               CALL ASSERT(.FALSE.,'crash 240')
             ENDIF
@@ -1803,9 +1957,23 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 250       CONTINUE
 *         Background colour if the object is too close or too far
           IF (INDTOP.EQ.0) GO TO 300
-*         this is the "height" of the chosen pixel,
+*         ZP is the "height" of the chosen pixel,
 *         and indtop tells us which object it came from:
-          ZP = ZTOP
+          IF (NTRANSP.GT.0) THEN
+	      NORMAL(1) = NORMTP(1)
+	      NORMAL(2) = NORMTP(2)
+	      NORMAL(3) = NORMTP(3)
+	  ELSE
+	      ZTOP = ZHIGH
+	  ENDIF
+	  ZP = ZTOP
+C	  
+C         Transparency overhead	22-Jan-1996
+C	  If the top object is transparent we will have to come back here
+C         later and do this all again for the next object down.
+	  ITPASS = 0
+255       CONTINUE
+C
           IF (SHADOW) THEN
 *           locate pixel in shadow space
 *           take out object translation & scaling
@@ -1835,6 +2003,9 @@ C           CALL ASSERT (JSTILE.LE.NSY,'jstile>nsy')
               IND = MSHORT(IK)
 C             CALL ASSERT (IND.GE.1,'ind<1')
 C             CALL ASSERT (IND.LE.N,'ind>n')
+*             Ignore transparent objects except for the one being shaded
+	      IF (AND(FLAG(IND),TRANSP).NE.0 .AND. IND.NE.INDTOP)
+     &            GOTO 260
               K = MIST(IND)
 C             CALL ASSERT (K.GE.0,'k<0')
 C             CALL ASSERT (K.LT.MDET,'k>=mdet')
@@ -1948,10 +2119,10 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
             RGBCUR(1) = DETAIL(K+9)
             RGBCUR(2) = DETAIL(K+10)
             RGBCUR(3) = DETAIL(K+11)
-*	  EAM Mar 1993 PLANE is shaded from full color in foreground
+*	  EAM Mar 1993 PLANE is shaded from full colour in foreground
 *	               to half-saturation at horizon
 	  ELSEIF (TYPE(INDTOP).EQ.PLANE) THEN
-	    FADE = (ZTOP + 3.*SCALE) / (4.*SCALE)
+	    FADE = (ZP + 3.*SCALE) / (4.*SCALE)
 	    RGBCUR(1) = FADE * DETAIL(K+5)
 	    RGBCUR(2) = FADE * DETAIL(K+6)
 	    RGBCUR(3) = FADE * DETAIL(K+7)
@@ -1965,7 +2136,7 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 *         a negative z component is considered to point away
 *         from the viewer and is therefore black.
 *
-          IF (NORMAL(3).LE.0.) THEN
+          IF (NORMAL(3).LE.0) THEN
             SDIFF = 0.
             SSPEC = 0.
             PDIFF = 0.
@@ -2024,34 +2195,64 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
           ENDIF
 *
 *	  Extra properties make specular highlighting calculation a
-*	  bit more complex - EAM Oct 1994
-*	  First we have to back up to find the MATERIAL description
+*	  bit more complex. First we have to find the MATERIAL description.
 *
-	  IF (  (AND(FLAG(INDTOP),PROPS).NE.0)
-     &    .AND. (NORMAL(3).GT.0) ) THEN
-            K = INDTOP
+	  IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
+            K = NPROPM+1
 272         K = K - 1
-	    IF (TYPE(K).NE.MATERIAL) GOTO 272
-	    K = LIST(K)
+	    IF (MLIST(K).GT.INDTOP) GOTO 272
+	    CALL ASSERT(K.GT.0,'lost material definition')
+	    K = LIST(MLIST(K))
 	    PHONGM    = DETAIL(K+1)
 	    SPECM     = DETAIL(K+2)
 	    SPECOL(1) = DETAIL(K+3)
 	    SPECOL(2) = DETAIL(K+4)
 	    SPECOL(3) = DETAIL(K+5)
+	    IF (SPECOL(1).LT.0) SPECOL(1) = RGBCUR(1)
+	    IF (SPECOL(2).LT.0) SPECOL(2) = RGBCUR(2)
+	    IF (SPECOL(3).LT.0) SPECOL(3) = RGBCUR(3)
+	    CLRITY    = DETAIL(K+6)
+	    ICLEAR    = DETAIL(K+7) + 0.1
+C	EAM February 1996
+C	This is the only computationally intensive code (as opposed to mere
+C	bookkeeping) involved in rendering transparent objects. The blend
+C	factor must be some function of the clarity/transparency, but I'm not
+C	sure exactly what the equation ought to be.  The cosine
+C	function below was chosen after purely empirical tests of the
+C	resulting image quality. If your machine bogs down incredibly due to
+C	the cosine call, then comment out the two lines below which include it,
+C	and uncomment the two lines which are currently commented C-ALT.
+C	Then re-compile (type "make render") and you should be all set.
+	    IF (ITPASS.EQ.0) THEN
+      	        BLEND0 = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
+C-ALT		BLEND0 = (1. - CLRITY*ABS(NL(3)))**2
+		SBLEND = BLEND0
+	    ELSE IF (ITPASS.EQ.1) THEN
+      	        BLEND1 = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
+C-ALT		BLEND1 = (1. - CLRITY*ABS(NL(3)))**2
+		SBLEND = BLEND1
+	    ELSE
+		SBLEND = 1.
+	    ENDIF
 	    DIFFM     = 1. - (SPECM + AMBIEN)
 	    SDIFF     = SDIFF * DIFFM / DIFFUS
  	    PDIFF     = PDIFF * DIFFM / DIFFUS
-	    IF (SSP .GE. PHOBND)
+	    SSPEC     = 0.0
+	    PSPEC     = 0.0
+	    IF (SSP .GE. PHOBND) 
      &          SSPEC = SSP**PHONGM * STRAIT*SPECM
-	    IF ((PSP .GE. PHOBND) .AND. (LDOTN.GT.0)) THEN
-                PSPEC = PSP**PHONGM * PRIMAR*SPECM
-	    ELSE
-	        PSPEC = 0.0
+	    IF ((PSP .GE. PHOBND) .AND. (LDOTN.GT.0))
+     &          PSPEC = PSP**PHONGM * PRIMAR*SPECM
+*	    de-emphasize highlights from inside surface of transparent objects
+	    IF (AND(FLAG(INDTOP),INSIDE).NE.0) THEN
+		SSPEC = SSPEC * (1.-SPECM)
+		PSPEC = PSPEC * (1.-SPECM)
 	    ENDIF
 *
 *	  The usual case is no special surface properties
 *
 	  ELSE
+	    SBLEND    = 1.0
 	    SPECOL(1) = 1.0
 	    SPECOL(2) = 1.0
 	    SPECOL(3) = 1.0
@@ -2060,19 +2261,27 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 *         We now return you to your regular processing
 *
           DO 280 KC = 1, 3
-            C2ND = RGBCUR(KC)*(AMBIEN+SDIFF) + SSPEC * SPECOL(KC)
-            CSUN = RGBCUR(KC)*PDIFF          + PSPEC * SPECOL(KC)
+            C2ND = SBLEND*RGBCUR(KC)*(AMBIEN+SDIFF) + SSPEC*SPECOL(KC)
+            CSUN = SBLEND*RGBCUR(KC)*PDIFF          + PSPEC*SPECOL(KC)
             RGBSHD(KC) = C2ND
             RGBFUL(KC) = C2ND + CSUN
 280       CONTINUE
 *
-*         that does it for the shading computation
+*         That does it for the shading computation.
+*         ZS should still be a shadow-space co-ordinate of the pixel 
+*         whose shading we were interested in, and zstop should be a
+*         shadow-space object's co-ordinate no further than that from
+*         the primary light source (modulo the empirical slop factor).
 *
-*         zs should still be a shadow-space co-ordinate of the
-*         pixel whose shading we were interested in, and zstop
-*         should be a shadow-space object's co-ordinate no
-*         further than that from the primary light source
-*         (modulo the empirical slop factor).
+*         The current implementation has transparent objects not cast any
+*         shadows. For a single transparent shadowing object I could 
+*         easily calculate a partial shadow based on the degree
+*         of transparency and also colour the shadow accordingly. With
+*         more effort I could even scale by thickness as estimated from
+*         surface normal of object casting the partial shadow. 
+*         The problem is that if multiple transparent objects might overlap
+*         in casting a shadow then the whole approach falls apart.
+*
           IF (INDTOP.EQ.INDSTP) THEN
             TILE(1,I,J) = RGBFUL(1)
             TILE(2,I,J) = RGBFUL(2)
@@ -2086,6 +2295,65 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
             TILE(2,I,J) = RGBSHD(2)
             TILE(3,I,J) = RGBSHD(3)
           ENDIF
+C
+C       Transparency checks	22-Jan-96
+C	OK, we've coloured the top surface at this point.  But if it's
+C	supposed to be transparent then we need to go back and figure
+C	out the colour of the object underneath it so we can blend in
+C	that colour as well. 
+C	First pass is sufficient if top object is not transparent
+	  IF (NTRANSP .EQ. 0) GOTO 300
+	  IF (ITPASS .EQ. 0) THEN
+	    IF (AND(FLAG(INDTOP),TRANSP).EQ.0) GOTO 300
+	    RGBLND(1) = TILE(1,I,J)
+	    RGBLND(2) = TILE(2,I,J)
+	    RGBLND(3) = TILE(3,I,J)
+	    ITPASS = 1
+	    IF (IND2ND .LE. 0) THEN
+	      TILE(1,I,J) = BKGND(1)
+	      TILE(2,I,J) = BKGND(2)
+	      TILE(3,I,J) = BKGND(3)
+	    ELSE
+	      ZP = Z2ND
+	      INDTOP = IND2ND
+	      NORMAL(1) = NORM2D(1)
+	      NORMAL(2) = NORM2D(2)
+	      NORMAL(3) = NORM2D(3)
+	      GOTO 255
+	    ENDIF
+	  ENDIF
+C	On second pass (or if there is nothing underneath) we blend in
+C	contribution of transparent top object
+	  IF (ITPASS.EQ.1) THEN
+	    TILE(1,I,J) = (1.-BLEND0)*TILE(1,I,J) + RGBLND(1)
+	    TILE(2,I,J) = (1.-BLEND0)*TILE(2,I,J) + RGBLND(2)
+	    TILE(3,I,J) = (1.-BLEND0)*TILE(3,I,J) + RGBLND(3)
+	    IF (AND(FLAG(IND2ND),TRANSP).EQ.0) GOTO 300
+	    RGBLND(1) = TILE(1,I,J)
+	    RGBLND(2) = TILE(2,I,J)
+	    RGBLND(3) = TILE(3,I,J)
+	    ITPASS = 2
+	    IF (IND3RD.LE.0) THEN
+	      TILE(1,I,J) = BKGND(1)
+	      TILE(2,I,J) = BKGND(2)
+	      TILE(3,I,J) = BKGND(3)
+	    ELSE
+	      ZP = Z3RD
+	      INDTOP = IND3RD
+	      NORMAL(1) = NORM3D(1)
+	      NORMAL(2) = NORM3D(2)
+	      NORMAL(3) = NORM3D(3)
+	      GOTO 255
+	    ENDIF
+	  ENDIF
+C	Third pass only happens if both of the two highest objects were
+C	transparent.
+	  TILE(1,I,J) = (1.-BLEND1)*TILE(1,I,J) + RGBLND(1)
+	  TILE(2,I,J) = (1.-BLEND1)*TILE(2,I,J) + RGBLND(2)
+	  TILE(3,I,J) = (1.-BLEND1)*TILE(3,I,J) + RGBLND(3)
+	      
+C	End of transparency processing
+C
 300     CONTINUE
 400     CONTINUE
 *       do tile averaging and save output tile in outbuf
@@ -2390,15 +2658,87 @@ C
 C Flat cylinder end
 C
 	else
+		if (cg .eq. 0.) then
+		    zb = -99999.
+		    return
+		endif
 		zb = (cg*za - ca*dx - cb*dy) / cg
 		if (dx2 + dy2 + (zb-za)**2 .ge. r2) then
 		    zb = -99999.
-		else
-		    xa = xb - (x1 - x2)
-		    ya = yb - (y1 - y2)
-		    za = zb - (z1 - z2)
-		end if
+		    return
+		endif
+		xa = xb - (x1 - x2)
+		ya = yb - (y1 - y2)
+		za = zb - (z1 - z2)
 	end if
 c
 	return
 	end
+
+C
+C Bookkeeping for transparency
+C We have to keep track of the 2nd highest object in case the top one
+C is transparent, and the highest opaque object because if the 2nd highest
+C is transparent also we have to show something reasonable underneath it.
+C
+	FUNCTION RANK( IND, ZP, NORMAL, FLAG )
+*
+	IMPLICIT REAL*4 (A-H, O-Z)
+	INTEGER  IND
+	REAL     ZP, NORMAL(3)
+*
+*     Support for transparency
+      COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
+     &                        NORMTP, NORM2D, NORM3D
+      INTEGER NTRANSP, INDTOP, IND2ND, IND3RD
+      REAL    ZTOP, Z2ND, Z3RD
+      REAL    NORMTP(3), NORM2D(3), NORM3D(3)
+*
+*     Bit definitions for FLAG(MAXOBJ) array
+      INTEGER FLAG(1)
+      INTEGER    FLAT,      RIBBON,    SURFACE,   PROPS
+      PARAMETER (FLAT=2,    RIBBON=4,  SURFACE=8, PROPS=16)
+      INTEGER    TRANSP,    HIDDEN
+      PARAMETER (TRANSP=32, HIDDEN=64)
+*
+	IF (ZP.GT.ZTOP) THEN
+	    IF (AND(FLAG(IND2ND),TRANSP).EQ.0) THEN
+	      Z3RD   = Z2ND
+	      IND3RD = IND2ND
+	      NORM3D(1) = NORM2D(1)
+	      NORM3D(2) = NORM2D(2)
+	      NORM3D(3) = NORM2D(3)
+	    ENDIF
+	    Z2ND = ZTOP
+            IND2ND = INDTOP
+	    NORM2D(1) = NORMTP(1)
+	    NORM2D(2) = NORMTP(2)
+	    NORM2D(3) = NORMTP(3)
+            ZTOP = ZP
+            INDTOP = IND
+	    NORMTP(1) = NORMAL(1)
+	    NORMTP(2) = NORMAL(2)
+	    NORMTP(3) = NORMAL(3)
+	ELSE IF (ZP.GT.Z2ND) THEN
+	    IF (AND(FLAG(IND2ND),TRANSP).EQ.0) THEN
+	      Z3RD   = Z2ND
+	      IND3RD = IND2ND
+	      NORM3D(1) = NORM2D(1)
+	      NORM3D(2) = NORM2D(2)
+	      NORM3D(3) = NORM2D(3)
+	    ENDIF
+	    Z2ND = ZP
+            IND2ND = IND
+	    NORM2D(1) = NORMAL(1)
+	    NORM2D(2) = NORMAL(2)
+	    NORM2D(3) = NORMAL(3)
+	ELSE IF (AND(FLAG(IND),TRANSP).EQ.0) THEN
+	    Z3RD   = ZP
+	    IND3RD = IND
+	    NORM3D(1) = NORMAL(1)
+	    NORM3D(2) = NORMAL(2)
+	    NORM3D(3) = NORMAL(3)
+	ENDIF
+	RANK = Z3RD
+	RETURN
+	END

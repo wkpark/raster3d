@@ -1,0 +1,20 @@
+Header records for example3; TMAT taken from Molscript run
+64 64     tiles in x,y
+18 18     pixels (x,y) per tile
+3         3x3 virtual pixels -> 2x2 pixels
+0 0 0     black background colour
+F         no shadows cast
+25        Phong power
+0.20      secondary light contribution
+0.05      ambient light contribution
+0.25      specular reflection component
+4.0       eye position
+1 1 1     main light source position
+ -0.503902  -0.857597   -0.103004   0
+ -0.262711   0.038566    0.964103   0
+ -0.822840   0.512874   -0.244734   0
+ 95.019661 -15.608208  -60.094696   35.0
+3         mixed objects
+*
+*
+*

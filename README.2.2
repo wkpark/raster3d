@@ -1,15 +1,37 @@
-most recent change:	  3-Aug-1995
+most recent change:	 15-Feb-1996
 
-The file Raster3D_2.11.tar.Z contains version 2.11 of RASTER3D.
+The file Raster3D_2.2b.tar.Z contains beta test version 2.2 of RASTER3D.
 It is a unified distribution which has been tested on the following 
 machines:
-
 	DECstation 5000 / Ultrix 4.3
 	Alpha / OSF 3.0
 	SGI Indigo / Irix 4.0.5F
-	IBM RS6000 / AIX
+	IBM RS6000 / AIX 3.2.5
+Version 2.11 (not yet V2.2) also tested OK on:
 	SUN Sparc  / SUNOS 4.1.3_U1
 	Intel 486 / linux
+
+New in version 2.2:
+
+- Transparency! Material definitions (object type 8) now includes a parameter
+  describing the degree of transparency. This allows, for instance, the use of
+  transparent triangularly tesselated surfaces to render the solvent accessible
+  surface. 
+- Generally improved handling of special material definitions, including 
+  optional use of objects base colour for specular highlighting (recommended for
+  effective use of coloured transparent surfaces).
+- Major bug fix with regard to rotation of explicit surface normals.
+- A utility program "ungrasp" is included which will convert surface
+  description files produced by the program GRASP (Nicholls, 1992) into a
+  Raster3D input file for rendering.
+- A utility program "normal3d" is included to assist in merging Raster3D input
+  files produced by different programs (Molscript/GRASP/rods/balls).
+- Various bug fixes to increase portability of code and handle a few 
+  pathological cases. 
+- Makefile for Irix 6.x
+- Default 4th ("alpha blend") channel of avs output file is set to 255 rather 
+  than 0.
+
 
 New in version 2.1:
 

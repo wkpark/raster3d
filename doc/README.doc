@@ -1,5 +1,5 @@
 Files
-	avs2ps.l        render.l        rods.l
+	avs2ps.l        render.l        rods.l       normal3d.l
 	raster3d.l      ribbon.l        balls.l
 
 These are standard unix man pages to be filtered through nroff.
@@ -10,7 +10,9 @@ In the latter case you may have to rename them so that the suffix is
 
 Files
 	avs2ps.html        render.html        rods.html
-	raster3d.html      ribbon.html        balls.html
+	raster3d.html      ribbon.html        balls.html      normal3d.html
+	r3d_hints.html     r3d_labels.html    r3d_transparent.html
+	r3d_icon.gif       index_button.gif
 
 These are hypertext versions of the PostScript documentation.  I do not 
 know of any truly general conventions for where to install them, but

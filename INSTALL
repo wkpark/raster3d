@@ -10,7 +10,7 @@ To install Raster3D
    TIFF image files you must
 	1) Obtain and install the TIFF library. There are a number of
 	   implementations available on the net.  I have been using
-	   Sam Leffler's version 3.3beta, available via anonymous ftp
+	   Sam Leffler's version 3.4beta024, available via anonymous ftp
 	   from sgi.com.
 	2) Edit the DEFINES, INCLUDES and LIBS definitions in the Makefile,
 	   DEFINES = -DTIFF_SUPPORT
@@ -48,7 +48,7 @@ TIFF header tag which defines the image orientation.  As a work-around
 for this problem I have added support for a conditional compilation
 directive TIFF_INVERT.  If you find that your TIFF images end up
 inverted after printing (particularly if you know that you will be
-using PhotoShop), then you may wish to add modify the Makefile to
+using PhotoShop), then you may wish to modify the Makefile to
 read:
 	DEFINES = -DTIFF_SUPPORT -DTIFF_INVERT
 Note that applications which correctly read the TIFF header should 
@@ -56,3 +56,6 @@ work in either case; this workaround is just to fool the stupid ones
 which think they already know the orientation without bothering to
 look.
 
+I don't have a linux machine or a SUN, so I haven't yet tested
+Version 2.2 on these systems.  If you find any problems with these or
+any other platforms please let me know.

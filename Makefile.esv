@@ -18,7 +18,7 @@ FFLAGS  = -O -systype bsd43 -static -w1
 INCLUDES=	-I/usr/local/include/
 
 RIBOBJS =      ribbon.o ribbon1.o modsubs.o
-PROGS   =      balls rods ribbon render setup avs2ps
+PROGS   =      balls normal3d rods ribbon render setup avs2ps
 
 all:        $(PROGS)
 

@@ -1,23 +1,29 @@
 #
-# Raster3D makefile for Alpha OSF/1.3 (actually the same as for Ultrix)
+# Raster3D makefile for Alpha OSF/1.3
+#          tested for both f77 and f90 compilers
 #
 LDFLAGS =
 CFLAGS  = -O
-FFLAGS  = -O -static -w1
+#FC	= f90
+#FFLAGS	= -O -fast -static -nowarn
+FC	= f77
+FFLAGS  = -O -fast -static -w1
 #
 # If you choose to build Raster3D with support for direct output of
 # TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
 # You will also need to add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
 #
 #LIBS    =	-ltiff
-#DEFINES =	-DTIFF_SUPPORT
- LIBS    =
- DEFINES =
+#DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT
+LIBS    =
+DEFINES =
 
 INCLUDES = -I/usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	balls rods ribbon render setup avs2ps
+PROGS   =	balls normal3d rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
@@ -34,13 +40,13 @@ tar:
 	compress  ../raster3d.tar
 
 ribbon:	$(RIBOBJS)
-	f77 -O $(RIBOBJS) -o ribbon
+	$(FC) -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
 render:	render.f local.o
-	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
+	$(FC) $(FFLAGS) render.f local.o  \
 	$(LIBS) -o render $(LDFLAGS)
 
 avs2ps:	avs2ps.c
