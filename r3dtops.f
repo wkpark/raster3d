@@ -174,6 +174,10 @@ c
      & ' } bind def',
      & '/XYZmove { pop moveto } bind def',
      & '/XYZrmove { pop rmoveto } bind def'
+      WRITE(LB,607) '/SetBackground { '
+      WRITE (LB,604) RED,GRN,BLU,' setrgbcolor'
+      WRITE(LB,607) ' } bind def'
+
 c
 c This is one way to do it
 c
@@ -252,7 +256,7 @@ c
       WRITE(LB,600) '%%BeginSetup'
       WRITE(LB,600) 'gsave'
       WRITE(LB,600) 'UnitWidth UnitHeight translate'
-      WRITE(LB,604) RED,GRN,BLU,' setrgbcolor'
+      WRITE(LB,600) 'SetBackground'
       WRITE(LB,600) 
      &	'UnitWidth -1 mul dup UnitHeight -1 mul newpath moveto'
       WRITE(LB,600)
@@ -522,6 +526,14 @@ c
 c All done, finish off PostScript file and report success
 c
       ENTRY LCLOSE( KEEP )
+c
+c     Make 100% sure that pixel[0,0] is background color so that
+c     it can be used for auto-definition of matte
+      WRITE (LB,600) '%Force pixel [0,0] to background color'
+      WRITE (LB,600) 'SetBackground'
+      WRITE (LB,600) 'newpath UnitWidth -1 mul UnitHeight moveto'
+      WRITE (LB,600) '1 0 rlineto 0 -1 rlineto -1 0 rlineto',
+     &               'closepath fill'
 c
 c     Finish off PostScript output
       WRITE (LB,600) '%'

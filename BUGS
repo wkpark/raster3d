@@ -31,6 +31,15 @@ All platforms
 	  the first call always returns 0, so two in a row are needed
 	- ribbon coloring scheme 6 doesn't work
 
+SGI
+===
+
+	- Some versions of Irix contain a header file jpeglib.h that is not
+	  compatible with the actual libjpeg in the same distribution
+	- The PNG library and header files are from an ancient beta-test version.
+	  You must choose between disabling PNG support in Makefile.template or
+	  installing a newer version of libpng on your machine
+
 Tru64 unix 5.1
 ==============
 	- The new fortran compiler is not fully compatible with older

@@ -1,10 +1,9 @@
- 1-Jun-2000
+11-Jul-2001
 ===========
 
 This directory contains two filters for processing molecular surfaces
 produced by Michael Sanner's program msms.  One is a perl script; the
-other is written in C.  Both work, but neither has been extensively
-tested.
+other is written in C.  Take your pick.
 
 The msms home page is
 
@@ -14,7 +13,7 @@ Files provided here:
 
     msms2r3d.c		C source for a conversion program
     msms2r3d.pl		perl source for a conversion program
-    example.script	example script that runs msms and converts the
+    msms_example.script	example script that runs msms and converts the
     			output for use in Raster3D
 
 Notes:
@@ -26,5 +25,5 @@ Caution: finer tesselation yields a *big* surface description file,
 and you may have to increase the value of MAXOBJ in parameters.incl
 so that render can handle that many triangular facets.
 
-The example script assumes that msms and pdb_to_xyzr have already
-been installed.
+The example script assumes that the programs msms and pdb_to_xyzr have 
+already been installed.

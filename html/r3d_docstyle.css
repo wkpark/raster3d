@@ -22,6 +22,7 @@
       }
 
  H1   { text-align: center; text-decoration: underline; }
+ H3   { color:#009900; margin-left: 3%; }
  H4   { color:#009900; margin-left: 0%; }
  H5   { color:#006600; margin-left: 3%; font-size=+1; }
 
@@ -29,10 +30,12 @@
 	font-weight: bold; 
 	margin-left: 4%; margin-right: 4%; 
 	border-left: 4%; border-right: 4%; 
+	margin-top: 3;
       }
  DD   {
 	margin-left: 8%; margin-right: 8%; 
 	border-left: 8%; border-right: 8%; 
+	margin-top: 3;
       }
 
  LISTING, PRE 

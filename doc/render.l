@@ -6,6 +6,8 @@ render - Raster3D molecular graphics package rendering program
 .SH SYNOPSIS
 .B "render"  < infile.r3d > outfile.avs
 
+.B "render"  -png < infile.r3d > outfile.png
+
 .B "render"  [\fI-quality NN\fP] -jpeg < infile.r3d > outfile.jpeg
 
 .B "render"   -tiff outfile.tiff < infile.r3d 
@@ -62,11 +64,12 @@ Invert image top-to-bottom. This may be necessary if you are using
 some odd viewing program.
 
 .TP 5
-.B "-jpeg"
+.B "-jpeg [outfile.jpeg]"
 
 Only if compiled with -DJPEG_SUPPORT.
 By default \fIrender\fP will produce an AVS-compatible image on stdout.
-The -jpeg flag will cause it to output a JPEG image stream to stdout instead.
+The -jpeg flag will cause it to output a JPEG image file instead, or
+stream the output to stdout if no file is specified.
 
 .TP 5
 .B "-labels [outfile.ps]"
@@ -83,6 +86,14 @@ Only if compiled with -DIMAGE_PIPE.
 The -out flag causes \fIrender\fP to pipe output to the ImageMagick
 command convert, with instructions to convert it to an image file
 whose type is determined by the filename extension xxx.
+
+.TP 5
+.B "-png [outfile.png]"
+
+Only if compiled with -DPNG_SUPPORT.
+By default \fIrender\fP will produce an AVS-compatible image on stdout.
+The -png flag will cause it to output a PNG image file instead, or
+stream the output to stdout if no file is specified.
 
 .TP 5
 .B "-quality"

@@ -2,7 +2,7 @@
 #
 # Calculate molecular surface of a galactose molecule using MSMS
 #
-ln -s ../examples/sugarG.pdb protein.pdb
+ln -s ../sugarG.pdb protein.pdb
 cat protein.pdb | pdb_to_xyzr > surf.dat
 msms -if surf.dat -of surf -probe_radius 1.4 -density 5.0
 #
@@ -30,3 +30,4 @@ EOF
 rm -f protein.pdb msms_surf.dat.log
 rm -f surf.dat surf.face surf.vert
 rm -f surf.r3d
+display picture.tiff&

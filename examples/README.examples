@@ -9,6 +9,10 @@ shell scripts should produce an image on your X-windows screen.
 There is a small picture gallery of the example images included 
 in the HTML documentation  ../html/r3d_examples.html
 
+The ./msms subdirectory contains source code for filters to 
+convert molecular surfaces calculated using msms into Raster3D
+files, and an example of use.
+
 Example 1
 =========
 

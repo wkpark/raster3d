@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH Raster3D 1 "28 March 2001" "Raster3D V2.6"
+.TH Raster3D 1 "28 August 2001" "Raster3D V2.6"
 .SH NAME
 .PP
 Raster3D molecular graphics package
@@ -11,7 +11,7 @@ program \fIrender\fP
 and a number of ancillary programs 
 (\fIballs\fP, \fIrastep\fP, \fIrods\fP, \fIribbon\fP)
 which produce input files for
-rendering from Brookhaven PDB files of atomic coordinates.
+rendering from PDB (Protein Data Bank) files of atomic coordinates.
 \fIRaster3D\fP can also render images composed using other programs
 such as \fIMOLSCRIPT\fP [Per Kraulis (1991), J. Appl. Cryst. 24, 946-950].
 
@@ -33,8 +33,8 @@ Output is in the form of a pixel image
 with 24 bits of color information per pixel.
 \fIRaster3D\fP does not depend on graphics hardware.
 
-Four common image output formats are supported: AVS, JPEG, TIFF, and
-SGI libimage.
+The following image output formats are supported: AVS, JPEG, PNG,
+TIFF, and SGI libimage.
 To actually view or manipulate the images produced,
 you must also have installed an image viewing package (e.g. John
 Cristy's ImageMagick or the SGI libimage utilities).
@@ -43,9 +43,8 @@ convert an AVS format output stream directly to a dithered monochrome
 PostScript image. Other output formats are possible in conjunction
 with ImageMagick.
 
-Although ancillary programs are provided only for the generation of object
-descriptions based on atomic coordinates stored in Brookhaven PDB
-format, the rendering program is not specific to molecular graphics.
+Although Raster3D is not intended as a general purpose ray-tracing package,
+nothing in the rendering process is specific to molecular graphics.
 
 .SH EXAMPLES
 

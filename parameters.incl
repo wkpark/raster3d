@@ -41,7 +41,7 @@
 *     Maximum number of stacked transparent objects at any single pixel
 *     (any further further stacking is ignored)
       INTEGER    MAXTRANSP
-      PARAMETER (MAXTRANSP=10)
+      PARAMETER (MAXTRANSP=25)
 *
 *     Maximum number of non-shadowing lights (object type 13)
       INTEGER    MAXGLOWS

@@ -36,6 +36,12 @@ LIBDIRS  =	-L/usr/local/lib
   JLIBS =	-ljpeg
   JDEFS =	-DJPEG_SUPPORT
 
+# PNG support (enabled by default)
+#     add -DPNG_SUPPORT to the DEFINES statement
+#     add -lpng to the LIBS definition (may need -lz also)
+  PLIBS =	-lpng
+  PDEFS =	-DPNG_SUPPORT
+
 #
 # Everybody (I think) needs these
 #

@@ -27,7 +27,7 @@ c
 	nay = -1
 	nscheme = -1
 	shadowflag = -1
-	quality = 95
+	quality = 90
 	lflag = .false.
 	zoom = 0.
 c

@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.6b (9 Jul 2001)
+*     Version 2.6c (31 Jul 2001)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -72,6 +72,8 @@
 *		  make back surface HIDING (former INMODE=4) the default for
 *		  	non-bounded opaque triangles 
 * EAM Jul 2001	- V2.6b first release
+* EAM Aug 2001	- V2.6c bug-fix for MOPT1 processing
+*		  PNG output format ( -DPNG_SUPPORT )
 *		  
 *
 *     This version does output through calls to an auxilliary routine
@@ -4268,7 +4270,7 @@ C
 	real     zp, normal(3)
 	integer*4  flag(1)
 *
-	integer  i,j
+	integer  i,j,k
 *
       INTEGER ASSOUT
       LOGICAL VERBOSE
@@ -4345,17 +4347,27 @@ c     overhead of having to check for duplication of material.
 	        if (flag(ind)/65536 .eq. flag(indlist(i))/65536) then
 		    goto 345
 		endif
-		do j = indepth, i, -1
+c		Handle case where two MOPT1 surfaces have intervening transp obj
+c		In this case overwrite the lower MOPT1 surface
+		do k = i, indepth-1
+		   if (flag(ind)/65536 .eq. flag(indlist(k+1))/65536) 
+     &		   	goto 401
+		enddo
+		if (indepth .ge. MAXTRANSP-1) then
+	    	    tranovfl = tranovfl + 1
+		else
+		    k = indepth
+		    indepth = indepth + 1
+		endif
+  401		continue
+		do j = k, i, -1
 		   indlist(j+1)   = indlist(j)
 		   zlist(j+1)     = zlist(j)
 		   normlist(1,j+1)= normlist(1,j)
 		   normlist(2,j+1)= normlist(2,j)
 		   normlist(3,j+1)= normlist(3,j)
-		   call assert(flag(ind)/65536.ne.flag(indlist(j))/65536
-     &				,'MOPT1 processing error')
 		enddo
-		indepth = indepth + 1
-		goto 344
+		goto 345
 	    else if (and(flag(indlist(i)),TRANSP).eq.0) then
 	    	return
 	    else if (flag(ind)/65536 .eq. flag(indlist(i))/65536) then

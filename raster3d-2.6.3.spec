@@ -1,9 +1,9 @@
 Summary: Raster3D photorealistic molecular graphics package
 Name: Raster3D
-Version: 2.6.2
+Version: 2.6.3
 Release: 1
 Copyright: Source freely available, redistribution restricted
-Source: Raster3D_2.6b.tar.gz
+Source: Raster3D_2.6c.tar.gz
 URL: http://www.bmsc.washington.edu/raster3d
 Packager: Ethan A Merritt
 Group: Graphics
@@ -11,8 +11,8 @@ Group: Graphics
 %description
 The Raster3D molecular graphics package consists of a core rendering program 
 and a number of ancillary programs that produce input files for rendering 
-from Brookhaven PDB files of atomic coordinates.  Raster3D can also render 
-images composed using other programs such as Molscript or XtalView.
+from PDB (Protein Data Bank) files of atomic coordinates.  Raster3D can also 
+render images composed using other programs such as Molscript or XtalView.
 Raster3D uses a fast Z-buffer algorithm to produce high quality pixel images 
 featuring one shadowing light source, additional non-shadowing light sources, 
 specular highlighting, transparency, and Phong shaded surfaces.  Output is to
@@ -33,6 +33,7 @@ Program reference and requested citation:
 /usr/local/bin/rastep 
 /usr/local/bin/render 
 /usr/local/bin/ribbon 
+/usr/local/bin/rings3d
 /usr/local/bin/rods 
 /usr/local/bin/normal3d
 /usr/local/bin/stereo3d

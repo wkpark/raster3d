@@ -1,3 +1,12 @@
+ 5-Oct-2001	Add info about PNG library to installation instructions
+11-Sep-2001	Release 2.6c
+29-Aug-2001	Add rings3d to Makefile and rpm package list 
+ 7-Aug-2001	Check for errors in outfile specification before proceeding
+31-Jul-2001	Add support for PNG output
+		-png and -jpeg default to stdout but allow explicit filename
+		fix local.c bug in code for timing calls
+30-Jul-2001	fix glitch in processing interleaved MOPT1 transparent objs
+... since V2.6b ...
 10-Jul-2001	Modify Makefile to work around Irix make inadequacies
  9-Jul-2001	Release 2.6b
  8-Jul-2001	Start checkout tests for version 2.6b

@@ -2,18 +2,18 @@
 # Makefile.incl is initially empty
 # It gets initialized by "Make OS"
 #
+default: all
+
 include Makefile.incl
 include VERSION
 
-LIBS	= $(LIBDIRS) $(CLIBS) $(TLIBS) $(JLIBS) $(SLIBS)
-DEFINES	= $(GDEFS) $(IDEFS) $(TDEFS) $(JDEFS) $(SDEFS) $(OSDEFS)
+LIBS	= $(LIBDIRS) $(CLIBS) $(TLIBS) $(JLIBS) $(SLIBS) $(PLIBS)
+DEFINES	= $(GDEFS) $(IDEFS) $(TDEFS) $(JDEFS) $(SDEFS) $(PDEFS) $(OSDEFS)
 
 FLAGS	= $(INCDIRS) $(DEFINES)
 
-PROGS   = avs2ps balls rastep render ribbon rods normal3d
+PROGS   = avs2ps balls rastep render ribbon rings3d rods normal3d
 SCRIPTS = label3d stereo3d
-
-default: all
 
 clean:	
 	rm -f *.o $(PROGS) core *~
@@ -75,7 +75,7 @@ irix5:
 	@echo CC = cc                         >> Makefile.incl
 	@echo CFLAGS = -g -w                  >> Makefile.incl
 	@echo FC = f77                        >> Makefile.incl
-	@echo FFLAGS = -O -Olimit 4000        >> Makefile.incl
+	@echo FFLAGS = -O -Olimit 4500        >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 
 irix6:	
@@ -85,7 +85,7 @@ irix6:
 	@echo CC = cc -n32                    >> Makefile.incl
 	@echo CFLAGS = -g -w                  >> Makefile.incl
 	@echo FC = f77                        >> Makefile.incl
-	@echo FFLAGS = -O -n32 -OPT:Olimit=4000 >> Makefile.incl
+	@echo FFLAGS = -O -n32 -OPT:Olimit=4500 >> Makefile.incl
 	@echo LDFLAGS = -L/usr/lib32          >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 
@@ -107,7 +107,7 @@ aix:	aix-patch strip-for-g77
 	@echo CFLAGS = -g                     >> Makefile.incl
 	@echo FC = xlf -qqcount -w            >> Makefile.incl
 	@echo FFLAGS = -O -qtkq_size=2000 -qintlog -qsave  >> Makefile.incl
-	@echo LDFLAGS = -bloadmap:loadmap.lis >> Makefile.incl
+	@echo LDFLAGS = -lz -bloadmap:loadmap.lis          >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo OSDEFS = -Dlocal_=local -Dungz_=ungz >> Makefile.incl
 aix-patch: 
@@ -138,6 +138,12 @@ rastep.f.bak:
 	egrep -v '(CARRIAGECONTROL|DISPOSE)' rastep.f.bak > rastep.f
 
 #
+# These source files are dependent on parameters.incl
+#
+FINCLS = render.o parse.o quadric.o normal3d.o
+$(FINCLS):	parameters.incl
+
+#
 # Actually build the programs
 #
 
@@ -164,7 +170,7 @@ rastep:	rastep.f quadric.o suv.o
 	rastep.f quadric.o suv.o $(LDFLAGS) \
 	-o rastep 
 
-render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o parameters.incl
+render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o
 	$(FC) $(FFLAGS) \
 	render.o local.o quadric.o parse.o r3dtops.o ungz.o \
 	$(LDFLAGS) $(LIBS) \
@@ -192,7 +198,8 @@ install:	all
 	if [ ! -e $(htmldir) ] ; then mkdirhier $(htmldir) ; fi
 	cp html/* $(htmldir)
 	if [ ! -e $(examdir) ] ; then mkdirhier $(examdir) ; fi
-	cp examples/* $(examdir)
+	if [ ! -e $(examdir)/msms ] ; then mkdirhier $(examdir)/msms ; fi
+	cp -R examples/* $(examdir)
 	@echo ""
 	@echo "	********************************************"
 	@echo "	* The examples subdirectory contains input *"

@@ -1,9 +1,9 @@
 most recent change:	   8-Jul-2001
 
-The file Raster3D_2.6b.tar.gz contains the full source distribution for
-version 2.6b of Raster3D.
+The file Raster3D_2.6c.tar.gz contains the full source distribution for
+version 2.6c of Raster3D.
 
-- Version 2.6b is the first general release of the Raster3D package version 2.6
+- Version 2.6c is the first general release of the Raster3D package version 2.6
   See CHANGELOG for a history of changes to the package.
 
 - The installation procedure for version 2.6 differs from earlier versions.
@@ -26,6 +26,7 @@ version 2.6b of Raster3D.
 	            render -tiff %o < %i
 
 - Changes in Version 2.6 compared to earlier versions
+	+   PNG image output
 	+   User changeable array limits are in a separate file parameters.incl
 	+   V2.6 supports bounding planes as part of a material description
 	    (see examples XXX)
@@ -52,6 +53,7 @@ John Cristy's ImageMagick package for image manipulation and viewing
 	(source distribution available from www.ImageMagick.org)
 Some version of a TIFF library, ideally one that allows LZW compression
 Some version of a JPEG library
+Version 1.0.6 or greater  of the PNG library (http://www.libpng.org/pub/png/libpng.html)
 Version 2.0 of Molscript (http://www.avatar.se/molscript)
 
 

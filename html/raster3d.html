@@ -11,9 +11,8 @@
 
 The Raster3D molecular graphics package consists of a core program 
 <a href="render.html">render</a> 
-and a number of ancillary programs
-which read atomic coordinates from Brookhaven PDB files to produce
-scene descriptions for input to render. 
+and a number of ancillary programs that read atomic coordinates from 
+PDB (Protein Data Bank) files to produce scene descriptions for input to render. 
 Raster3D can also render images composed using other programs such as 
 <a href="#refs">Molscript</a> and 
 <a href="http://www.scripps.edu/pub/dem-web/index.html">XtalView</a>.
@@ -114,10 +113,10 @@ information per pixel plus one matte channel.
 </p>
 
 <p>
-Raster3D does not depend on graphics hardware. Four common image output
-formats are supported: AVS, JPEG, TIFF, and SGI libimage.  To actually view or
-manipulate the images produced, you must also have installed an image viewing
-package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).
+Raster3D does not depend on graphics hardware. The rendering program currently
+supports output to files in AVS, JPEG, TIFF, PNG and SGI libimage format.  
+To actually view or manipulate the images produced, you must also have installed 
+an image viewing package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).
 The Raster3D rendering program can be integrated with ImageMagick to
 expand the flexibility of output formats and interactive use.
 </p>
@@ -125,7 +124,7 @@ expand the flexibility of output formats and interactive use.
 <p>
 Ancillary programs are provided for the generation of object
 descriptions based on atomic coordinates stored in PDB format.
-Although Raster3D is not intended as a general purpose ray-tracing program,
+Although Raster3D is not intended as a general purpose ray-tracing package,
 nothing in the rendering process is specific to molecular graphics. 
 Some of the algorithms used have been chosen for speed rather than generality,
 however. They work well for molecular graphics images, but possibly 
@@ -262,17 +261,28 @@ render &lt; description.r3d | avs2ps &gt; picture.ps
 
 <h5>Required for full installation:</h5>
 <dl>
+    <dt>PNG
+    <dd>Support for direct output of PNG images requires prior installation of the
+    	<i>libpng</i> and <i>libz</i> libraries. If these are not distributed with
+	your operating system you can get the source from 
+	<a href="http://www.libpng.org/pub/png/">http://www.libpng.org/pub/png/</a>.
+	PNG files allow transparent backgrounds and alpha blending, and can be
+	viewed using a web browser.
     <dt>TIFF
     <dd>In order to build in support for the direct output of TIFF image files,
 	you must separately obtain and install a copy of the TIFF library 
 	(libtiff.a).  Several implementations are available, including one by 
 	Sam Leffler which may be obtained via anonymous ftp from 
-	<a href="ftp://ftp.sgi.com"> sgi.com</a>.
+	<a href="ftp://ftp.sgi.com/graphics/"> sgi.com</a>. Some recent TIFF libraries
+	no longer support LZW compression due to concerns about patent enforcement by
+	Unisys. This makes TIFF much less useful than it used to be. Consider using PNG
+	format instead, as it has most of the good features of TIFF and also can be
+	viewed by web browsers.
     <dt>JPEG
     <dd>In order to build in support for output of JPEG images you must have a
 	copy of the JPEG library. If your system does not already have this
-	library installed, you can obtain it directly from the Indepent JPEG Group development 
-	project via anonymous ftp from 
+	library installed, you can obtain it directly from the Independent JPEG Group 
+	development project via anonymous ftp from 
 	<a href="ftp://ftp.uu.net/graphics/jpeg/">ftp.uu.net/graphics/jpeg/</a>.
     <dt>ImageMagick
     <dd>In order to view the rendered images on a workstation screen you must 

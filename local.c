@@ -4,7 +4,7 @@
  *
  * Output from render.f is performed by calls to routine LOCAL.
  *
- * This version of local.c supports 6 output modes, 4 of which
+ * This version of local.c supports 7 output modes, 5 of which
  * are controlled by conditional compilation directives.
  *
  *	mode 0	AVS image file sent to stdout
@@ -22,19 +22,23 @@
  *		calls to the TIFF library if TIFF_SUPPORT is defined
  *
  *	mode 4	#ifdef JPEG_SUPPORT
- *		JPEG image output to stdout
+ *		JPEG image output to file (defaults to stdout)
  *
  *	mode 5	#ifdef IMAGEPIPE
  *		AVS image file piped to ImageMagick for conversion to
  *		some other image type determined by suffix
  *
- * V2.5 Command line switches other than output file format handled elsewhere
- *	here we recognize
+ *	mode 6	#ifdef PNG_SUPPORT
+ *		PNG image output to file (defaults to stdout)
+ *
+ * Command line switches other than output file format handled elsewhere
+ * here we recognize
  *		-invert	         invert y coordinate axis
- *		-jpeg            for jpeg output
- *		-out file.xxx    pipe output to ImageMagick
- *		-sgi [filename]  SGI libimage format output
+ *		-jpeg [filename] for jpeg output
+ *		-png  [filename] for jpeg output
+ *		-sgi  [filename] SGI libimage format output
  *		-tiff [filename] TIFF output format
+ *		-out   file.xxx  pipe output to ImageMagick
  */
 
 #include	<stdio.h>
@@ -65,6 +69,17 @@
   struct jpeg_error_mgr      	jerr;
   JSAMPLE			*jpeg_pixels;
   JSAMPROW			jpeg_row[1];
+#endif
+
+#ifdef PNG_SUPPORT
+#include	<png.h>
+#ifndef png_jmpbuf
+#  define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf)
+#endif
+  /* PNG data structures */
+  png_structp png_ptr;
+  png_infop   info_ptr;
+  png_text    text_ptr[2];
 #endif
 
 /* Pick up version number from same include file used by Makefile */
@@ -131,6 +146,7 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
 #ifdef JPEG_SUPPORT
   /* For -jpeg output option only */
   JSAMPLE *q;
+  static FILE *jpegfile;
 #endif
 
 #ifdef IMAGEPIPE
@@ -138,6 +154,13 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
   static FILE *pipe;
   char convert_command[128];
 #endif
+
+#ifdef PNG_SUPPORT
+  /* For -png output option only */
+  static png_bytep pngline;
+  static FILE *pngfile;
+#endif
+
 
 
 /****************************************************************/
@@ -188,9 +211,22 @@ if (*option == 0)
       {
 #ifdef      JPEG_SUPPORT
 	mode  = 4;
+	ofile = (char *)buffer2;
 #else
 	fprintf(stderr,
 		"\n This copy of render was not built with jpeg support\n");
+	exit(-1);
+#endif
+      }
+
+    else if (strncmp( (char *)buffer1, "-png" , 4) == 0)
+      {
+#ifdef      PNG_SUPPORT
+	mode  = 6;
+	ofile = (char *)buffer2;
+#else
+	fprintf(stderr,
+		"\n This copy of render was not built with png support\n");
 	exit(-1);
 #endif
       }
@@ -200,6 +236,10 @@ if (*option == 0)
 #ifdef	IMAGEPIPE
 	mode  = 5;
 	ofile = strtok( (char *)buffer2, " " );
+	if (ofile)
+		fprintf(stderr,"ofile = %s\n",ofile);
+	else
+		fprintf(stderr,"ofile = NULL\n");
 #else
 	fprintf(stderr,
 		"\n This copy of render was not built with support\n");
@@ -224,9 +264,11 @@ if (*option == 0)
 	fprintf(stderr,
 		"\n     render                        AVS image to stdout");
 	fprintf(stderr,
-		"\n     render [-quality NN] -jpeg    JPEG image to stdout");
+		"\n     render -jpeg [outfile]        JPEG image to outfile (defaults to stdout)");
 	fprintf(stderr,
-		"\n     render -sgi [outfile]         output to SGI libimage file (defaults to render.rgb)");
+		"\n     render -png  [outfile]        PNG image to outfile (defaults to stdout)");
+	fprintf(stderr,
+		"\n     render -sgi  [outfile]        output to SGI libimage file (defaults to render.rgb)");
 	fprintf(stderr,
 		"\n     render -tiff [outfile]        output to TIFF file (defaults to render.tif)");
 	fprintf(stderr,
@@ -239,8 +281,9 @@ if (*option == 0)
 	fprintf(stderr,"\n    -debug                verbose output while running");
 	fprintf(stderr,"\n    -draft                no anti-aliasing (SCHEME 1)");
 	fprintf(stderr,"\n    -fontscale FF         multiplier for PostScript font size");
-	fprintf(stderr,"\n    -labels               write labels to PostScript file label3d.ps");
 	fprintf(stderr,"\n    -invert               invert y axis");
+	fprintf(stderr,"\n    -labels               write labels to PostScript file label3d.ps");
+	fprintf(stderr,"\n    -quality QQ           0 < QQ < 95  jpeg compression [default 90]");
 	fprintf(stderr,"\n    -[no]shadow           enable or disable shadowing");
 	fprintf(stderr,"\n    -size HHHxVVV         specify size of output image in pixels");
 	fprintf(stderr,"\n    -transparent          same as -alpha (SCHEME 0)");
@@ -318,6 +361,7 @@ else if (*option == 1)
 	else
 	    ofile = "render.tif";
 	tfile=TIFFOpen(ofile,"w");
+	if (!tfile) exit(-1);
 	TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
 	TIFFSetField(tfile,TIFFTAG_SOFTWARE,program_name);
 	TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
@@ -338,13 +382,7 @@ else if (*option == 1)
 #endif
 	TIFFSetField(tfile,TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
 	TIFFSetField(tfile,TIFFTAG_COMPRESSION,COMPRESSION_LZW);
-#ifdef	OLD_CODE
-	rows_per_strip=8192/TIFFScanlineSize(tfile);
-	if (rows_per_strip == 0)
-	    rows_per_strip=1;
-#else
 	rows_per_strip = ysize;
-#endif
 	TIFFSetField(tfile,TIFFTAG_ROWSPERSTRIP,rows_per_strip);
 	if (alpha_channel)
 	    {
@@ -366,6 +404,18 @@ else if (*option == 1)
 #ifdef	JPEG_SUPPORT
     if (mode == 4)
 	{
+	if (*ofile != ' ' && *ofile != '-')
+	    {
+	    ofile = strtok( ofile, " " );
+	    jpegfile = fopen(ofile, "wb");
+	    if (!jpegfile)
+	    	{
+		fprintf(stderr,"Could not open output file %s\n",ofile);
+		exit(-1);
+		}
+	    }
+	else
+	    jpegfile = stdout;
 	jpeg_pixels = (JSAMPLE *) malloc(xsize*3*sizeof(JSAMPLE));
 	if (jpeg_pixels == (JSAMPLE *) NULL)
 	    {
@@ -374,7 +424,7 @@ else if (*option == 1)
 	    }
 	cinfo.err = jpeg_std_error(&jerr);
 	jpeg_create_compress(&cinfo);
-	jpeg_stdio_dest(&cinfo,stdout);
+	jpeg_stdio_dest(&cinfo,jpegfile);
 	cinfo.image_width      = xsize;
 	cinfo.image_height     = ysize;
 	cinfo.input_components = 3;
@@ -395,9 +445,13 @@ else if (*option == 1)
 #ifdef	IMAGEPIPE
     if (mode == 5)   /* pipe to ImageMagick */
 	{
+	if (!ofile || *ofile==' ' || *ofile=='-') 
+	    { 
+	    fprintf(stderr,"render: illegal output file name\n");
+	    exit(-1);
+	    }
 	sprintf( convert_command, "convert -verbose -quality %d avs:- ", 
 		 quality );
-/*	strcpy(  convert_command, "convert -verbose avs:- "); */
 	strncat( convert_command, ofile, 96 );
 	fprintf(stderr,"\n Opening pipe to | %s\n",convert_command);
 	pipe = popen( convert_command, "w" );
@@ -418,8 +472,50 @@ else if (*option == 1)
     else
 #endif
 
-    start_time = time(NULL);	/* My congratulations to anyone who can figure */
-    start_time = time(NULL);	/* why two of these time calls are needed!     */
+#ifdef PNG_SUPPORT
+    if (mode == 6) 
+    	{
+	if (*ofile != ' ' && *ofile != '-')
+	    {
+	    ofile = strtok( ofile, " " );
+	    pngfile = fopen(ofile, "wb");
+	    if (!pngfile)
+	    	{
+		fprintf(stderr,"Could not open output file %s\n",ofile);
+		exit(-1);
+		}
+	    }
+	else
+	    pngfile = stdout;
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (png_ptr) info_ptr = png_create_info_struct(png_ptr);
+	if (!png_ptr || !info_ptr)
+	    {
+	    fprintf(stderr,"PNG initialization failed - die\n");
+	    exit(-1);
+	    }
+	if (setjmp(png_jmpbuf(png_ptr)))
+	    {
+	    fprintf(stderr,"Error writing PNG file - die\n");
+	    exit(-1);
+	    }
+	png_init_io(png_ptr,pngfile);
+	png_set_IHDR(png_ptr, info_ptr, (png_uint_32)xsize, (png_uint_32)ysize, 8, 
+		     (alpha_channel ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB),
+		     PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+	pngline=(png_bytep) calloc(xsize, sizeof(png_byte) * (alpha_channel ? 4 : 3));
+	if (!pngline)
+	    {
+	    fprintf(stderr,"\nMemory allocation error\n");
+	    return(-1);
+	    }
+	if (quality == 100) png_set_compression_level( png_ptr, Z_NO_COMPRESSION );
+	}
+    else
+#endif
+
+    /* NOP */ ;
+    start_time = time(NULL);
     return(1);
     }
       
@@ -520,8 +616,32 @@ else if (*option == 2)
 	}
     else
 #endif
-   
-    if (mode >= 6)
+  
+#ifdef PNG_SUPPORT
+    if (mode == 6)
+	{
+	int j = 0;
+
+	if (alpha_channel)
+	    for (i=0; i<xsize; i++) {
+		pngline[j++] = buffer1[i];
+		pngline[j++] = buffer2[i];
+		pngline[j++] = buffer3[i];
+		pngline[j++] = buffer4[i];
+	    }
+	else
+	    for (i=0; i<xsize; i++) {
+		pngline[j++] = buffer1[i];
+		pngline[j++] = buffer2[i];
+		pngline[j++] = buffer3[i];
+	    }
+	png_write_rows(png_ptr, &pngline, 1);
+
+	}
+    else
+#endif
+
+    if (mode >= 7)
     	{
     	fprintf(stderr,"\n local.c: illegal output mode\n");
 	exit(-1);
@@ -571,8 +691,18 @@ else if (*option == 3)
     else
 #endif
 
-    end_time = time(NULL);	/* My congratulations to anyone who can figure */
-    end_time = time(NULL);	/* why two of these time calls are needed!     */
+#ifdef PNG_SUPPORT
+    if (mode == 6)
+    	{
+	png_write_end(png_ptr, info_ptr);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+	free(pngline);
+	}
+    else
+#endif
+
+    /* NOP */ ;
+    end_time = time(NULL);
     fprintf(stderr,"rendering time - %5d sec\n",(int)(end_time-start_time));
 
     return(1);
@@ -605,14 +735,29 @@ else if (*option == 4)
 	}
     else
 #endif
-  
+
+#ifdef PNG_SUPPORT
+    if (mode == 6)
+    	{
+	text_ptr[0].key  = "Software";
+	text_ptr[0].text = (unsigned char *)program_name;
+	text_ptr[0].compression = PNG_TEXT_COMPRESSION_NONE;
+	text_ptr[0].text_length = strlen(program_name);
+	text_ptr[1].key  = "Title";
+	text_ptr[1].text = (unsigned char *)buffer1;
+	text_ptr[1].compression = PNG_TEXT_COMPRESSION_NONE;
+	text_ptr[1].text_length = 79;
+	png_set_text(png_ptr, info_ptr, text_ptr, 2);
+	png_write_info(png_ptr, info_ptr);
+	}
+    else
+#endif
+
+    /* NOP */ ;
     return(1);
     }
   
 }
-
-
-
 
 #ifdef TIFF_SUPPORT
 void my_write_tiff(fp, buf1, buf2, buf3, buf4, size, scanline)

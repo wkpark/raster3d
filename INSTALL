@@ -13,6 +13,7 @@ User configurable options are contained in two files:
 
    	-tiff	enabled by default (TIFF output)
 	-jpeg	enabled by default (JPEG output)
+	-png	enabled by default (PNG output)
 	-sgi	disbled by default (SGI libimage output)
 	-out    enabled by default (output piped through ImageMagick)
 	GUNZIP	enabled by default (auto-decompression of input files)
@@ -92,9 +93,14 @@ flag in local_jpeg.c triggered by adding the definition -DBROKEN_LIBJPEG
 in Makefile.template. Or just obtain and build a correct version of libjpeg.so
 from the independent JPEG development group ftp://ftp.uu.net/graphics/jpeg/
 
+Irix 6.5 contains an ancient, beta-test, version of the PNG library.
+You will have to choose between disabling PNG support in Makefile.template
+or obtaining and installing a more recent version of libpng from
+     http://www.libpng.org/pub/png/libpng.html
+
 linux
 =====
-Works fine under Redhat 6.x and Mandrake 7.1
+Works fine under Redhat 6.x and Mandrake 7.x, 8.x
 There were some gotchas under earlier earlier Redhat versions, however:
 	- The pre-built linux binaries for ImageMagick 3.8.8 got confused
 	  by the byte order in AVS files.  To work around this problem I
@@ -112,6 +118,7 @@ compression.  This makes your output tiff files much larger than they ought
 to be.  Blame it all on Unisys, who are being litigious about use of LZW
 compression.  If this is a problem, you can build your own libtiff from
 any source distribution with version <= 3.3.2
+Or you could switch to generating PNG images
 
 
 Sun

@@ -26,10 +26,11 @@ Usage:
    input from stdin; output mode controlled from command line 
 
      render                        AVS image to stdout
-     render [-quality NN] -jpeg    JPEG image to stdout
-     render -sgi [outfile]         output to SGI libimage file (defaults to render.rgb)
+     render -jpeg [outfile]        JPEG image to outfile (defaults to stdout)
+     render -png  [outfile]        PNG image to outfile (defaults to stdout)
+     render -sgi  [outfile]        output to SGI libimage file (defaults to render.rgb)
      render -tiff [outfile]        output to TIFF file (defaults to render.tif)
-     render -out outfile.xxx       pipe output to ImageMagick for
+     render -out   outfile.xxx     pipe output to ImageMagick for
                                    conversion to image type xxx
 </pre>
 Options:
@@ -40,9 +41,10 @@ Options:
     -alpha                alpha channel in output image (SCHEME 0)
     -debug                verbose output while running
     -draft                no anti-aliasing (SCHEME 1)
-    -invert               invert y axis
     -fontscale FF         multiplier for PostScript label fonts
+    -invert               invert y axis
     -labels [outfile.ps]  write labels to PostScript file [default: label3d.ps]
+    -quality QQ           0 < QQ < 100   jpeg compression parameter (default 90)
     -[no]shadow	          enable or disable shadowing
     -size HHHxVVV         specify size of output image in pixels
     -transparent          same as -alpha (SCHEME 0)

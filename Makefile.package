@@ -1,7 +1,18 @@
+#
+# These commands for maintaining the distribution package
+# cause great difficulties with some versions of make.
+# To actually build the tar file, you need to do something like
+#    make distclean; cp Makefile.package Makefile.incl; gmake tar VERSION=2.6c
+# After that (tar file is needed first!) to make the RPM files 
+#    make linux-pgf77; make install; make rpm
+#
+
 TARFILE := $(shell echo Raster3D_$(VERSION).tar.gz)
 
 tar:	../$(TARFILE)
 ../$(TARFILE):
+	rm Makefile.incl
+	touch Makefile.incl
 	@echo making ../$(TARFILE)
 	(cd ..; gtar -czvf $(TARFILE) Raster3D_$(VERSION))
 
@@ -16,5 +27,5 @@ rpm_build:
 	cp BUGS CHANGELOG INSTALL README VERSION /usr/src/RPM/BUILD/
 	cp doc/R3D_manual.pdf /usr/src/RPM/BUILD/
 	cp Raster3D.csh Raster3D.sh /etc/profile.d
-	rpm -ba --target=i586 raster3d-2.6.2.spec
+	rpm -ba --target=i586 raster3d-2.6.3.spec
 
