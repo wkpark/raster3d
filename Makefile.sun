@@ -1,0 +1,42 @@
+#
+# Raster3D makefile for SunOS
+#
+# SUNOS support by Elya S. Kurktchi (elya@ljcrf.edu)
+#
+CC	= gcc
+LDFLAGS =
+CFLAGS  = -O
+FFLAGS  = -O 
+#
+LIBS    = -L/usr/local/include -ltiff -L/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.2 -lgcc
+DEFINES = -DTIFF_SUPPORT
+INCLUDES= -I/usr/local/include/ -I/usr/local/include/tiff
+
+RIBOBJS = ribbon.o ribbon1.o modsubs.o
+PROGS   = setup rods ribbon render avs2ps
+
+all:	$(PROGS)
+
+clean:
+	rm -f *.o *.u
+	rm -f $(PROGS)
+
+install: $(PROGS)
+	mv $(PROGS) /usr/local/bin
+	cp doc/*.l /usr/local/man/manl
+
+tar:
+	(cd ..; tar -cvvf raster3d.tar raster3d)
+	compress  ../raster3d.tar
+
+ribbon:	$(RIBOBJS)
+	f77 -O $(RIBOBJS) -o ribbon
+
+local.o: local.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+
+render:	render.f local.o
+	f77 $(FFLAGS) render.f local.o $(LIBS) -o render $(LDFLAGS)
+
+avs2ps:	avs2ps.c
+	$(CC) -O avs2ps.c -o avs2ps -lm

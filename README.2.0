@@ -1,6 +1,6 @@
-most recent change:	 16-Nov-1994
+most recent change:	 28-Nov-1994
 
-The file Raster3D_2.01.tar.Z contains version 2.01 of RASTER3D i
+The file Raster3D_2.02.tar.Z contains version 2.02 of RASTER3D.
 It is a unified distribution which has been tested on the following 
 machines:
 
@@ -8,6 +8,7 @@ machines:
 	Alpha / OSF 3.0
 	SGI Indigo / Irix 4.0.5F
 	IBM RS6000 / AIX
+	SUN Sparc  / SUNOS 4.1.3_U1
 
 Changes since first official release of version 2.0:
 

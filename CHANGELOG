@@ -1,3 +1,6 @@
+29-Nov-94	update ftp site to release V2.02
+28-Nov-94	add Elya Kurktchi's Makefile for SUNOS
+28-Nov-94	add section on Moslcript->Raster3D stereo to docs.ps
 16-Nov-94	update ftp site to release V2.01
  5-Aug-94	add filter utility avs2ps for producing B&W PostScript output
  4-Aug-94	include patch to Molscript V1.4 to support dotted lines

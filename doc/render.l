@@ -222,7 +222,7 @@ Parameters are read in the order
  0.25      specular reflection component
  4.0       eye position
  1 1 1     main light source position (from over right shoulder)
- 1 0 0 0   input coordinate, radius transformation
+ 1 0 0 0   view matrix describing input coordinate transformation
  0 1 0 0
  0 0 1 0
  0 0 0 0.6 enlarge by 40% (smaller scalar -> bigger objects)
