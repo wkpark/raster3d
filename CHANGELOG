@@ -1,4 +1,10 @@
-      		Release 2.6e
+		Release 2.6f (mostly relevant only to RPM installation) 
+ 6-Nov-2002	Change default image format in scripts to PNG rather than TIFF
+ 		Modify RPM installation script for newer ImageMagick delegates format
+		Build RPM against newer libpng.so.3 (Mandrake 8.2/9.0 Redhat 7.3/8.0)
+26-Jul-2002	Suppress error message if libtiff has no LZW compression
+ 3-Jul-2002	Prevent coord overflow in rastep output
+		Release 2.6e
 15-May-2002	Add -gamma option to render
  3-May-2002	Won-kyu Park <wkpark@kldp.org> more complete spec file for rpm
  		Matsuura Takanori <matsu@gsc.riken.go.jp> Makefile for linux-ppc

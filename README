@@ -1,7 +1,7 @@
-most recent change:	   4-Apr-2002
+most recent change:	   6-Nov-2002
 
-The file Raster3D_2.6e.tar.gz contains the full source distribution for
-version 2.6e of Raster3D.
+The file Raster3D_2.6f.tar.gz contains the full source distribution for
+version 2.6f of Raster3D.
 
   See CHANGELOG for a history of changes to the package.
 
@@ -23,6 +23,15 @@ version 2.6e of Raster3D.
 	    Add the following 2 lines at the end of the file
 		r3d=>
 	            render -tiff %o < %i
+	    Newer ImageMagick versions use an XML delegates file. In this case
+	    add the line:
+	        <delegate decode="r3d" command='render -png "%o" < "%i" ' />
+
+- Changes in Version 2.6f compared to earlier versions
+	+ RPM built against newer libraries for compatibility with 
+	  Mandrake 8.2/9.0 Redhat 7.3/8.0
+	+ RPM installation handles newer ImageMagick delegates format (XML)
+	+ image format defaults to PNG everywhere (TIFF is deprecated)
 
 - Changes in Version 2.6e compared to earlier versions
 	+ All programs now use $TMPDIR for scratch files
@@ -42,7 +51,7 @@ This distribution has been tested on the following platforms:
 	SGI / Irix 6.2 6.5
 	IBM RS6000 / AIX
 	SUNOS (g77/gcc)
-	Intel Pentium / linux (Mandrake 8.1)  (g77/pgf77)
+	Intel Pentium / linux (Mandrake 9.0)  (g77/pgf77)
 
 Previous versions have been tested under Irix 5.3 and the Cygwin
 environment for Windows.  If you run into installation problems, please let

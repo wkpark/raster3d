@@ -1,8 +1,8 @@
 Summary: Raster3D photorealistic molecular graphics package
 Name: Raster3D
-Version: 2.6.5
+Version: 2.6.6
 Release: 2
-%define  r3dver Raster3D_2.6e
+%define  r3dver Raster3D_2.6f
 Copyright: Source freely available, redistribution restricted
 Source: %{r3dver}.tar.gz
 URL: http://www.bmsc.washington.edu/raster3d
@@ -33,8 +33,13 @@ Program reference and requested citation:
 
 %build
 make clean
-make linux-pgf77
-make all FFLAGS='-O -Munroll -tp px'
+if [ -x pgf77 ]; then
+  make linux-pgf77
+  make all FFLAGS='-O -Munroll -tp px'
+else
+  make linux
+  make all
+fi
 mkdir -p $RPM_BUILD_ROOT%{_prefix}/bin
 make install prefix=$RPM_BUILD_ROOT%{_prefix} \
              mandir=$RPM_BUILD_ROOT%{_mandir}/manl
@@ -71,25 +76,37 @@ cp Raster3D.{csh,sh} $RPM_BUILD_ROOT/%{_sysconfdir}/profile.d/
 %{_sysconfdir}/profile.d/Raster3D.sh
 
 %post
- 
-if [ -a /usr/lib/ImageMagick/modules/coders/delegates.mgk ] ;
-then grep -q Raster3D /usr/lib/ImageMagick/modules/coders/delegates.mgk \
-  || echo -e '# Raster3D 2.6 \nr3d=>\n	render -tiff %o < %i' \
-  >> /usr/lib/ImageMagick/modules/coders/delegates.mgk ;
+MGK=
+if   [ -a /usr/lib/ImageMagick/modules/coders/delegates.mgk ]; then
+  MGK="/usr/lib/ImageMagick/modules/coders/delegates.mgk"
+elif [ -a /usr/X11R6/share/ImageMagick/delegates.mgk ]; then
+  MGK="/usr/X11R6/share/ImageMagick/delegates.mgk"
+elif [ -a /usr/lib/ImageMagick/delegates.mgk ]; then
+  MGK="/usr/lib/ImageMagick/delegates.mgk"
 fi
-if [ -a /usr/X11R6/share/ImageMagick/delegates.mgk ] ;
-then grep -q Raster3D /usr/X11R6/share/ImageMagick/delegates.mgk \
-  || echo -e '# Raster3D 2.6 \nr3d=>\n	render -tiff %o < %i' \
-  >> /usr/X11R6/share/ImageMagick/delegates.mgk ;
-fi
-if [ -a /usr/lib/ImageMagick/delegates.mgk ] ;
-then grep -q r3d /usr/lib/ImageMagick/delegates.mgk \
-  || grep -q encode /usr/lib/ImageMagick/delegates.mgk \
-  || echo -e '# Raster3D 2.6 \nr3d=>\n	render -tiff %o < %i' \
-  >> /usr/lib/ImageMagick/delegates.mgk ;
+
+OLD="# Raster3D 2.6 \nr3d=> \nrender -tiff %o < %i"
+XML="  <delegate decode=\"r3d\" command='render -png \"%o\"<\"%i\"' />"
+if [ -a $MGK ]; then
+  if grep -q "xml" $MGK; then
+    if ! grep -q "r3d" $MGK; then
+      cp $MGK /tmp/delegates.bak.$$
+      sed "/<\/delegatemap>/{x;s!^!$XML!;G;}" $MGK > /tmp/delegates.mgk.$$
+      cp /tmp/delegates.mgk.$$ $MGK
+      rm /tmp/delegates.mgk.$$
+    fi
+  else
+    if grep -q "r3d" $MGK; then
+      echo -e $OLD >> $MGK
+    fi
+  fi
 fi
 
 %changelog
+* Thu Nov  7 2002 <jpaint@u.washington.edu>
+- modify post-install script for ImageMagick XML delegates file
+* Wed Nov  6 2002 EAM
+- update RPM distribution to match newer libs in Mandrake 8.2/9.0 Redhat 7.3/8.0
 * Fri May  3 2002 EAM
 - modify for cross-platform build
 * Fri Apr  3 2002 Won-kyu Park <wkpark@kldp.org>

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	Raster3D utility script "stereo3d" V2.6e
+#	Raster3D utility script "stereo3d" V2.6f
 #       ========================================
 #
 # Ethan A Merritt - April 2002
@@ -26,7 +26,7 @@
 #	Ghostscript (if labels are present).
 # 	TIFF support, although this could be changed.
 # 	sed (previous versions used awk/nawk).
-# This script was tested using ImageMagick version 4.9.2
+# This script was tested using ImageMagick version 5.3.8
 #
 # Usage:
 #	stereo3d [-angsep] [-border] [-tiff [out.tiff]] < infile.r3d > outfile.tiff
@@ -83,8 +83,8 @@ fi
 previous="$option"
 done
 
-if [ "$img" != "png" ]; then
-    img=tiff
+if [ "$img" != "tiff" ]; then
+    img=png
 fi
 
 if [ "$outfile" ]; then
@@ -131,9 +131,9 @@ IMAGESIZE=`echo "$WIDTH x $HEIGHT" | sed -e 's/ //g'`
 #
 echo "stereo3d: joining left and right images" 1>&2
 if [ "$STEREOBORDER" ]; then
-   montage +frame +label -background black -geometry $IMAGESIZE+2+0! -scene 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
+   montage +frame +label -background black -geometry $IMAGESIZE+2+0! -scenes 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
 else
-   montage +frame +label -background white -geometry $IMAGESIZE+0+0! -scene 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
+   montage +frame +label -background white -geometry $IMAGESIZE+0+0! -scenes 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
 fi
 #
 # This next bit is only necessary because ImageMagick _always_ writes a label

@@ -21,7 +21,7 @@ cat header8.r3d $TMPDIR/$$_balls.r3d $TMPDIR/$$_ribbon.r3d > $TMPDIR/$$_example8
 # Now render it as a stereo pair
 # Add a gamma correction before displaying
 #
-stereo3d -tiff < $TMPDIR/$$_example8.r3d | display -gamma 1.2 tiff:-
+stereo3d -png < $TMPDIR/$$_example8.r3d | display -gamma 1.2 png:-
 #
 #
 # Clean up

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	Raster3D labeling script label3d V2.6e
+#	Raster3D labeling script label3d V2.6f
 #       ======================================
 #
 # Ethan A Merritt  April 2002
@@ -68,8 +68,8 @@ fi
 previous="$option"
 done
 
-if [ "$img" != "png" ]; then
-    img=tiff
+if [ "$img" != "tiff" ]; then
+    img=png
 fi
 
 
