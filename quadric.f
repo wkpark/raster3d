@@ -152,9 +152,9 @@ C
       INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
-     &                , ISOLATE
+     &                , ISOLATION
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
-      LOGICAL           ISOLATE
+      LOGICAL           ISOLATION
 *
 * Assume this is legitimate
 	qinp = .TRUE.

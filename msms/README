@@ -1,0 +1,11 @@
+ 1-Jun-2000
+===========
+
+This directory contains two filters for processing molecular surfaces
+produced by Michael Sanner's program msms.  One is a perl script; the
+other is written in C.  Both work, but neither has been extensively
+tested.
+
+The msms home page is
+
+    http://www.scripps.edu/pub/olson-web/people/sanner/html/msms_home.html

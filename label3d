@@ -11,7 +11,7 @@
 #	- Depending on what size images you typically produce, 
 #	  you might want to change the FONTSCALE definition below
 #
-setenv FONTSCALE "3.0"
+if ${?FONTSCALE} == '0' setenv FONTSCALE "3.0"
 #
 if ($1 == ''-'') then
    cat > label3d.tmp

@@ -1,7 +1,7 @@
 *******************************************************************************
 *               Support routines for PostScript labels                        *
 *******************************************************************************
-*     Version 2.5c
+*     Version 2.5d
 *
 * EAM Dec 1996	- Initial version (called labels3d, later changed)
 * EAM May 1999	- Updated to match V 2.4j as stand-alone program
@@ -37,6 +37,8 @@
 *
       INTEGER  I, J, LEN, IBEG
       INTEGER  INPUT, INTYPE, KEEP
+      LOGICAL  MATCOL
+      REAL     RGBMAT(3)
 *
 *     Input transformation
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
@@ -53,9 +55,9 @@
       REAL     PERSP, PFAC
 *
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
-     &                , ISOLATE
+     &                , ISOLATION
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
-      LOGICAL           ISOLATE
+      INTEGER           ISOLATION
 *
 *     Command line options
       COMMON /OPTIONS/ NSCHEME, NAX, NAY, INVERT, OTMODE, QUALITY
@@ -99,12 +101,12 @@
       END DO
       OPEN( UNIT=LB, FILE=FILENAME(1:LEN), STATUS='UNKNOWN', ERR=99)
       WRITE (NOISE,*) 'Writing PostScript labels to file ',
-     &                FILENAME(1:LEN)
+     &                FILENAME(1:LEN),' with scale',FONTSCALE
       RETURN
    99 CONTINUE
       WRITE (NOISE,100) FILENAME
   100 FORMAT('>>> Cannot open ',A,' for writing labels')
-      CALL EXIT
+      CALL EXIT(-1)
 *
 *     Don't write PostScript header until we've read R3D header
 *
@@ -260,7 +262,7 @@ c
       RETURN
 
 
-      ENTRY LINP( INPUT, INTYPE )
+      ENTRY LINP( INPUT, INTYPE, MATCOL, RGBMAT )
 c
 c     Read in next object
       IF (INTYPE .EQ. FONT) THEN
@@ -284,6 +286,11 @@ c
 
       ELSE IF (INTYPE .EQ. LABEL ) THEN
 	READ (INPUT,*,END=50) XA, YA, ZA, RED, GRN, BLU
+	IF (MATCOL) THEN
+	    RED = RGBMAT(1)
+	    GRN = RGBMAT(2)
+	    BLU = RGBMAT(3)
+	ENDIF
 c
 c	Here is where Perl would shine
 c
@@ -296,8 +303,12 @@ c
 c
 c       Isolated objects not transformed by TMAT, but still subject to inversion.
 c       Then again, PostScript y-axis convention is upside-down from screen coords.
-        IF (ISOLATE) THEN
+        IF (ISOLATION.GT.0) THEN
           IF (.not.INVERT) YA = -YA
+	  if (isolation.eq.2) then
+	    if (xcent.gt.ycent) xa = xa * xcent / ycent
+	    if (xcent.lt.ycent) ya = ya * ycent / xcent
+	  endif
         ELSE
 c         modify the input, as it were
 	  IF (IALIGN.NE.3) THEN
@@ -340,6 +351,7 @@ c
 	IBEG = 1
   81	CONTINUE
   	I = IBEG
+	IF (I.GT.LEN) RETURN
   82	CONTINUE
 c	
 c	27-Feb-2000

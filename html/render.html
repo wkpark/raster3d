@@ -132,7 +132,10 @@ can be modified to produce a TIFF file without conversion:
     <dt><i> -fontscale XX</i>
     <dd>Only meaningful in conjunction with the <i>-labels</i> option.
     	Modifies the interpretation of font sizes during label processing.
-	Defaults to -fontscale 3.0, which will generate PostScript labels that are 
+	If <i>-fontscale</i> is not specified, the program next looks for an
+	environmental variable FONTSCALE. If neither a command line value or
+	an environmental variable is found, the program defaults to 
+	<i>-fontscale 3.0</i>, which generates PostScript labels that are 
 	approximately the nominal font size when printed at 300 dpi.
     <dt><i> -help</i>
     <dd>Print summary of options.

@@ -652,7 +652,8 @@ c
 	    BLUE  = RGB(3,ICOL)
 	endif
 	IF (ellipses .and.(ATOM(IATM+1)(1:6).EQ.'ANISOU')) THEN
-	    read (atom(iatm+1)(29:70),*,err=131) (anisou(i),i=1,6)
+	    read (atom(iatm+1)(29:70),*,err=131,end=131) 
+     &           (anisou(i),i=1,6)
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
@@ -1051,7 +1052,8 @@ c
 	    RAD  = sqrt(SPAM(4,IATM)) * PRADIUS
             WRITE(OUTPUT,151) 2, X,Y,Z,RAD,RED,GREEN,BLUE
 	ELSE IF (ATOM(IATM+1)(1:6).EQ.'ANISOU') THEN
-	    read (atom(iatm+1)(31:80),*,err=153) (anisou(i),i=1,6)
+	    read (atom(iatm+1)(31:80),*,err=153,end=153) 
+     &           (anisou(i),i=1,6)
 	    do i=1,6
 		anisou(i) = anisou(i) * 0.0001
 	    enddo
@@ -1172,8 +1174,9 @@ C     Dummy routine to make linker happy (called by QINP in quadric.f)
       CHARACTER*(*) DAMMIT
       COMMON /ASSOUT/ NOISE
       IF (LOGIC) RETURN
-      WRITE (NOISE,*) '*** ',DAMMIT
-      STOP 1234
+      WRITE (NOISE,*) 'ERROR >>>>>> ',DAMMIT
+C     STOP 1234
+      CALL EXIT(-1)
       END
 
 

@@ -40,6 +40,7 @@
 #include	<stdio.h>
 #include	<fcntl.h>
 #include	<string.h>
+#include	<time.h>
 
 #ifdef LIBIMAGE_SUPPORT
 #include	<gl/image.h>
@@ -105,6 +106,8 @@ local_(option,buffer1,buffer2,buffer3,buffer4)
   int		invert = 0;
   int		bits;
   int		quality;
+ 
+  static time_t	start_time, end_time;
   
   /* For -original output mode only */
   static int header[8] = { 3, 1, 1, 0, 0, 0, 0, 0 };
@@ -412,6 +415,8 @@ else if (*option == 1)
     else
 #endif
 
+    start_time = time(NULL);	/* My congratulations to anyone who can figure */
+    start_time = time(NULL);	/* why two of these time calls are needed!     */
     return(1);
     }
       
@@ -562,6 +567,10 @@ else if (*option == 3)
         }
     else
 #endif
+
+    end_time = time(NULL);	/* My congratulations to anyone who can figure */
+    end_time = time(NULL);	/* why two of these time calls are needed!     */
+    fprintf(stderr,"rendering time - %5d sec\n",(int)(end_time-start_time));
 
     return(1);
     }

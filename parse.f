@@ -1,4 +1,5 @@
 	subroutine parse
+c	Version 2.5d
 c
 	common /options/ nscheme, nax, nay, invert, otmode, quality
      &                 , lflag, fontscale
@@ -7,16 +8,11 @@ c
 	logical          invert, lflag
 	real             fontscale
 c
-	common /raster/  ntx,nty,npx,npy
-	integer          ntx,nty,npx,npy
-c
 	common /asscom/  assout, verbose
 	integer          assout
 	logical                  verbose
 c
-	PARAMETER (MAXNTX=256,MAXNTY=256)
-c
-	character*64     args(4), option
+	character*64     args(4), option, labelfile
 	save             args
 c
 	integer    INVERTFLAG
@@ -32,7 +28,15 @@ c
 	nscheme = -1
 	quality = 95
 	lflag = .false.
-	fontscale = 3.0
+c
+c	Default font scale is 3.0 (appropriate for 300 dpi printers)
+c	This is superseded by the environmental variable FONTSCALE
+c	or a specific command line options -fontscale XX
+	call getenv('FONTSCALE',option)
+	read (option,*,err=8,end=8) fontscale 
+	goto 9
+    8	fontscale = 3.0
+    9	continue
 c
 	iarg  = 1
 	nargs = iargc()
@@ -56,7 +60,7 @@ c
 	    else if (option(1:5).eq.'-qual') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
-		read (option,*,err=10) quality
+		read (option,*,err=10,end=10) quality
 		if (quality.le.0 .or. quality.gt.100) quality = 95
 	    else if (option(1:5).eq.'-size') then
 	    	iarg = iarg + 1
@@ -64,21 +68,21 @@ c
 		do k = 15,2,-1
 		    if (option(k:k).eq.'x') kbrk = k
 		end do
-		read (option(1:kbrk-1),*,err=10) nax
-		read (option(kbrk+1:15),*,err=10) nay
+		read (option(1:kbrk-1),*,err=10,end=10) nax
+		read (option(kbrk+1:15),*,err=10,end=10) nay
 	    else if (option(1:6).eq.'-label') then
 	    	lflag = .true.
 		call getarg( iarg+1, option )
 		if (iarg.lt.nargs .and. option(1:1).ne.'-') then
+		    labelfile = option
 		    iarg = iarg + 1
 		else
-		    option = 'label3d.ps'
+		    labelfile = 'label3d.ps'
 		end if
-		call lopen(option)
 	    else if (option(1:10).eq.'-fontscale') then
 	        iarg = iarg + 1
 		call getarg( iarg, option )
-		read (option,*,err=10) fontscale
+		read (option,*,err=10,end=10) fontscale
 		if (fontscale.le.0) then fontscale = 3.0
 	    else 
 	    	larg = larg + 1
@@ -88,6 +92,8 @@ c
 	goto 10
    11	continue
 c
+	if (lflag) call lopen(labelfile)
+c
 	otmode = local(0, args(1), args(2), args(3), args(4))
 c
 	if (and(otmode,invertflag).ne.0) then
@@ -95,6 +101,21 @@ c
 	else
 	    invert = .true.
 	end if
+c
+	call autotile( nax, nay )
+	end
+
+	subroutine autotile( nax, nay )
+c
+	common /raster/  ntx,nty,npx,npy
+	integer          ntx,nty,npx,npy
+	PARAMETER (MAXNTX=256,MAXNTY=256)
+c
+	common /asscom/  assout, verbose
+	integer          assout
+	logical                  verbose
+c
+	integer*2 nax, nay
 c
 	if (nax .gt. 0) then
 	    npx = 2
@@ -113,6 +134,9 @@ c
 	    	ntx = ntx + 1
 	    end if
 	    if (ntx.gt.MAXNTX) goto 21
+	    if (npx.lt.6 .and. ( mod(ntx,2).eq.0
+     &	        .or. mod(ntx,3).eq.0 .or. mod(ntx,5).eq.0))
+     &		goto 21
 	endif
 	if (nay .gt. 0) then
 	    npy = 2
@@ -131,6 +155,9 @@ c
 	    	nty = nty + 1
 	    end if
 	    if (nty.gt.MAXNTY) goto 31
+	    if (npy.lt.6 .and. ( mod(nty,2).eq.0
+     &	        .or. mod(nty,3).eq.0 .or. mod(nty,5).eq.0))
+     &		goto 31
 	endif
 	if (verbose .and. (nax.gt.0 .or. nay.gt.0)) then
 	    write(0,32) 'X',ntx,npx,ntx*npx

@@ -1,3 +1,12 @@
+ 1-Jun-2000	V2.5d release
+25-Mar-2000	Revise auto-tiling to avoid tiles smaller than 6 pixels
+		Additional checks for shadow tile out of bounds
+		If requesting tiling is not possible, try auto-tiling
+		Add timing commands to local.c
+11-Mar-2000	Honor MATERIAL colors during label processing
+24-Feb-2000	regularize code for storing/retrieving material index in FLAG 
+ 8-Feb-2000	Add CLROPT = 2 option to transparency rendering
+ 		Add object type VERTRANSP (per-vertex transparency)
 10-Mar-2000	V2.5c (minor bugfixes)
 		local.c picks up version from VERSION include file 
 		Fortran files pick up version from VERSION.incl

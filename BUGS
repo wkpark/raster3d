@@ -1,16 +1,3 @@
-AIX 
-	File indirection in render doesn't work, because opening Fortran
-	LUN 6 clobbers C I/O in local.c
-	Work-around : 
-		Patch file render_patch.aix modifies render to use
-		LUNs 5,4,3,2,1 for file indirection rather than 6,7,...
-
-Windows
-	I am relying entirely on the instructions kindly provided by 
-	Suhaib Siddiqi, and have not tested the installation procedure at all.
-	In particular I haven't done anything about adding the label-handling 
-	code to the Makefile.
-
 All platforms
 =============
 	- ISOLATE (object code 15) not yet implemented for quadric surfaces
@@ -27,3 +14,23 @@ All platforms
 	  shadows, and always fail to shadow themselves.
 	- Explicit vertex colors take precedence over material colors;
 	  I'm not sure whether that's good or bad.
+	- Labels with TeX-like escape sequences are always treated as Left-Align.
+	- Angstrom symbol only loaded into Times/Helvetica fonts.
+	- the calls in local.c to time() behave very oddly under linux and DU;
+	  the first call always returns 0, so two in a row are needed
+
+AIX 
+===
+	File indirection in render doesn't work, because opening Fortran
+	LUN 6 clobbers C I/O in local.c
+	Work-around : 
+		Patch file render_patch.aix modifies render to use
+		LUNs 5,4,3,2,1 for file indirection rather than 6,7,...
+
+Windows
+=======
+	I am relying entirely on the instructions kindly provided by 
+	Suhaib Siddiqi, and have not tested the installation procedure at all.
+	In particular I haven't done anything about adding the label-handling 
+	code to the Makefile.
+

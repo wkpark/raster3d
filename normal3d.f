@@ -1,6 +1,6 @@
       PROGRAM NORMAL3D
 *
-*     Version 2.5c Feb 2000
+*     Version 2.5d 1-Jun-2000
 *
 * EAM Jan 1996	- Initial release as part of version 2.2
 * EAM Aug 1996	- Add -expand option to deal with file indirection
@@ -8,7 +8,7 @@
 *		  -stereo flag to generate left.r3d and right.r3d
 * EAM Apr 1997	- now handles labels and glowlights
 * EAM May 1997	- (well, now it does) V2.3c
-* EAM Jul 1997	- quadric surfaces, ISOLATE
+* EAM Jul 1997	- quadric surfaces, ISOLATION
 * EAM Oct 1997	- fix bug that prevented handling CYLFLAT objects
 * EAM Nov 1997	- handle VERTEXRGB records, allow # as comment
 * EAM Jul 1998	- remove Q format from LABEL input; wrong, but fewer complaints
@@ -16,6 +16,7 @@
 * EAM Feb 1999	- FRONTCLIP, BACKCLIP
 * EAM Jul 1999	- preliminary work towards a post-hoc rotation option
 * EAM Jan 2000	- V2.5b general release
+* EAM Feb 2000	- compatible with new object type VERTRANSP
 *
 *	This program is part of the Raster3D package.
 *	It is simply a stripped down version of the input section of 
@@ -91,7 +92,9 @@
 *	  - type 14: quadric surface
 *	  - type 15: don't apply TMAT to subsequent objects
 *	  - type 16: global property on following line
-*	  - type 17: vertex colors for previous triangle
+*	  - type 17: vertex colors for previous object
+*	  - type 18: vertex transparencies for previous object
+*	  - type 19: variant of type 15; forces unitary coordinate sytem
 *         - type 0:  no more objects (equivalent to eof)
 *
 *-----------------------------------------------------------------------------
@@ -116,7 +119,7 @@
 *     Codes for triangle, sphere, truncated cone, and string of pearls
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
       INTEGER PLANE, QUADRIC, MXTYPE, FONT, GLOWLIGHT
-      INTEGER NORMS, VERTEXRGB
+      INTEGER NORMS, VERTEXRGB, VERTRANSP
       PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
       PARAMETER (CYLIND = 3, CYLFLAT= 5)
       PARAMETER (PLANE    = 6)
@@ -126,10 +129,12 @@
       PARAMETER (FONT     = 10, LABEL = 11 )
       PARAMETER (GLOWLIGHT= 13)
       PARAMETER (QUADRIC  = 14)
-      PARAMETER (NOTRANS  = 15)
+      PARAMETER (ISOLATE1 = 15)
       PARAMETER (GPROP    = 16)
-      PARAMETER (MXTYPE   = 17)
       PARAMETER (VERTEXRGB= 17)
+      PARAMETER (VERTRANSP= 18)
+      PARAMETER (ISOLATE2 = 19)
+      PARAMETER (MXTYPE   = 19)
 *
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
@@ -170,7 +175,7 @@
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
      &                 ,RAFTER, TAFTER
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
-*     Transformation matrix, inverse, and transponsed inverse
+*     Transformation matrix, inverse, and transposed inverse
       REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
 *     Shortest rotation from light source to +z axis
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
@@ -230,8 +235,9 @@ c
       CHARACTER*80 FLAGS
 *
 *     Stuff for labels
-      CHARACTER*80 FONTNAME, LABELSTRING, FONTALIGN
-      REAL         FONTSIZE
+      CHARACTER*80  FONTNAME, FONTALIGN
+      CHARACTER*128 LABELSTRING
+      REAL          FONTSIZE
 *
 * Support for a "glow" light source 
       REAL 	GLOWSRC(3), GLOWCOL(3), GDIST(3), GLOWRAD, GLOW
@@ -239,9 +245,9 @@ c
 *
 *     Keep track of actual coordinate limits (for information only)
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
-     &                , ISOLATE
+     &                , ISOLATION
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
-      LOGICAL           ISOLATE
+      INTEGER           ISOLATION
       FRONTCLIP    = HUGE
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
@@ -262,6 +268,7 @@ c
       IDET(GLOWLIGHT) = 10
       IDET(QUADRIC)   = 17
       IDET(VERTEXRGB) = 9
+      IDET(VERTRANSP) = 3
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
       SDET(CYLIND) = 8
@@ -271,6 +278,7 @@ c
       SDET(MATERIAL)  = 1
       SDET(GLOWLIGHT) = 1
       SDET(VERTEXRGB) = 1
+      SDET(VERTRANSP) = 1
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
@@ -313,17 +321,17 @@ c
       IF (SFLAG) THEN
 	HFLAG = .TRUE.
 	OPEN(UNIT=LEFT,FILE='left.r3d',
-     &	     CARRIAGECONTROL='LIST',
+     &       CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
 	OPEN(UNIT=RIGHT,FILE='right.r3d',
-     &	     CARRIAGECONTROL='LIST',
+     &       CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
       ENDIF
 *
 *     Ready for input records
       ILEVEL = 0
       INPUT  = STDIN
-      ISOLATE = .FALSE.
+      ISOLATION = 0
 *
 *     Get title
   100 CONTINUE
@@ -346,7 +354,7 @@ c
 	IF (TITLE(1:1).EQ.'#') GOTO 100
 	GOTO 102
   101	WRITE (NOISE,'(A,A)') ' >> Cannot open or read file ',TITLE(2:80)
-	CALL EXIT
+	CALL EXIT(-1)
   102	CONTINUE
       ENDIF
 *
@@ -381,6 +389,8 @@ c
       CALL ASSERT (NPY.GT.0, 'npy.le.0')
 *
 *     Get pixel averaging scheme
+C     Mar 2000 - 
+C       Now that render does auto-tiling, we can relax the checks done here
       READ (INPUT,1) LINE
       READ (LINE,*) SCHEME
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
@@ -398,13 +408,13 @@ c
       ELSEIF (SCHEME.EQ.3) THEN
         NOX = 2*(NPX/3)
         NOY = 2*(NPY/3)
-        CALL ASSERT (MOD(NPX,3).EQ.0,'scheme 3 requires mod(NPX,3)=0')
-        CALL ASSERT (MOD(NPY,3).EQ.0,'scheme 3 requires mod(NPY,3)=0')
+C       CALL ASSERT (MOD(NPX,3).EQ.0,'scheme 3 requires mod(NPX,3)=0')
+C       CALL ASSERT (MOD(NPY,3).EQ.0,'scheme 3 requires mod(NPY,3)=0')
       ELSEIF (SCHEME.EQ.4) THEN
 	NOX = NPX
 	NOY = NPY
-	CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 4 requires NPX even')
-	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
+C	CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 4 requires NPX even')
+C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
 	NPX = NPX + NPX/2
 	NPY = NPY + NPY/2
 	SCHEME = 3
@@ -623,6 +633,8 @@ c
 	INFMTS(NORMS)     = INFMTS(TRIANG)
 	INFLGS(VERTEXRGB) = INFLGS(TRIANG)
 	INFMTS(VERTEXRGB) = INFMTS(TRIANG)
+	INFLGS(VERTRANSP) = INFLGS(TRIANG)
+	INFMTS(VERTRANSP) = INFMTS(TRIANG)
 	INFLGS(MATERIAL)  = .TRUE.
 	INFLGS(FONT)      = .TRUE.
 	INFLGS(LABEL)     = .TRUE.
@@ -715,7 +727,7 @@ c
       IF (INTYPE.EQ.0) GO TO 50
       	IF (INTYPE .EQ. MATEND) THEN
 	    WRITE (OUTPUT,1) LINE 
-	    ISOLATE = .FALSE.
+	    ISOLATION = 0
 	    GOTO 7
 	ELSE
 	    WRITE (OUTPUT,'(I2)') INTYPE
@@ -733,8 +745,11 @@ c     handle non-numerical input elsewhere
 	GOTO 9
       ELSE IF (INTYPE.EQ.GPROP) THEN
 	GOTO 9
-      ELSE IF (INTYPE.EQ.NOTRANS) THEN
-	ISOLATE = .TRUE.
+      ELSE IF (INTYPE.EQ.ISOLATE1) THEN
+	ISOLATION = 1
+	GOTO 7
+      ELSE IF (INTYPE.EQ.ISOLATE2) THEN
+	ISOLATION = 2
 	GOTO 7
 c
       ELSE IF (INFLG) THEN
@@ -776,7 +791,7 @@ c
 	CALL CHKRGB( RED,GRN,BLU,'invalid triangle color')
         CALL ASSERT (IDET(INTYPE).EQ.12,'idet(1).ne.12')
 *	Isolated objects not transformed by TMAT
-	IF (.NOT.ISOLATE) THEN
+	IF (ISOLATION.EQ.0) THEN
 *	update true coordinate limits
 	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
 	  TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A,X3A)
@@ -808,7 +823,7 @@ c
 	CALL CHKRGB( RED,GRN,BLU,'invalid sphere color')
         CALL ASSERT (IDET(INTYPE).EQ.7,'idet(2).ne.7')
 *	Isolated objects not transformed by TMAT
-	IF (.NOT.ISOLATE) THEN
+	IF (ISOLATION.EQ.0) THEN
 *	update true coordinate limits
 	  TRULIM(1,1) = MIN( TRULIM(1,1), XA )
 	  TRULIM(1,2) = MAX( TRULIM(1,2), XA )
@@ -841,7 +856,7 @@ c
 	CALL CHKRGB( RED,GRN,BLU,'invalid cylinder color')
         CALL ASSERT (IDET(INTYPE).EQ.11,'idet(1).ne.11')
 *	Isolated objects not transformed by TMAT
-	IF (.NOT.ISOLATE) THEN
+	IF (ISOLATION.EQ.0) THEN
 *	update true coordinate limits
 	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
 	  TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A)
@@ -897,6 +912,11 @@ c
 	CALL CHKRGB( BUF(7),BUF(8),BUF(9),'invalid vertex color')
 	WRITE (OUTPUT,91) BUF(1),BUF(2),BUF(3),BUF(4),BUF(5),BUF(6),
      &	                  BUF(7),BUF(8),BUF(9)
+*
+      ELSEIF (INTYPE .EQ. VERTRANSP) THEN
+	NDET = NDET + IDET(INTYPE)
+	MDET = MDET + SDET(INTYPE)
+	WRITE (OUTPUT,91) BUF(1),BUF(2),BUF(3)
 *
 *	Material properties are saved with no further manipulation
 *
@@ -957,7 +977,7 @@ c
         XA = BUF(1)
         YA = BUF(2)
         ZA = BUF(3)
-	IF (.NOT.ISOLATE) THEN
+	IF (ISOLATION.EQ.0) THEN
           IF (IALIGN.NE.3) CALL TRANSF (XA,YA,ZA)
 	ENDIF
         RED = BUF(4)
@@ -978,7 +998,7 @@ c
  	GOPT       = BUF(6)
  	GPHONG     = BUF(7)
 *	Isolated objects not transformed by TMAT
-	IF (.NOT.ISOLATE) THEN
+	IF (ISOLATION.EQ.0) THEN
  	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3))
  	  GLOWRAD = GLOWRAD/TMAT(4,4)
 	ENDIF
@@ -1082,6 +1102,7 @@ c
 	ZA = (TRULIM(3,1) + TRULIM(3,2)) / 2.0
       WRITE (NOISE,*) XA, YA, ZA
 *
+      call exit(0)
       end
 
       SUBROUTINE ASSERT (LOGIC, DAMMIT)
@@ -1092,8 +1113,9 @@ c
       COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
       IF (LOGIC) RETURN
-      WRITE (ASSOUT,*) '*** ',DAMMIT
-      STOP 1234
+      WRITE (ASSOUT,*) 'ERROR >>>>>> ',DAMMIT
+C     STOP 1234
+      CALL EXIT(-1)
       END
 
 

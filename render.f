@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.5c (25 Feb 2000)
+*     Version 2.5d (1 Jun 2000)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -41,7 +41,7 @@
 *		  V2.3d remove DATA statements; more terse output; 
 *		  BACKFACE material option; EYEPOS = 0.0 disables perspective
 * EAM Jul 1997	- add commons LISTS MATRICES NICETIES RASTER
-* 		- D_LINES code for quadric surfaces, ISOLATE 
+* 		- D_LINES code for quadric surfaces, ISOLATION 
 * EAM Sep 1997	- fix normals of flat cylinder ends (thanks to Takaaki Fukami)
 * EAM Nov 1997	- add VERTEXRGB object type to extend triangle descriptions,
 *		  allow # as comment delimiter in input stream
@@ -60,6 +60,7 @@
 *		  label processing folded into render; routines in r3dtops.f
 * EAM Jan 2000	- 2.5b general release
 * EAM Feb 2000	- 2.5c (bug fixes to 2.5b)
+* EAM Mar 2000	- object types VTRANSP (18) and ISOLATE2 (19)
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -158,7 +159,9 @@
 *	  - type 14: quadric surface (usually an ellipsoid)
 *	  - type 15: disable coordinate transformation of subsequent objects
 *	  - type 16: global properties (e.g. FOG)
-*	  - type 17: RGB triple for each vertex of preceding triangle or cylinder
+*	  - type 17: RGB triple for each vertex of preceding object
+*	  - type 18: transparency at each vertex of preceding object
+*	  - type 19: variant of type 15; forces unitary coordinate sytem
 *         - type  0: no more objects (equivalent to eof)
 *
 *-----------------------------------------------------------------------------
@@ -332,7 +335,7 @@
 *     Descriptor codes for the various object types
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
       INTEGER PLANE, QUADRIC, MXTYPE, FONT, GLOWLIGHT
-      INTEGER NORMS, VERTEXRGB
+      INTEGER NORMS, VERTEXRGB, VERTRANSP
       PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
       PARAMETER (CYLIND = 3, CYLFLAT= 5)
       PARAMETER (PLANE    = 6)
@@ -342,18 +345,20 @@
       PARAMETER (FONT     = 10, LABEL = 11)
       PARAMETER (GLOWLIGHT= 13)
       PARAMETER (QUADRIC  = 14)
-      PARAMETER (NOTRANS  = 15)
+      PARAMETER (ISOLATE1 = 15)
       PARAMETER (GPROP    = 16)
       PARAMETER (VERTEXRGB= 17)
-      PARAMETER (MXTYPE   = 17)
+      PARAMETER (VERTRANSP= 18)
+      PARAMETER (ISOLATE2 = 19)
+      PARAMETER (MXTYPE   = 19)
 *
 *     Bit definitions for FLAG array
       INTEGER    FLAT,      RIBBON,    SURFACE,   PROPS
       PARAMETER (FLAT=2,    RIBBON=4,  SURFACE=8, PROPS=16)
       INTEGER    TRANSP,    HIDDEN,    INSIDE,    MOPT1
       PARAMETER (TRANSP=32, HIDDEN=64, INSIDE=128,MOPT1=256)
-      INTEGER	 VCOLS,     CLIPPED
-      PARAMETER	(VCOLS=512, CLIPPED=1024)
+      INTEGER	 VCOLS,     CLIPPED,      VTRANS
+      PARAMETER	(VCOLS=512, CLIPPED=1024, VTRANS=2048)
 *
 *     Bit definitions for OTMODE passed to local(1,...)
       INTEGER    ALPHACHANNEL
@@ -584,9 +589,9 @@
 *
 *     Keep track of actual coordinate limits
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
-     &                , ISOLATE
+     &                , ISOLATION
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
-      LOGICAL           ISOLATE
+      INTEGER           ISOLATION
 *
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
@@ -608,6 +613,7 @@
       IDET(GLOWLIGHT)= 10
       IDET(QUADRIC)  = 17
       IDET(VERTEXRGB)= 9
+      IDET(VERTRANSP)= 3
 *
       KDET(TRIANG) = 16
       KDET(SPHERE) = 7
@@ -618,6 +624,7 @@
       KDET(GLOWLIGHT)= 10
       KDET(QUADRIC)  = 17
       KDET(VERTEXRGB)= 9
+      KDET(VERTRANSP)= 3
 *
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
@@ -630,6 +637,7 @@
       SDET(MATERIAL) = 1
       SDET(GLOWLIGHT)= 1
       SDET(VERTEXRGB)= 1
+      SDET(VERTRANSP)= 1
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
@@ -644,7 +652,7 @@
 *     Initialize to no special material properties
       MSTATE  = 0
       MATCOL  = .FALSE.
-      ISOLATE = .FALSE.
+      ISOLATION = 0
       CLIPPING= .FALSE.
       CLRITY  = 0.0
       GLOWMAX = 0.0
@@ -668,10 +676,13 @@
       IF (TITLE(1:1) .EQ. '@') THEN
 	K = 80
 	DO I=80,2,-1
+	  IF (TITLE(I:I).EQ.'	') TITLE(I:I) = ' '
 	  IF (TITLE(I:I).NE.' ') J = I
 	  IF (TITLE(I:I).EQ.'#') K = I-1
 	  IF (TITLE(I:I).EQ.'!') K = I-1
-	  IF (TITLE(I:I).EQ.'	') TITLE(I:I) = ' '
+	ENDDO
+	DO WHILE (TITLE(K:K).EQ.' ')
+	  K = K -1
 	ENDDO
 	OPEN (UNIT=INPUT+1,ERR=101,STATUS='OLD',FILE=TITLE(J:K))
 	WRITE (NOISE,'(A,A)') '  + Opening input file ',TITLE(J:K)
@@ -680,15 +691,15 @@
 	IF (TITLE(1:1) .EQ. '#') GOTO 100
 	GOTO 102
   101	WRITE (NOISE,'(A,A)')' >> Cannot open or read file ',TITLE(2:K)
-	CALL EXIT
+	CALL EXIT(-1)
   102	CONTINUE
       ENDIF
-      DO K = 80,1,-1
-        IF (TITLE(K:K).NE.' ') GOTO 103
+      K = 80
+      DO WHILE (TITLE(K:K).EQ.' ')
+	K = K -1
       ENDDO
-  103 CONTINUE
-      WRITE (NOISE,1103) TITLE(1:K)
- 1103 FORMAT('title="',A,'"')
+      WRITE (NOISE,103) TITLE(1:K)
+  103 FORMAT('title="',A,'"')
 *
 *     Get number of tiles
       READ (INPUT,*,ERR=104,END=104) ITX,ITY
@@ -722,20 +733,24 @@
         CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 2 requires NPX even')
         CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 2 requires NPY even')
       ELSEIF (SCHEME.EQ.3) THEN
-        NOX = 2*(NPX/3)
-        NOY = 2*(NPY/3)
-        CALL ASSERT (MOD(NPX,3).EQ.0,'scheme 3 requires mod(NPX,3)=0')
-        CALL ASSERT (MOD(NPY,3).EQ.0,'scheme 3 requires mod(NPY,3)=0')
-      ELSEIF (SCHEME.EQ.4) THEN
+	nax = ((NPX * NTX) * 2 + 2) / 3.0
+	nay = ((NPY * NTY) * 2 + 2) / 3.0
+	call autotile( nax, nay )
 	NOX = NPX
 	NOY = NPY
-	CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 4 requires NPX even')
-	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
-	NPX = NPX + NPX/2
-	NPY = NPY + NPY/2
+	NPX = NPX + (NPX+1)/2
+	NPY = NPY + (NPY+1)/2
+      ELSEIF (SCHEME.EQ.4) THEN
+	IF (MOD(NPX,2).NE.0 .OR. MOD(NPY,2).NE.0) THEN
+	    nax = NPX * NTX
+	    nay = NPY * NTY
+	    call autotile( nax, nay )
+	ENDIF
+	NOX = NPX
+	NOY = NPY
+	NPX = NPX + (NPX+1)/2
+	NPY = NPY + (NPY+1)/2
 	SCHEME = 3
-      ELSE
-        CALL ASSERT (.FALSE.,'crash 2')
       ENDIF
 *
       CALL ASSERT (NTX.LE.MAXNTX,'ntx>maxntx')
@@ -743,7 +758,8 @@
       CALL ASSERT (NPX.LE.MAXNPX,'npx>maxnpx')
       CALL ASSERT (NPY.LE.MAXNPY,'npy>maxnpy')
 *
-      CALL ASSERT (OUTSIZ.GE.NOY*NOX*NTX,'outsiz too small')
+      CALL ASSERT (OUTSIZ.GE.NOY*NOX*NTX,
+     &             'image too large for output buffer')
 *
       NX = NOX*NTX
       NY = NOY*NTY
@@ -758,8 +774,9 @@ C
       if (nax.lt.0) nax = nx
       if (nay.lt.0) nay = ny
       LINOUT = 0
-      WRITE (NOISE,*) 'Rendered raster size =',NX,' x',NY
-      WRITE (NOISE,*) '  Output raster size =',NAX,' x',NAY
+      WRITE (NOISE,1105) 'Rendered raster size =',NPX*NTX,NPY*NTY
+      WRITE (NOISE,1105) '  Output raster size =',NAX,NAY
+1105  FORMAT(A,I6,' x',I6)
 C
 C	Header records and picture title
       IF (SCHEME.EQ.0) OTMODE = OR(OTMODE,ALPHACHANNEL)
@@ -767,11 +784,11 @@ C	Header records and picture title
       IERR = LOCAL(4, TITLE)
 *
 *     Some derived parameters
-      XCENT = NTX*NPX/2.
-      YCENT = NTY*NPY/2.
+      XCENT  = NTX*NPX/2.
+      YCENT  = NTY*NPY/2.
       SXCENT = NSX*NPX/2.
       SYCENT = NSY*NPY/2.
-      SCALE = 2.*MIN(XCENT,YCENT)
+      SCALE  = 2.*MIN(XCENT,YCENT)
 *     This was always true; now it's explicit
       BACKCLIP  = -(SCALE+1.0)
       FRONTCLIP =  HUGE
@@ -964,11 +981,13 @@ C         WRITE (NOISE,*) INFMTS(I)
 	INFMTS(NORMS)     = INFMTS(TRIANG)
 	INFLGS(VERTEXRGB) = INFLGS(TRIANG)
 	INFMTS(VERTEXRGB) = INFMTS(TRIANG)
+	INFLGS(VERTRANSP) = INFLGS(TRIANG)
+	INFMTS(VERTRANSP) = INFMTS(TRIANG)
 	INFLGS(MATERIAL)  = .TRUE.
 	INFLGS(GLOWLIGHT) = .TRUE.
 	INFLGS(QUADRIC)   = .TRUE.
       ELSE
-        CALL ASSERT (.FALSE.,'crash 4')
+        CALL ASSERT (.FALSE.,'bad inmode')
       ENDIF
 c
 c     Done with header records
@@ -985,11 +1004,11 @@ c
 c     End of header processing
 *
 *     Give them a notice to stare at while the program cranks along
-      WRITE (NOISE,'(/)')
+      WRITE (NOISE,'(1X)')
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
-      WRITE (NOISE,*) '%                      Raster3D ',VERSION,
-     &                '                       %'
+      WRITE (NOISE,*) '%                      Raster3D    ',VERSION,
+     &                '                    %'
       WRITE (NOISE,*) '%            -------------------------',
      &                '-------------            %'
       WRITE (NOISE,*) '% If you publish figures generated by this ',
@@ -1014,7 +1033,7 @@ c     End of header processing
         PSSCALE = 2.0 * MIN( NTX*NOX/2., NTY*NOY/2. )
       	CALL LSETUP( PSSCALE, BKGND, TITLE )
       ENDIF
-      WRITE (NOISE,'(/)')
+      WRITE (NOISE,'(1X)')
 *
 *
 *     Initialize counters
@@ -1044,6 +1063,7 @@ c
       nglows  = 0
       nquads  = 0
       nclip   = 0
+      nvtrans = 0
 c
 c     Objects in, and count up objects that may impinge on each tile
       NDET = 0
@@ -1064,6 +1084,7 @@ c     Nov 1997 - allow # comments
       	GOTO 7
 c     May 1996 - allow file indirection
       ELSE IF (LINE(1:1) .EQ. '@') THEN
+        J = 1
 	K = 80
 	DO I=80,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
@@ -1071,10 +1092,15 @@ c     May 1996 - allow file indirection
 	  IF (LINE(I:I).EQ.'!') K = I-1
 	  IF (LINE(I:I).EQ.'	') LINE(I:I) = ' '
 	ENDDO
+	IF (J.EQ.1) GOTO 7
 	DO I=J,K
 	  IF (LINE(I:I).NE.' ') L = I
 	ENDDO
 	K = L
+	IF (LINE(K:K).eq.'Z' .or. LINE(K-1:K).eq.'gz') THEN
+	    WRITE (NOISE,'(A)') ' >> sorry, no decompression '
+	    GOTO 74    
+	ENDIF
    70	CONTINUE
 	OPEN (UNIT=INPUT+1,ERR=71,STATUS='OLD',
      &	      FILE=LINE(J:K))
@@ -1087,7 +1113,7 @@ c     May 1996 - allow file indirection
 	    GOTO 70
 	ENDIF
    	CALL LIBLOOKUP( LINE(J:K), FULLNAME )
-	OPEN (UNIT=INPUT+1,ERR=73,STATUS='OLD',FILE=FULLNAME)
+	OPEN (UNIT=INPUT+1,ERR=74,STATUS='OLD',FILE=FULLNAME)
    72	CONTINUE
 	DO I=80,2,-1
 	  IF (FULLNAME(I:I).EQ.' ') J = I
@@ -1097,7 +1123,7 @@ c     May 1996 - allow file indirection
 	CALL ASSERT(INPUT-INPUT0.LE.MAXLEV, 
      &	            'Too many levels of indirection')
 	GOTO 7
-   73	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
+   74	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
 	GOTO 7
       ELSE
 	READ (LINE,*,END=50) INTYPE
@@ -1111,12 +1137,12 @@ c     May 1996 - allow file indirection
 	CLRITY = 0
 	CLROPT = 0
 	MATCOL  = .FALSE.
-	ISOLATE = .FALSE.
+	ISOLATION = 0
 	CLIPPING= .FALSE.
 	GOTO 7
       ELSEIF (INTYPE .EQ. FONT) THEN
 	IF (LFLAG) THEN
-	  CALL LINP( INPUT, INTYPE )
+	  CALL LINP( INPUT, INTYPE, .FALSE., RGBMAT )
 	ELSE
           READ (INPUT,'(A)',END=50) LINE
 	ENDIF
@@ -1124,22 +1150,29 @@ c     May 1996 - allow file indirection
       ELSEIF (INTYPE .EQ. LABEL) THEN
 	NLABELS = NLABELS + 1
 	IF (LFLAG) THEN
-	  CALL LINP( INPUT, INTYPE )
+	  IF (MSTATE.EQ.MATERIAL .AND. MATCOL) THEN
+	    CALL LINP( INPUT, INTYPE, .TRUE., RGBMAT )
+	  ELSE
+	    CALL LINP( INPUT, INTYPE, .FALSE., RGBMAT )
+	  ENDIF
 	ELSE
           READ (INPUT,'(A)',END=50) LINE
           READ (INPUT,'(A)',END=50) LINE
 	ENDIF
 	GOTO 7
-      ELSEIF (INTYPE .EQ. NOTRANS) THEN
-	ISOLATE = .TRUE.
+      ELSEIF (INTYPE .EQ. ISOLATE1) THEN
+	ISOLATION = 1
+	GOTO 7
+      ELSEIF (INTYPE .EQ. ISOLATE2) THEN
+	ISOLATION = 2
 	GOTO 7
 c     Global Properties
       ELSEIF (INTYPE .EQ. GPROP) THEN
 	READ (INPUT,'(A)',END=50) LINE
 	IF (LINE(1:3).EQ.'FOG') THEN
-	  READ (LINE(5:74),*,ERR=74,END=74) 
+	  READ (LINE(5:74),*,ERR=774,END=774) 
      &          FOGTYPE, FOGFRONT, FOGBACK, FOGDEN
-   74	  CONTINUE
+  774	  CONTINUE
      	  FOGRGB(1) = BKGND(1)
      	  FOGRGB(2) = BKGND(2)
      	  FOGRGB(3) = BKGND(3)
@@ -1156,7 +1189,7 @@ c     Global Properties
 	  READ (INPUT,*,ERR=75) ((RAFTER(I,J),J=1,3),I=1,3)
 	  WRITE (NOISE,775) ((RAFTER(I,J),J=1,3),I=1,3)
   775	  FORMAT('Post-rotation matrix:  ',3(/,3F10.4))
-CDEBUG	  Should check determinant and type error if not 1.0
+CDEBUG    Should check determinant and type error if not 1.0
 	  IF (INVERT) THEN
 	    RAFTER(1,2) = -RAFTER(1,2)
 	    RAFTER(2,1) = -RAFTER(2,1)
@@ -1217,7 +1250,7 @@ c                 but all zeros is legal for [at least!] LABELs
       CALL ASSERT (N.LE.MAXOBJ,'too many objects')
 C     20-Feb-1997 Save both object type and material type 
       TYPE(N) = INTYPE
-      FLAG(N) = FLAG(N) + 65536 * NPROPM
+      IF (MSTATE.EQ.MATERIAL) FLAG(N) = FLAG(N) + 65536 * NPROPM
       LIST(N) = NDET
       IF (SHADOW) MIST(N) = MDET
       ISTRANS  = 0
@@ -1257,12 +1290,10 @@ C     20-Feb-1997 Save both object type and material type
 	  ENDIF
 	ENDIF
 *	Isolated objects not transformed by TMAT, but still subject to inversion
-	IF (ISOLATE) THEN
-	  IF (INVERT) THEN
-	    Y1A = -Y1A
-	    Y2A = -Y2A
-	    Y3A = -Y3A
-	  ENDIF
+	IF (ISOLATION.GT.0) THEN
+	  CALL ISOLATE(X1A,Y1A)
+	  CALL ISOLATE(X2A,Y2A)
+	  CALL ISOLATE(X3A,Y3A)
 	ELSE
 *	update true coordinate limits
 	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
@@ -1469,10 +1500,8 @@ C     20-Feb-1997 Save both object type and material type
 	  ENDIF
 	ENDIF
 *	Isolated objects not transformed by TMAT, but still subject to inversion
-	IF (ISOLATE) THEN
-	  IF (INVERT) THEN
-	    YA = -YA
-	  ENDIF
+	IF (ISOLATION.GT.0) THEN
+	  CALL ISOLATE(XA,YA)
 	ELSE
 *	update true coordinate limits
 	  TRULIM(1,1) = MIN( TRULIM(1,1), XA )
@@ -1574,6 +1603,17 @@ C     20-Feb-1997 Save both object type and material type
 25        CONTINUE
 26        CONTINUE
         ENDIF
+
+c	30-Dec-99 duplicate transparent spheres, if requested, so that
+c	the inside surface can be rendered also. BUF() is still loaded
+c	with specs for the current object; we just need to set flags.
+	IF (  AND(FLAG(N),TRANSP).NE.0 .AND. CLROPT.EQ.2
+     &  .AND. AND(FLAG(N),INSIDE).EQ.0) THEN
+	    FLAG(N+1) = INSIDE
+	    NINSIDE   = NINSIDE + 1
+	    GOTO 9
+	ENDIF
+
       ELSEIF (INTYPE.EQ.CYLIND) THEN
 *	EAM May 1990 cylinder as read in
         X1A = BUF(1)
@@ -1619,11 +1659,9 @@ C     20-Feb-1997 Save both object type and material type
 	  ENDIF
 	ENDIF
 *	Isolated objects not transformed by TMAT, but still subject to inversion
-	IF (ISOLATE) THEN
-	  IF (INVERT) THEN
-	    Y1A = -Y1A
-	    Y2A = -Y2A
-	  ENDIF
+	IF (ISOLATION.GT.0) THEN
+	  CALL ISOLATE(X1A,Y1A)
+	  CALL ISOLATE(X2A,Y2A)
 	ELSE
 *	update true coordinate limits
 	  TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
@@ -1769,7 +1807,10 @@ c	with specs for the current object; we just need to set flags.
 *	vertex normals as given (these belong to previous triangle)
 	IF (JUSTCLIPPED) GOTO 7
 	IPREV = N - 1
-	IF (TYPE(IPREV).EQ.VERTEXRGB) IPREV = IPREV - 1
+	IF ((TYPE(IPREV).EQ.VERTEXRGB).OR.(TYPE(IPREV).EQ.VERTRANSP))
+     &      IPREV = IPREV - 1
+	IF ((TYPE(IPREV).EQ.VERTEXRGB).OR.(TYPE(IPREV).EQ.VERTRANSP))
+     &      IPREV = IPREV - 1
 	CALL ASSERT (TYPE(IPREV).EQ.TRIANG,'orphan normals')
         X1A = BUF(1)
         Y1A = BUF(2)
@@ -1781,7 +1822,7 @@ c	with specs for the current object; we just need to set flags.
         Y3A = BUF(8)
         Z3A = BUF(9)
 *	Isolated objects not transformed by TMAT, but still subject to inversion
-	IF (ISOLATE) THEN
+	IF (ISOLATION.GT.0) THEN
 	  IF (INVERT) THEN
 	    Y1B = -Y1B
 	    Y2B = -Y2B
@@ -1870,7 +1911,10 @@ C
 	CALL CHKRGB(BUF(4),BUF(5),BUF(6),'invalid vertex color')
 	CALL CHKRGB(BUF(7),BUF(8),BUF(9),'invalid vertex color')
 	IPREV = N - 1
-	IF (TYPE(IPREV).EQ.NORMS) IPREV = IPREV - 1
+	IF ((TYPE(IPREV).EQ.NORMS).OR.(TYPE(IPREV).EQ.VERTRANSP))
+     &      IPREV = IPREV - 1
+	IF ((TYPE(IPREV).EQ.NORMS).OR.(TYPE(IPREV).EQ.VERTRANSP))
+     &      IPREV = IPREV - 1
 c	we should only see a SPHERE is if it's a collapsed cylinder
 	IF (TYPE(IPREV).EQ.SPHERE) THEN
 	    K = LIST(IPREV)
@@ -1891,6 +1935,32 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	DETAIL(NDET+7) = BUF(7)
 	DETAIL(NDET+8) = BUF(8)
 	DETAIL(NDET+9) = BUF(9)
+	NDET = NDET + KDET(INTYPE)
+	IF (SHADOW) THEN
+	  MDET = MDET + SDET(INTYPE)
+	ENDIF
+*
+*	EAM - 30-Dec-1999
+*	Allow specification of transparency at each vertex of preceding
+*	triangle or cylinder. Overrides any MATERIAL properties.
+*
+      ELSEIF (INTYPE .EQ. VERTRANSP) THEN
+	IF (JUSTCLIPPED) GOTO 7
+	IPREV = N - 1
+	IF (TYPE(IPREV).EQ.NORMS .OR. TYPE(IPREV).EQ.VERTEXRGB)
+     &      IPREV = IPREV - 1
+	IF (TYPE(IPREV).EQ.NORMS .OR. TYPE(IPREV).EQ.VERTEXRGB)
+     &      IPREV = IPREV - 1
+	CALL ASSERT (TYPE(IPREV).EQ.TRIANG .OR. TYPE(IPREV).EQ.CYLIND
+     &           .OR.TYPE(IPREV).EQ.SPHERE,
+     &		'orphan vertex transparency')
+	NVTRANS = NVTRANS + 1
+	IF (AND(FLAG(IPREV),TRANSP).EQ.0) NTRANSP = NTRANSP + 1
+	FLAG(IPREV) = OR( FLAG(IPREV), TRANSP )
+	FLAG(IPREV) = OR( FLAG(IPREV), VTRANS )
+	DETAIL(NDET+1) = BUF(1)
+	DETAIL(NDET+2) = BUF(2)
+	DETAIL(NDET+3) = BUF(3)
 	NDET = NDET + KDET(INTYPE)
 	IF (SHADOW) THEN
 	  MDET = MDET + SDET(INTYPE)
@@ -1990,10 +2060,8 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	IF (GLOW.GT.GLOWMAX) GLOWMAX = GLOW
 	CALL CHKRGB (RED,GRN,BLU,'invalid glow light color')
 *	Isolated objects not transformed by TMAT, but still subject to inversion
-	IF (ISOLATE) THEN
-	  IF (INVERT) THEN
-	    GLOWSRC(2) = -GLOWSRC(2)
-	  ENDIF
+	IF (ISOLATION.GT.0) THEN
+	  CALL ISOLATE(GLOWSRC(1),GLOWSRC(2))
 	ELSE
 *	transform coordinates and radius of glow source
 	  CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3))
@@ -2075,7 +2143,7 @@ c		  if input line is not recognized
 *
 50    CONTINUE
       IF (INPUT.GT.INPUT0) THEN
-	WRITE (NOISE,*) ' - closing indirect input file'
+	IF (VERBOSE) WRITE (NOISE,*) ' - closing indirect input file'
 	CLOSE(INPUT)
 	INPUT = INPUT - 1
 	GOTO 7
@@ -2158,6 +2226,7 @@ c		  if input line is not recognized
 	  IF (AND(FLAG(I),RIBBON).NE.0)  NRIB = NRIB + 1
 	  IF (AND(FLAG(I),SURFACE).NE.0) NSUR = NSUR + 1
 	END IF
+CDEBUG	Should maybe count things like NTRANSP here, to double check
 55    CONTINUE
       IF (TYPE(N).EQ.TRIANG) NTRI = NTRI + 1
 56    CONTINUE
@@ -2193,8 +2262,10 @@ c		  if input line is not recognized
       ENDIF
 57    FORMAT(2X,A,I8)
 *
-      WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
-      IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',MAXSDT
+      IF (VERBOSE) THEN
+        WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
+        IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',MAXSDT
+      ENDIF
 *
 *
 *     Sort objects, fill in "short lists" as indices into main list
@@ -2225,7 +2296,9 @@ c		  if input line is not recognized
 	ELSEIF (TYPE(I).EQ.PLANE) THEN
 *	  EAM Mar 1993 (but not sure it's necessary)
 	  ZTEMP(I) = SCALE + 1.0
-	ELSEIF (TYPE(I).EQ.NORMS .OR. TYPE(I).EQ.MATERIAL
+	ELSEIF (TYPE(I).EQ.NORMS 
+     &     .OR. TYPE(I).EQ.MATERIAL
+     &     .OR. TYPE(I).EQ.VERTRANSP
      &     .OR. TYPE(I).EQ.VERTEXRGB) THEN
 *	  EAM Mar 1994 (not sure this is needed either)
 	  ZTEMP(I) = SCALE + 1.0
@@ -2246,7 +2319,7 @@ c		  if input line is not recognized
         KNTTOT = KNTTOT + KOUNT(I,J)
       ENDDO
       ENDDO
-      WRITE (NOISE,*) 'knttot=',KNTTOT,' MAXSHR=',MAXSHR
+      IF (VERBOSE) WRITE (NOISE,*) 'knttot=',KNTTOT,' MAXSHR=',MAXSHR
       CALL ASSERT (KNTTOT.LE.MAXSHR,'short list overflow')
       K = 0
       DO J = 1, NTY
@@ -2309,6 +2382,8 @@ c		  if input line is not recognized
         ELSEIF (TYPE(IND).EQ.NORMS) THEN
 	  GOTO 81
         ELSEIF (TYPE(IND).EQ.VERTEXRGB) THEN
+	  GOTO 81
+        ELSEIF (TYPE(IND).EQ.VERTRANSP) THEN
 	  GOTO 81
         ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
 	  GOTO 81
@@ -2377,6 +2452,7 @@ c		  if input line is not recognized
 	  ELSEIF (TYPE(I).EQ.NORMS) THEN
 *	    and certainly not for normals
 	  ELSEIF (TYPE(I).EQ.VERTEXRGB) THEN
+	  ELSEIF (TYPE(I).EQ.VERTRANSP) THEN
 	  ELSEIF (TYPE(I).EQ.MATERIAL) THEN
 *	    or surface properties
 	  ELSEIF (TYPE(I).EQ.GLOWLIGHT) THEN
@@ -2395,7 +2471,7 @@ c		  if input line is not recognized
         DO 170 I = 1, NSX
           MNTTOT = MNTTOT + MOUNT(I,J)
 170     CONTINUE
-        WRITE (NOISE,*) 'mnttot=',MNTTOT,' MAXSSL=',MAXSSL
+        IF (VERBOSE) WRITE (NOISE,*) 'mnttot=',MNTTOT,' MAXSSL=',MAXSSL
         CALL ASSERT (MNTTOT.LE.MAXSSL,'shadow short list overflow')
         K = 0
         DO 175 J = 1, NSY
@@ -2455,6 +2531,8 @@ c		  if input line is not recognized
           ELSEIF (TYPE(IND).EQ.NORMS) THEN
 	    GOTO 181
           ELSEIF (TYPE(IND).EQ.VERTEXRGB) THEN
+	    GOTO 181
+          ELSEIF (TYPE(IND).EQ.VERTRANSP) THEN
 	    GOTO 181
           ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
 	    GOTO 181
@@ -2516,7 +2594,7 @@ c		  if input line is not recognized
 200     CONTINUE
 *       test for no objects in tile
         IF (KOUNT(ITILE,JTILE).EQ.0) GO TO 400
-	NTRANSP = TTRANS(ITILE,JTILE)
+	NTRANSP = TTRANS(ITILE,JTILE) + nvtrans
 	IJSTART = KSTART(ITILE,JTILE)
 	IJSTOP  = KSTOP(ITILE,JTILE)
 *       process non-empty tile
@@ -2539,11 +2617,7 @@ c		  if input line is not recognized
 C         DO 240 IK = KSTART(ITILE,JTILE), KSTOP(ITILE,JTILE)
           DO 240 IK = IJSTART, IJSTOP
             IND = KSHORT(IK)
-C           CALL ASSERT (IND.GE.1,'ind<1')
-C           CALL ASSERT (IND.LE.N,'ind>n')
             K = LIST(IND)
-C           CALL ASSERT (K.GE.0,'k<0')
-C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 *           skip if hidden surface
 	    IF (NHIDDEN.GT.0 .AND. AND(FLAG(IND),HIDDEN).NE.0) goto 240
 *	    further tests depend on object type
@@ -2583,13 +2657,13 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 		IF ( ZP.GT.DETAIL(MIND+16)) GOTO 240
 	      ENDIF
 *	      Use Phong shading for surface and ribbon triangles.
-	      IF (AND(FLAG(IND),OR(SURFACE,VCOLS)).NE.0) THEN
+	      IF (AND(FLAG(IND),SURFACE+VCOLS+VTRANS).NE.0) THEN
 		V = (Y3-Y1)*(X2-X1) - (X3-X1)*(Y2-Y1)
 		W = (XP-X1)*(Y3-Y1) - (YP-Y1)*(X3-X1)
 		ALPHA = W / V
 		BETA  = S / V
 	      ENDIF
-	      IF (AND(FLAG(IND),VCOLS).NE.0) THEN
+	      IF (AND(FLAG(IND),VCOLS+VTRANS).NE.0) THEN
 		DETAIL(14 + LIST(IND)) = ALPHA
 		DETAIL(15 + LIST(IND)) = BETA
 	      ENDIF
@@ -2655,6 +2729,9 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               IF (DX2+DY2 .GE. R2) GO TO 240
 *             skip object if z not a new high
               DZ = SQRT(R2-(DX2+DY2))
+C	      Triggered by CLROPT=2
+	      IF (AND(FLAG(IND),TRANSP).NE.0 .AND.
+     &	          AND(FLAG(IND),INSIDE).NE.0)       DZ = -DZ
               ZP = Z+DZ
               IF (ZP.LE.ZHIGH) GO TO 240
 *	      Z-clipped spheres aren't too bad
@@ -2722,8 +2799,9 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               NORMAL(2) = YP - YA
               NORMAL(3) = ZP - ZA
 *	      if explicit vertex colors, need to keep fractional position
-*	      NB: was already calculated in CYL1, so this is CPU waste :(
-	      IF (AND(FLAG(IND),VCOLS).NE.0) THEN
+*	      NB: was already calculated in CYL1, so this is a CPU waste :(
+*	          store it in R2, which is not currently used for anything else
+	      IF (AND(FLAG(IND),OR(VCOLS,VTRANS)).NE.0) THEN
 		DETAIL(K+8) = ((XA-X1)**2 + (YA-Y1)**2 + (ZA-Z1)**2)
      &		            / ((X2-X1)**2 + (Y2-Y1)**2 + (Z2-Z1)**2)
 		DETAIL(K+8) = SQRT(DETAIL(K+8))
@@ -2842,10 +2920,9 @@ C
 *           determine appropriate shadow tile
             ISTILE = XS/NPX + 1
             JSTILE = YS/NPY + 1
-C           CALL ASSERT (ISTILE.GE.1,'istile<1')
-C           CALL ASSERT (ISTILE.LE.NSX,'istile>nsx')
-C           CALL ASSERT (JSTILE.GE.1,'jstile<1')
-C           CALL ASSERT (JSTILE.LE.NSY,'jstile>nsy')
+*	    Just to get proper error message
+	      IF (JSTILE.LE.0) JSTILE = NSY + 1 - JSTILE
+	      IF (ISTILE.LE.0) ISTILE = NSX + 1 - ISTILE
 	    IF (JSTILE.GE.NSY) THEN
 	      NSYMAX = MAX(JSTILE,NSYMAX)
               INDSTP = 0
@@ -2863,14 +2940,10 @@ C           CALL ASSERT (JSTILE.LE.NSY,'jstile>nsy')
 *
             DO 260 IK = MSTART(ISTILE,JSTILE), MSTOP(ISTILE,JSTILE)
               IND = MSHORT(IK)
-C             CALL ASSERT (IND.GE.1,'shadow ind<1')
-C             CALL ASSERT (IND.LE.N,'shadow ind>n')
 *             Ignore transparent objects except for the one being shaded
 	      IF (AND(FLAG(IND),TRANSP).NE.0 .AND. IND.NE.INDTOP)
      &            GOTO 260
               K = MIST(IND)
-C             CALL ASSERT (K.GE.0,'shadow k<0')
-C             CALL ASSERT (K.LT.MDET,'shadow k>=mdet')
               IF (TYPE(IND).EQ.TRIANG) THEN
                 X1 = SDTAIL(K+1)
                 Y1 = SDTAIL(K+2)
@@ -2988,7 +3061,7 @@ CDEBUG                          XS, YS, ZTEST, QNORM, .TRUE., .FALSE. )
                 ZSTOP = ZTEST
                 INDSTP = IND
               ELSE
-                CALL ASSERT(.FALSE.,'crash 260')
+                CALL ASSERT(.FALSE.,'shadow tile error, crash 260')
               ENDIF
 260         CONTINUE
 270         CONTINUE
@@ -3009,16 +3082,16 @@ CDEBUG                          XS, YS, ZTEST, QNORM, .TRUE., .FALSE. )
 *
 *         Pick up colours of object to be shaded
 *
-C         CALL ASSERT (INDTOP.GT.0,'indtop<=0')
           K = LIST(INDTOP)
-C         CALL ASSERT (K.GE.0,'k<0')
-C         CALL ASSERT (K.LT.NDET,'k>=ndet')
           IF (TYPE(INDTOP).EQ.TRIANG) THEN
 	    IF (AND(FLAG(INDTOP),VCOLS).NE.0) THEN
 	      ALPHA = DETAIL(K+14)
 	      BETA  = DETAIL(K+15)
 	      INEXT = INDTOP + 1
-	      IF (TYPE(INEXT).EQ.NORMS) INEXT = INEXT + 1
+	      IF ((TYPE(INEXT).EQ.NORMS).OR.(TYPE(INEXT).EQ.VERTRANSP))
+     &            INEXT = INEXT + 1
+	      IF ((TYPE(INEXT).EQ.NORMS).OR.(TYPE(INEXT).EQ.VERTRANSP))
+     &            INEXT = INEXT + 1
 	      K = LIST(INEXT)
 	      CALL ASSERT(TYPE(INEXT).EQ.VERTEXRGB,'lost vertex colors')
 	      RGBCUR(1) = DETAIL(K+1) 
@@ -3043,6 +3116,7 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 	    IF (AND(FLAG(INDTOP),VCOLS).NE.0) THEN
 	      FRAC = DETAIL(K+8)
 	      INEXT = INDTOP + 1
+	      IF (TYPE(INEXT).EQ.VERTRANSP) INEXT = INEXT + 1
 	      K = LIST(INEXT)
 	      CALL ASSERT(TYPE(INEXT).EQ.VERTEXRGB,'lost vertex colors')
               RGBCUR(1) = FRAC*DETAIL(K+4) + (1.-FRAC)*DETAIL(K+1)
@@ -3083,9 +3157,7 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
             NORMAL(3) = -NORMAL(3)
 	    BACKFACE = .TRUE.
 	    IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
-		K = NPROPM + 1
-271		K = K - 1
-		IF (MLIST(K).GT.INDTOP) GOTO 271
+		K = FLAG(INDTOP) / 65536
 		CALL ASSERT(K.GT.0,'lost material definition')
 		IF (AND(FLAG(MLIST(K)),INSIDE).NE.0) THEN
 		  K = LIST(MLIST(K))
@@ -3144,13 +3216,19 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
           SSPEC = SSPEC * BRIGHT
           PSPEC = PSPEC * BRIGHT
 *
+*	  The usual case is white lighting, no transparency
+*
+	  SPECOL(1) = 1.0
+	  SPECOL(2) = 1.0
+	  SPECOL(3) = 1.0
+	  SBLEND    = 1.0
+	  CLRITY    = 0.0
+*
 *	  Extra properties make specular highlighting calculation a
 *	  bit more complex. First we have to find the MATERIAL description.
 *
 	  IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
-            K = NPROPM+1
-272         K = K - 1
-	    IF (MLIST(K).GT.INDTOP) GOTO 272
+	    K = FLAG(INDTOP) / 65536
 	    CALL ASSERT(K.GT.0,'lost material definition')
 	    IF (AND(FLAG(MLIST(K)),INSIDE).NE.0  .AND.
      &		AND(FLAG(INDTOP),  INSIDE).NE.0) THEN
@@ -3172,6 +3250,38 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 *	    not currently used, as MOPT(1)=1 already marked in FLAG,
 *	    but future interpretations of MOPT(1) might need it
 	    CLROPT    = DETAIL(K+7)
+	  ENDIF
+*
+*	  20-Feb-2000 Allow per-vertex transparency (obj type 18)
+	  IF (AND(FLAG(INDTOP),VTRANS).NE.0) THEN
+	      IF (TYPE(INDTOP).EQ.CYLIND) THEN
+                K = LIST(INDTOP)
+	        FRAC = DETAIL(K+8)
+	        INEXT = INDTOP + 1
+  	        IF (TYPE(INEXT).EQ.VERTEXRGB) INEXT = INEXT + 1
+	        CALL ASSERT(TYPE(INEXT).EQ.VERTRANSP,'lost vertex transp')
+	        K = LIST(INEXT)
+	        CLRITY = FRAC*DETAIL(K+1) + (1.-FRAC)*DETAIL(K+2)
+	      ELSE IF (TYPE(INDTOP).EQ.TRIANG) THEN
+	        K = LIST(INDTOP)
+		ALPHA = DETAIL(K+14)
+		BETA  = DETAIL(K+15)
+		INEXT = INDTOP + 1
+		IF ((TYPE(INEXT).EQ.VERTEXRGB).OR.(TYPE(INEXT).EQ.NORMS))
+     &              INEXT = INEXT + 1
+		IF ((TYPE(INEXT).EQ.VERTEXRGB).OR.(TYPE(INEXT).EQ.NORMS))
+     &              INEXT = INEXT + 1
+     		CALL ASSERT(TYPE(INEXT).EQ.VERTRANSP,'lost vertex transp')
+		K = LIST(INEXT)
+		CLRITY = DETAIL(K+1)
+     &		       + ALPHA * (DETAIL(K+2)-DETAIL(K+1))
+     &		       + BETA  * (DETAIL(K+3)-DETAIL(K+1))
+     		CALL ASSERT(CLRITY.LE.1 .AND. CLRITY.GE.0.0, 'illegal transp')
+	      ELSE
+	        CALL ASSERT(.FALSE.,'illegal vertex transp')
+	      ENDIF
+	  ENDIF
+
 C
 C	EAM February 1996
 C	This is the only computationally intensive code (as opposed to mere
@@ -3184,19 +3294,21 @@ C	the cosine call, then comment out the two lines below which include it,
 C	and uncomment the two lines which are currently commented C-ALT.
 C	Then re-compile (type "make render") and you should be all set.
 C
-            SBLEND = 1.
-            IF (CLRITY.NE.0) THEN
-                IF (ITPASS.EQ.0) THEN
-                    BLEND0 = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
-C-ALT               BLEND0 = (1. - CLRITY*ABS(NL(3)))**2
-                    SBLEND = BLEND0
-                ELSE IF (ITPASS.EQ.1) THEN
-                    BLEND1 = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
-C-ALT               BLEND1 = (1. - CLRITY*ABS(NL(3)))**2
-                    SBLEND = BLEND1
-                ENDIF
-            ENDIF
-C           
+	  IF (CLRITY.NE.0) THEN
+		IF (ITPASS.EQ.0) THEN
+        	    BLEND0 = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
+C-ALT		    BLEND0 = (1. - CLRITY*ABS(NL(3)))**2
+		    SBLEND = BLEND0
+	    	ELSE IF (ITPASS.EQ.1) THEN
+      	            BLEND1 = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
+C-ALT		    BLEND1 = (1. - CLRITY*ABS(NL(3)))**2
+		    SBLEND = BLEND1
+	        ENDIF
+	  ENDIF
+C
+C	  Final calculation of specular properties of special materials
+C
+	  IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
 	    DIFFM     = 1. - (SPECM + AMBIEN)
 	    SDIFF     = SDIFF * DIFFM / DIFFUS
 	    PDIFF     = PDIFF * DIFFM / DIFFUS
@@ -3212,14 +3324,6 @@ C
 		SSPEC = SSPEC * (1.-SPECM)
 		PSPEC = PSPEC * (1.-SPECM)
 	    ENDIF
-*
-*	  The usual case is no special surface properties
-*
-	  ELSE
-	    SBLEND    = 1.0
-	    SPECOL(1) = 1.0
-	    SPECOL(2) = 1.0
-	    SPECOL(3) = 1.0
 	  END IF
 *
 *         We now return you to your regular processing
@@ -3562,6 +3666,34 @@ C
       RETURN
       END
 
+      SUBROUTINE ISOLATE( X, Y )
+*     Expand X and Y coordinates to fill image regardless of aspect ratio
+      COMMON /OPTIONS/ NSCHEME, NAX, NAY, INVERT, OTMODE, QUALITY
+     &               , LFLAG, FONTSCALE
+      INTEGER          NSCHEME
+      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      LOGICAL          INVERT, LFLAG
+      REAL             FONTSCALE
+      COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
+     &                 ,RAFTER, TAFTER
+      REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
+      COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
+     &                , ISOLATION
+      REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
+      INTEGER           ISOLATION
+*
+      IF (INVERT) Y = -Y
+      IF (ISOLATION.EQ.2) THEN
+          ASPECT = XCENT/YCENT
+	  IF (ASPECT.GT.1.0) X = X * ASPECT
+	  IF (ASPECT.LT.1.0) Y = Y / ASPECT
+      ENDIF
+      RETURN
+      END
+
+
+
       SUBROUTINE HSORTD (N, A, NDEX)
       INTEGER N
       REAL   A(N)
@@ -3645,8 +3777,9 @@ C
       COMMON /ASSCOM/ ASSOUT, VERBOSE
       SAVE /ASSCOM/
       IF (LOGIC) RETURN
-      WRITE (ASSOUT,*) '*** ',DAMMIT
-      STOP 1234
+      WRITE (ASSOUT,*) 'ERROR >>>>>> ',DAMMIT
+*     STOP 1234
+      CALL EXIT(-1)
       END
 
 C
