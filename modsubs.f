@@ -38,25 +38,6 @@ C
       IDOT=A(1)*B(1)+A(2)*B(2)+A(3)*B(3)
       RETURN
       END
-      FUNCTION MATCH(I,J,K)
-C     =====================
-C
-C
-C     TEST K BYTES OF I AGAINST J
-C     RETURN MATCH=0 IF ALL EQUAL, =1 IF J>I ELSE =-1
-C
-      BYTE I(K),J(K)
-      DO 10 N=1,K
-      IF(I(N).NE.J(N))GO TO 20
-   10 CONTINUE
-      MATCH=0
-      RETURN
-   20 IF(J(N).LT.I(N))GO TO 30
-      MATCH=1
-      RETURN
-   30 MATCH=-1
-      RETURN
-      END
 	SUBROUTINE MATMUL(A,B,C)
 C	========================
 C
@@ -211,25 +192,5 @@ C
       DO 10 I=1,3
       A(I)=B(I)+C(I)
    10 CONTINUE
-      RETURN
-      END
-      SUBROUTINE ZIPIN(ID,N,BUF)
-C     ==========================
-C
-C
-C     FAST BINARY READ ON UNIT ID INTO ARRAY BUF OF LENGTH N
-C
-      REAL BUF(N)
-      READ(ID)BUF
-      RETURN
-      END
-      SUBROUTINE ZIPOUT(ID,N,BUF)
-C     ===========================
-C
-C
-C     FAST BINARY WRITE TO UNIT ID OF ARRAY BUF LENGTH N
-C
-      REAL BUF(N)
-      WRITE(ID)BUF
       RETURN
       END

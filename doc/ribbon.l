@@ -88,7 +88,7 @@ header records produced by \fIribbon\fP.
 .SH SOURCE
 .TP 5
 	anonymous ftp site:	
-                stanzi.bchem.washington.edu   (128.95.12.38)
+                ftp.bmsc.washington.edu
 .TP 5
 	contact:		
                 Ethan A Merritt
@@ -97,7 +97,7 @@ header records produced by \fIribbon\fP.
                 merritt@u.washington.edu
 
 .SH SEE ALSO
-MOLSCRIPT(1), render(1), rods(1), setup(1)
+MOLSCRIPT(1), render(1), rods(1), balls(1)
 .PP
 .SH AUTHORS
 

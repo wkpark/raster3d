@@ -1,35 +1,45 @@
 .ad l
 .nh
-.TH RODS 1 "29 April 1995" "Raster3D"
+.TH BALLS 1 "29 April 1995" "Raster3D"
 .SH NAME
 
-rods - preprocessor for ball-and-stick models in Raster3D molecular graphics package
+balls - preprocessor for space-filling models in Raster3D molecular graphics package
 .SH SYNOPSIS
-
-.B "rods" [\fI-h\fP] [\fI-b\fP]
 .PP
-\fIRods\fP reads a file describing atom colours and/or a Brookhaven 
+.B "balls" [\fI-h\fP]
+.PP
+\fINote: balls\fP went by the name "setup" in previous releases of Raster3D. 
+This was changed to prevent conflicts on some systems with other utilities 
+called "setup".  For backwards compatibility "setup" may be installed as a
+symbolic link to \fIballs\fP.
+.PP
+\fIBalls\fP reads a file describing atom colours and/or a Brookhaven 
 PDB coordinate file and produces a file containing Raster3D descriptor
-records.
-The file produced by \fIrods\fP
+records for each atom in the input file.  The file produced by \fIballs\fP
 may be fed directly to \fIrender\fP or it may be combined with descriptor
 files produced by other Raster3D utilities.
 .PP
 .SH EXAMPLES
 .PP
-To describe a simple bonds-only model coloured by residue type:
+To describe a simple space-filling model coloured by residue type:
 .PP
-     cat mycolours.pdb protein.pdb | rods | render > mypicture.avs
+     cat mycolours.pdb protein.pdb | balls | render > mypicture.avs
 .PP
-To render the same molecule as ball-and-stick:
+To include a pre-selected view matrix with the same model:
 .PP
-     cat mycolours.pdb protein.pdb | rods -b | render > mypicture.avs
+     cp  view1.matrix setup.matrix
+     cat mycolours.pdb protein.pdb | balls | render > mypicture.avs
+.PP
+To prepend header records describing a pre-selected scale and view:
+.PP
+     cat mycolours.pdb protein.pdb | balls -h > balls.r3d
+     cat header.r3d balls.r3d | render > mypicture.avs
 .SH OPTIONS
 
 .B "-h"
 .PP
 Suppress header records in output.  
-By default \fIrods\fP will produce an output file which starts with 
+By default \fIballs\fP will produce an output file which starts with 
 header records containing a default set of scaling and processing
 options.
 The \fI-h\fP flag will suppress these header records so that the output
@@ -38,24 +48,14 @@ This option is useful for producing files which describe only part
 of a scene, and which are to be later combined with descriptor files
 produced by other programs.
 
-.B "-b"
-.PP
-By default \fIrods\fP will describe bonds only; the -b flag will
-cause it to include spheres at the atom positions also, yielding
-a ball-and-stick representation.  
-
 .SH DESCRIPTION
 .PP 
-The input to \fIrods\fP consists of a single text file
+The input to \fIballs\fP consists of a single text file
 containing colour information and atomic coordinates in Brookhaven
 PDB data bank format.
 Coordinates are output as Raster3D descriptor records
 with colours and sphere radii assigned according to the COLO
 records described below.  
-Ball-and-stick figures have atoms drawn
-at 0.2 * VanderWaals radius, connected by rods with 0.2A cylindrical radius.
-Bonds are drawn for atoms which lie closer to each other than
-0.6 * (sum of VanderWaals radii).
 By default the output file contains a set of header records as
 required by the \fIrender\fP program.
 The header is constructed to include a TMAT matrix corresponding to
@@ -109,11 +109,14 @@ record in the input should have # symbols in all of columns 7 through
 fails to match any previous COLO record.  This idea of matching masks for
 colour specifications is due to Colin Broughton.
 
+Several files of COLO records, including one based on Bob Fletterick's
+"Shapely Models" and another mimicking CPK model parts, are
+provided as samples.
 .SH ENVIRONMENT
 .TP 5
 
 The files setup.matrix and setup.angles, if they exist, affect the
-header records produced by \fIrods\fP.
+header records produced by \fIballs\fP.
 
 .SH SOURCE
 .TP 5
@@ -127,8 +130,9 @@ header records produced by \fIrods\fP.
                 merritt@u.washington.edu
 
 .SH SEE ALSO
-render(1), ribbon(1), balls(1)
+render(1), rods(1), ribbon(1)
 .PP
 .SH AUTHORS
-	Ethan A Merritt
+	Originally written by David J. Bacon and Wayne F. Anderson.
+	Extensions and revisions by Ethan A Merritt.
 

@@ -1,6 +1,6 @@
-.ad l
+.l
 .nh
-.TH RENDER 1 "23 April 1994" "Raster3D"
+.TH RENDER 1 "29 April 1995" "Raster3D"
 .SH NAME
 render - image rendering program of Raster3D molecular graphics package
 .SH SYNOPSIS
@@ -16,7 +16,7 @@ with 24 bits of color information per pixel.
 Several utility programs exist which will create all or part
 of an acceptable input file by reading atomic coordinates from a
 Brookhaven PDB file.
-These include \fIsetup\fP, \fIrods\fP, and \fIribbon\fP from the 
+These include \fIballs\fP, \fIrods\fP, and \fIribbon\fP from the 
 \fIRaster3D\fP distribution kit, and \fIMOLSCRIPT\fP [ref: Kraulis, 1991].
 
 .PP
@@ -24,16 +24,16 @@ These include \fIsetup\fP, \fIrods\fP, and \fIribbon\fP from the
 .PP
 To render a simple space-filling model coloured by residue type:
 .PP
-     cat mycolors.pdb protein.pdb | setup | render > mypicture.avs
+     cat mycolors.pdb protein.pdb | balls | render > mypicture.avs
 .PP
 Display the same picture on an X-windows display directly using 
 ImageMagick:
 .PP
-     cat mycolors.pdb protein.pdb | setup | render | display avs:-
+     cat mycolors.pdb protein.pdb | balls | render | display avs:-
 .PP
 To render and display the same picture using the SGI libimage format:
 .PP
-     cat mycolors.pdb protein.pdb | setup | render -sgi picture.rgb
+     cat mycolors.pdb protein.pdb | balls | render -sgi picture.rgb
      ipaste picture.rgb
 .PP
 Render a stick-figure model of a cofactor jointly with a ribbon
@@ -186,6 +186,11 @@ The Raster3D programs always use mode INMODE 3.
  type 3 = round-ended cylinder
  type 5 = flat-ended cylinder
  type 6 = plane (triangle with infinite extent)
+ type 7 = explicit normals at vertices of previous triangle
+ type 8 = explicit material properties for subsequent objects
+ type 9 = terminate previous explicit material properties (if any)
+	  otherwise ignored, so remainder of line may act as a comment
+ type 0 = end of input file
 .TP 5 
 .B     INFMT or INFMTS
 Object input format specifier(s).  For object input
@@ -206,6 +211,38 @@ Parameters are read in the order
  cylinder (object type 3 or 5): 
       x1, y1, z1, R1, x2, y2, z2, R2, red, green, blue.
       (R1 is the cylinder radius, R2 is currently ignored).
+
+.TP 5
+.B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.1
+.PP
+Version 2.1 of the Raster3D supports a few new object types.
+These are intended to provide additional flexibility in adapting other
+molecular graphics tools to compose figures for Raster3D to render.
+These are mostly of interest to programmers, as the utilities supplied
+with the package currently make no use of them.
+
+  Object type 7
+    Explicit vertex normals for preceeding triangle object. This object 
+    must directly follow the triangle object, and uses the same format.
+    The intended use of this object type is to allow rendering of
+    arbitrary molecular surfaces.
+  Object type 8
+    Material properties. These values override the specification of
+    lighting and specular highlighting in the header records, allowing
+    some objects to have different surface properties from the rest.
+    The specified values will apply to all subsequent objects until
+    an object of type 9 is encountered.  The parameters are read as
+    free format floating point numbers from the following line:
+        MPHONG - override global Phong power for specular highlighting
+        MSPEC  - override global specular scattering contribution
+        SR,SG,SB - RGB triple specifying color of reflected light
+                   (by default all specular highlights are white)
+        TEXMAP - texture map (not yet implemented)
+  Object type 9
+    Terminates previous set of special material properties.
+    The rest of this record is ignored, so object type 9 may also
+    be used as a comment record.
+
 
 .TP 5
 .B SAMPLE HEADER
@@ -230,11 +267,35 @@ Parameters are read in the order
  *         (free format triangle descriptors)
  *         (free format sphere descriptors)
  *         (free format cylinder descriptors)
- 
+
+
+.SH INCREASING THE ARRAY SIZES
+.PP
+If you are creating images of very large proteins, or if you are rendering
+surfaces with many facets, then you may fill the storage arrays in render.
+If so you will get an error message something like
+.PP
+	STOP 1234 **** too many objects - increase MAXOBJ and recompile
+.PP
+The parameters which you may need to increase are contained in the 
+following lines of render.f:
+.PP
+ *     Maximum number of objects (was 7500)
+       PARAMETER (MAXOBJ = 25000)
+ *
+ *     Array elements available for object details
+       PARAMETER (MAXDET = 250 000, MAXSDT = 250 000)
+ *
+ *     Array elements available for sorted lists ("short" lists)
+       PARAMETER (MAXSHR = 150 000, MAXSSL = 150 000)
+.PP
+Increase the appropriate PARAMETER values by editing render.f, and
+recompile the render program by typing "make render".
+
 .SH SOURCE
 .TP 5
 	anonymous ftp site:	
-                stanzi.bchem.washington.edu   (128.95.12.38)
+                ftp.bmsc.washington.edu
 .TP 5
 	contact:		
                 Ethan A Merritt
@@ -243,7 +304,7 @@ Parameters are read in the order
                 merritt@u.washington.edu
 
 .SH SEE ALSO
-avs2ps(1), rods(1), ribbon(1), setup(1), ImageMagick(1), MOLSCRIPT(1)
+avs2ps(1), rods(1), ribbon(1), balls(1), ImageMagick(1), MOLSCRIPT(1)
 .PP
 .SH AUTHORS
 Originally written by David J. Bacon. 

@@ -17,7 +17,7 @@ DEFINES = -Dlocal_=local
 INCLUDES= /usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	setup rods ribbon render avs2ps
+PROGS   =	balls rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
@@ -47,3 +47,6 @@ render:	render.o local.o
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps -lm
+
+setup:	balls
+	ln -s balls setup

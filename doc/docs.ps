@@ -936,8 +936,8 @@ end
 4 0 /Times-Roman FMFONTDEFINE
 5 0 /Helvetica-Narrow-BoldOblique FMFONTDEFINE
 6 0 /Times-Italic FMFONTDEFINE
-7 0 /Times-Bold FMFONTDEFINE
-8 0 /Courier FMFONTDEFINE
+7 0 /Courier FMFONTDEFINE
+8 0 /Times-Bold FMFONTDEFINE
 9 0 /Helvetica FMFONTDEFINE
 32 FMFILLS
 0 0 FMFILL
@@ -990,7 +990,7 @@ V
 0 X
 (Raster3D) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -1002,7 +1002,7 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (1) 552 59.9 T
 108 87.98 558 720 R
@@ -1021,82 +1021,96 @@ N
 0 K
 (Raster3D) 108 708 T
 3 10 Q
-(SYNOPSIS) 108 654.31 T
+(SYNOPSIS) 108 678.31 T
 4 F
--0.08 (The Raster3D molecular graphics package consists of a core program) 108 636.31 P
+-0.08 (The Raster3D molecular graphics package consists of a core program) 108 660.31 P
 5 F
--0.07 (render) 387.53 636.31 P
+-0.07 (render) 387.53 660.31 P
 4 F
--0.08 ( and a number of ancillary programs) 413.04 636.31 P
-0.29 (\050) 108 624.31 P
+-0.08 ( and a number of ancillary programs) 413.04 660.31 P
+0.51 (\050) 108 648.31 P
 5 F
-0.27 (setup, rods, ribbon) 111.33 624.31 P
+0.46 (balls, rods, ribbon) 111.33 648.31 P
 4 F
-0.29 (\051 which produce input \336les for rendering from Brookhaven PDB \336les of atomic coordinates.) 186.09 624.31 P
--0.18 (Raster3D can also render images composed using version 1.4 of Molscript [Per Kraulis \0501991\051) 108 612.31 P
+0.51 (\051 which produce input \336les for rendering from Brookhaven PDB \336les of atomic coordinates.) 183.31 648.31 P
+(Raster3D can also render images composed using version 1.4 of Molscript [Per Kraulis, 1991].) 108 636.31 T
+2.03 (Raster3D uses a fast Z-buf) 108 618.31 P
+2.03 (fer algorithm to produce high quality pixel images featuring two light sources,) 222.53 618.31 P
+-0.09 (specular highlighting, Phong shaded surfaces, and shadowing. Output is in the form of a pixel image with 24 bits) 108 606.31 P
+(of color information per pixel.) 108 594.31 T
+0.46 (Raster3D does not depend on graphics hardware for operation. Four image output formats are supported: A) 108 576.31 P
+0.46 (VS,) 542.73 576.31 P
+0.42 (TIFF) 108 564.31 P
+0.42 (, SGI libimage, and a private format which is backwards-compatible with earlier versions of Raster3D. T) 127.75 564.31 P
+0.42 (o) 553 564.31 P
+0.38 (actually view or manipulate the images produced, you must also have installed an image viewing package \050e.g.) 108 552.31 P
+(John Cristy\325) 108 540.31 T
+(s ImageMagick or the SGI libimage utilities\051.) 156.59 540.31 T
+1.25 (Although the rendering program is not speci\336c to molecular graphics, Raster3D is not intended as a general) 108 522.31 P
+1.35 (purpose ray-tracing program. Ancillary programs are provided only for the generation of object descriptions) 108 510.31 P
+(based on atomic coordinates stored in Brookhaven PDB format.) 108 498.31 T
+3 11 Q
+0.66 (V) 108 480.31 P
+0.66 (ersion 2.1:) 114.11 480.31 P
+4 10 Q
+0.6 ( Raster3D V) 162.99 480.31 P
+0.6 (ersion 2.1 supports rendering of \336ve object types: spheres, triangles, planes, smooth-) 213.04 480.31 P
+1.18 (ended cylinders, and round-ended cylinders. New to V) 108 468.31 P
+1.18 (ersion 2.1 is support for two \322object types\323 which are) 333.61 468.31 P
+1.31 (really modi\336ers for characteristic properties of existing objects. One of these allows speci\336cation of explicit) 108 456.31 P
+0.16 (surface normals at the vertices of triangles; the other allows speci\336cation of the surface re\337ectance properties of) 108 444.31 P
+0.14 (individual objects. Neither of these features is used by the current version of the auxiallary programs distributed) 108 432.31 P
+0.8 (with Raster3D, but their inclusion may encourage use of the Raster3D rendering program in conjunction with) 108 420.31 P
+0.28 (other code which depends on these capabilities. The provision for explicit surface normals, for example, should) 108 408.31 P
+0.17 (allow the use of Raster3D to render general molecular surfaces. Starting with version 2.1 the utility program for) 108 396.31 P
+0.12 (composing space-\336lling models, formerly called) 108 384.31 P
+5 F
+0.11 (setup) 304.58 384.31 P
+4 F
+0.12 (, is renamed to) 326.43 384.31 P
+5 F
+0.11 ( balls) 385.64 384.31 P
+4 F
+0.12 (. This change is to avoid con\337ict with) 406.7 384.31 P
+0.26 (system utilities also called \322setup\323. If desired, backwards compatibility with existing scripts may be retained by) 108 372.31 P
+(creating an alias or symbolic link for the command) 108 360.31 T
+5 F
+(setup) 314.25 360.31 T
+4 F
+(.) 336.11 360.31 T
+0.33 (Raster3D is freely available. If you use the package to prepare \336gures for publication,) 108 342.31 P
 6 F
--0.18 (J. Appl. Cryst.) 486.07 612.31 P
+0.33 (please) 457.92 342.31 P
+4 F
+0.33 ( give proper credit) 483.46 342.31 P
+(to the authors: \050Bacon and Anderson, 1988; Merritt and Murphy) 108 330.31 T
+(, 1994\051.) 364.4 330.31 T
+3 F
+(EXAMPLES) 108 306.31 T
+4 F
+0.24 (Using only programs included in the Raster3D distribution one can create and render space-\336lling models, ball-) 108 288.31 P
+1.8 (and-stick models, ribbon models, and \336gures composed of any combination of these. The following set of) 108 276.31 P
+0.06 (commands would produce a composite \336gure of an Fe-containing metalloprotein with a smoothly shaded ribbon) 108 264.31 P
+(representation of the protein and spheres drawn for the Fe atoms:) 108 252.31 T
 7 F
--0.18 (24) 545.51 612.31 P
-4 F
--0.18 (,) 555.5 612.31 P
-(946-950].) 108 600.31 T
-0.33 (Raster3D is freely available. If you use the package to prepare \336gures for publication,) 108 582.31 P
-6 F
-0.33 (please) 457.92 582.31 P
-4 F
-0.33 ( give proper credit) 483.46 582.31 P
-(to the authors: \050Bacon and Anderson, 1988; Merritt and Murphy) 108 570.31 T
-(, 1994\051.) 364.4 570.31 T
-3 F
-(DESCRIPTION) 108 546.31 T
-4 F
-2.03 (Raster3D uses a fast Z-buf) 108 528.31 P
-2.03 (fer algorithm to produce high quality pixel images featuring two light sources,) 222.53 528.31 P
--0.09 (specular highlighting, Phong shaded surfaces, and shadowing. Output is in the form of a pixel image with 24 bits) 108 516.31 P
-(of color information per pixel.) 108 504.31 T
-2.18 (Raster3D does not depend on graphics hardware for operation. Four image output formats are supported:) 108 486.31 P
-2.73 (A) 108 474.31 P
-2.73 (VS, TIFF) 113.93 474.31 P
-2.73 (, SGI libimage, and a private format which is backwards-compatible with earlier versions of) 154.18 474.31 P
-0.38 (Raster3D. T) 108 462.31 P
-0.38 (o actually view or manipulate the images produced, you must also have installed an image viewing) 156.53 462.31 P
-(package \050e.g. John Cristy\325) 108 450.31 T
-(s ImageMagick or the SGI libimage utilities\051.) 212.09 450.31 T
-1.25 (Although the rendering program is not speci\336c to molecular graphics, Raster3D is not intended as a general) 108 432.31 P
-1.35 (purpose ray-tracing program. Ancillary programs are provided only for the generation of object descriptions) 108 420.31 P
-(based on atomic coordinates stored in Brookhaven PDB format.) 108 408.31 T
--0.02 (Raster3D V) 108 390.31 P
--0.02 (ersion 2.0 supports rendering of \336ve object types: spheres, triangles, planes, smooth-ended cylinders,) 154.34 390.31 P
-1.5 (and round-ended cylinders. In comparison to earlier versions it contains various bug-\336xes, additional object) 108 378.31 P
-0.37 (types, improved shadowing, and revised utility programs which are more tightly integrated with each other and) 108 366.31 P
-(with external programs such as Molscript.) 108 354.31 T
-3 F
-(EXAMPLES) 108 330.31 T
-4 F
-0.24 (Using only programs included in the Raster3D distribution one can create and render space-\336lling models, ball-) 108 312.31 P
-1.8 (and-stick models, ribbon models, and \336gures composed of any combination of these. The following set of) 108 300.31 P
-0.06 (commands would produce a composite \336gure of an Fe-containing metalloprotein with a smoothly shaded ribbon) 108 288.31 P
-(representation of the protein and spheres drawn for the Fe atoms:) 108 276.31 T
-8 F
-(#) 126 258.31 T
-(# Draw smooth ribbon with default color scheme 2,) 126 248.31 T
-(# save description \050with header records\051 in ribbon.r3d) 126 238.31 T
-(#) 126 228.31 T
-(cat protein.pdb | ribbon -d2 > ribbon.r3d) 126 218.31 T
-(#) 126 208.31 T
-(# Extract Fe atoms only, and draw as spheres.) 126 198.31 T
-(# Color info is taken from colorf) 126 188.31 T
-(ile.) 323.89 188.31 T
-(# Save description \050with no header records\051 in irons.r3d) 126 178.31 T
-(#) 126 168.31 T
-(grep \322FE\323 protein.pdb | cat colorf) 126 158.31 T
-(ile - | setup -h > irons.r3d) 329.89 158.31 T
-(#) 126 148.31 T
-(# combine the two descriptions and render as AVS image f) 126 138.31 T
-(ile) 461.82 138.31 T
-(#) 126 128.31 T
-(cat ribbon.r3d irons.r3d | render > picture.x) 126 118.31 T
+(#) 126 240.31 T
+(# Draw smooth ribbon with default color scheme 2,) 126 230.31 T
+(# save description \050with header records\051 in ribbon.r3d) 126 220.31 T
+(#) 126 210.31 T
+(cat protein.pdb | ribbon -d2 > ribbon.r3d) 126 200.31 T
+(#) 126 190.31 T
+(# Extract Fe atoms only, and draw as spheres.) 126 180.31 T
+(# Color info is taken from colorf) 126 170.31 T
+(ile.) 323.89 170.31 T
+(# Save description \050with no header records\051 in irons.r3d) 126 160.31 T
+(#) 126 150.31 T
+(grep \322FE\323 protein.pdb | cat colorf) 126 140.31 T
+(ile - | balls -h > irons.r3d) 329.89 140.31 T
+(#) 126 130.31 T
+(# combine the two descriptions and render as AVS image f) 126 120.31 T
+(ile) 461.82 120.31 T
+(#) 126 110.31 T
+(cat ribbon.r3d irons.r3d | render > picture.x) 126 100.31 T
 FMENDPAGE
 %%EndPage: "1" 2
 %%Page: "2" 2
@@ -1130,7 +1144,7 @@ V
 0 X
 (2) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
@@ -1142,93 +1156,98 @@ V
 0 (, to render any labels speci\336ed by the Molscript input. Integrated use of Molscript/Raster3D/) 134.07 701.33 P
 (ImageMagick allows one to describe, render) 54 689.33 T
 (, and view 3D representations of existing Molscript \336gures.) 231.23 689.33 T
-8 F
-(molscript -r inf) 72 671.33 T
-(ile.dat | render | display avs:-) 167.95 671.33 T
+7 F
+(molscript -r inf) 72 677.33 T
+(ile.dat | render | display avs:-) 167.95 677.33 T
 4 F
-0.52 (A similar example using) 54 655.33 P
+0.52 (A similar example using) 54 661.33 P
 5 F
-0.47 (xv) 156.58 655.33 P
+0.47 (xv) 156.58 661.33 P
 4 F
-0.52 ( as an image viewer) 165.69 655.33 P
-0.52 (, and assuming that TIFF support has been built into the render) 246.76 655.33 P
-(program:) 54 643.33 T
-8 F
-(molscript -r inf) 72 625.33 T
-(ile.dat | render -tiff image.tif) 167.95 625.33 T
-(xv image.tif) 72 615.33 T
+0.52 ( as an image viewer) 165.69 661.33 P
+0.52 (, and assuming that TIFF support has been built into the render) 246.76 661.33 P
+(program:) 54 649.33 T
+7 F
+(molscript -r inf) 72 637.33 T
+(ile.dat | render -tiff image.tif) 167.95 637.33 T
+(xv image.tif) 72 627.33 T
 4 F
-0.99 (The Raster3D distribution also includes a \336lter utility which will convert the 24-bit color output stream from) 54 599.33 P
+0.99 (The Raster3D distribution also includes a \336lter utility which will convert the 24-bit color output stream from) 54 611.33 P
 5 F
-(render) 54 587.33 T
+(render) 54 599.33 T
 4 F
-( into a dithered black & white PostScript image:) 79.51 587.33 T
-8 F
-(render < description.r3d | avs2ps > picture.ps) 72 569.33 T
+( into a dithered black & white PostScript image:) 79.51 599.33 T
+7 F
+(render < description.r3d | avs2ps > picture.ps) 72 587.33 T
 3 F
-(SUGGESTIONS FOR BETTER PICTURES) 54 537.33 T
+(SUGGESTIONS FOR BETTER PICTURES) 54 555.33 T
 3 11 Q
-0.04 (Shadowing:) 54 519.33 P
+0.04 (Shadowing:) 54 537.33 P
 4 10 Q
-0.04 (The primary purpose of shadowing is to convey a feeling of depth in the rendered image. This can) 110.87 519.33 P
-0.75 (be particularly effective when there are a relatively small number of elements in the scene, or when there is a) 54 507.33 P
-0.06 (grouping of foreground objects which cast shadows onto a separate grouping of background objects. However if) 54 495.33 P
-0.78 (there are a large number of elements in the scene, e.g. a ribbon and arrow representation of a large molecular) 54 483.33 P
--0.06 (assembly, the use of shadows may actually complicate the visual impact and make the image less satisfactory. In) 54 471.33 P
--0.04 (this case you may wish to try rendering the image both with and without shadows, or you might experiment with) 54 459.33 P
-1.29 (the location of the primary light source \050the SOURCE parameter in the 12th header record input to) 54 447.33 P
+0.04 (The primary purpose of shadowing is to convey a feeling of depth in the rendered image. This can) 110.87 537.33 P
+0.75 (be particularly effective when there are a relatively small number of elements in the scene, or when there is a) 54 525.33 P
+0.06 (grouping of foreground objects which cast shadows onto a separate grouping of background objects. However if) 54 513.33 P
+0.78 (there are a large number of elements in the scene, e.g. a ribbon and arrow representation of a large molecular) 54 501.33 P
+-0.06 (assembly, the use of shadows may actually complicate the visual impact and make the image less satisfactory. In) 54 489.33 P
+-0.04 (this case you may wish to try rendering the image both with and without shadows, or you might experiment with) 54 477.33 P
+1.29 (the location of the primary light source \050the SOURCE parameter in the 12th header record input to) 54 465.33 P
 5 F
-1.18 (render) 472.67 447.33 P
+1.18 (render) 472.67 465.33 P
 4 F
-1.29 (\051.) 498.17 447.33 P
-0.71 (Finally, you can de-emphasize the shadows by increasing the secondary \050straight-on\051 light source contribution) 54 435.33 P
-(parameter.) 54 423.33 T
+1.29 (\051.) 498.17 465.33 P
+0.71 (Finally, you can de-emphasize the shadows by increasing the secondary \050straight-on\051 light source contribution) 54 453.33 P
+(parameter.) 54 441.33 T
 3 11 Q
-1.44 (T) 54 405.33 P
-1.44 (ailoring your image to the output device:) 59.7 405.33 P
+1.44 (T) 54 423.33 P
+1.44 (ailoring your image to the output device:) 59.7 423.33 P
 4 10 Q
-1.31 ( The quality of pictures generated by Raster3D is ultimately) 252.67 405.33 P
-0.76 (limited by the output device. Although you will probably compose and preview your \336gures on a workstation) 54 393.33 P
-0.01 (screen, you will probably want to re-render the \336nal version with a lar) 54 381.33 P
-0.01 (ger number of pixels before sending it to a) 334.03 381.33 P
-0.59 (\336lm recorder or high performance color printer) 54 369.33 P
-0.59 (. For example, a typical \336lm recorder can produce slides with a) 245.18 369.33 P
-1.88 (resolution of roughly 4000x3000 pixels \050much lar) 54 357.33 P
-1.88 (ger than can be displayed on a workstation screen\051. The) 264.45 357.33 P
--0.16 (number of pixels in your rendered image is controlled by the parameters \050NTX,NTY\051 and \050NPX,NPY\051 in the 2nd) 54 345.33 P
-(and 3rd header records input to the) 54 333.33 T
+1.31 ( The quality of pictures generated by Raster3D is ultimately) 252.67 423.33 P
+0.76 (limited by the output device. Although you will probably compose and preview your \336gures on a workstation) 54 411.33 P
+0.01 (screen, you will probably want to re-render the \336nal version with a lar) 54 399.33 P
+0.01 (ger number of pixels before sending it to a) 334.03 399.33 P
+0.59 (\336lm recorder or high performance color printer) 54 387.33 P
+0.59 (. For example, a typical \336lm recorder can produce slides with a) 245.18 387.33 P
+1.88 (resolution of roughly 4000x3000 pixels \050much lar) 54 375.33 P
+1.88 (ger than can be displayed on a workstation screen\051. The) 264.45 375.33 P
+-0.16 (number of pixels in your rendered image is controlled by the parameters \050NTX,NTY\051 and \050NPX,NPY\051 in the 2nd) 54 363.33 P
+(and 3rd header records input to the) 54 351.33 T
 5 F
-(render) 195.83 333.33 T
+(render) 195.83 351.33 T
 4 F
-( program. Y) 221.34 333.33 T
-(ou should also be aware that color balance and particularly) 268.91 333.33 T
-2.11 (the appropriate \322gamma correction\323 varies from one device to another) 54 321.33 P
-2.11 (. Raster3D itself applies no gamma) 353.01 321.33 P
-0.5 (correction; if you need one you will have to apply it to the generated image \336les afterwards. This is a standard) 54 309.33 P
-0.35 (image processing procedure, and may be a selectable print option for your output device. If you will be using a) 54 297.33 P
-0.74 (particular output device regularly) 54 285.33 P
-0.74 (, it is worth an initial round of experimentation to determine the best gamma) 189.07 285.33 P
-0.19 (value for future runs. The appropriate gamma correction can then be applied to the each rendered picture before) 54 273.33 P
-(sending it for printing.) 54 261.33 T
+( program. Y) 221.34 351.33 T
+(ou should also be aware that color balance and particularly) 268.91 351.33 T
+2.11 (the appropriate \322gamma correction\323 varies from one device to another) 54 339.33 P
+2.11 (. Raster3D itself applies no gamma) 353.01 339.33 P
+0.5 (correction; if you need one you will have to apply it to the generated image \336les afterwards. This is a standard) 54 327.33 P
+0.35 (image processing procedure, and may be a selectable print option for your output device. If you will be using a) 54 315.33 P
+0.74 (particular output device regularly) 54 303.33 P
+0.74 (, it is worth an initial round of experimentation to determine the best gamma) 189.07 303.33 P
+0.19 (value for future runs. The appropriate gamma correction can then be applied to the each rendered picture before) 54 291.33 P
+(sending it for printing.) 54 279.33 T
 3 11 Q
-1.92 (Side-by-side \336gures and stereo pairs:) 54 243.33 P
+1.92 (Side-by-side \336gures and stereo pairs:) 54 261.33 P
 4 10 Q
-1.75 (The EYEPOS parameter input to the) 233.18 243.33 P
+1.75 (The EYEPOS parameter input to the) 233.18 261.33 P
 5 F
-1.6 (render) 392.48 243.33 P
+1.6 (render) 392.48 261.33 P
 4 F
-1.75 ( program specifies a) 417.98 243.33 P
-0.4 (viewing distance for the resulting image. You may think of this as equivalent to the distance between a camera) 54 231.33 P
-1.18 (and the object being photographed. Generally the sense of depth conveyed by the rendered image is slightly) 54 219.33 P
-0.78 (increased by positioning the virtual camera reasonably close to the object; the default recommended value for) 54 207.33 P
--0.22 (EYEPOS is 4, which means that distance from the camera to the center of the object is four times the width of the) 54 195.33 P
-0.29 (field of view. However, if you are composing a figure containing two or more similar objects which are next to) 54 183.33 P
--0.05 (each other, e.g. a comparison of two variants of the same protein structure, the resulting parallax may be more of) 54 171.33 P
-0.28 (a hindrance than a help. Since the virtual camera is centered it will \322see\323 the right hand object slightly from the) 54 159.33 P
-1.37 (left, and the left hand object slightly from the right. This results in different effective viewpoints for paired) 54 147.33 P
--0.12 (objects which would otherwise be identical. To overcome this effect you may wish to set EYEPOS to some large) 54 135.33 P
-2.37 (value, which will generate an image with effectively no parallax. The same considerations apply for the) 54 123.33 P
-(production of stereo pairs.) 54 111.33 T
+1.75 ( program specifies a) 417.98 261.33 P
+0.4 (viewing distance for the resulting image. You may think of this as equivalent to the distance between a camera) 54 249.33 P
+1.18 (and the object being photographed. Generally the sense of depth conveyed by the rendered image is slightly) 54 237.33 P
+0.78 (increased by positioning the virtual camera reasonably close to the object; the default recommended value for) 54 225.33 P
+-0.22 (EYEPOS is 4, which means that distance from the camera to the center of the object is four times the width of the) 54 213.33 P
+0.29 (field of view. However, if you are composing a figure containing two or more similar objects which are next to) 54 201.33 P
+-0.05 (each other, e.g. a comparison of two variants of the same protein structure, the resulting parallax may be more of) 54 189.33 P
+0.28 (a hindrance than a help. Since the virtual camera is centered it will \322see\323 the right hand object slightly from the) 54 177.33 P
+1.37 (left, and the left hand object slightly from the right. This results in different effective viewpoints for paired) 54 165.33 P
+-0.12 (objects which would otherwise be identical. To overcome this effect you may wish to set EYEPOS to some large) 54 153.33 P
+2.37 (value, which will generate an image with effectively no parallax. The same considerations apply for the) 54 141.33 P
+(production of stereo pairs.) 54 129.33 T
+3 11 Q
+0.47 (Stereo pairs and Molscript:) 54 111.33 P
+4 10 Q
+0.42 (Unfortunately Molscript does not pass any information about area, page layout,) 182.21 111.33 P
+0.88 (or even aspect ratio, on to the Raster3D input file. This means that all objects emitted by a Molscript run are) 54 99.33 P
 FMENDPAGE
 %%EndPage: "2" 3
 %%Page: "3" 3
@@ -1248,7 +1267,7 @@ V
 0 X
 (Raster3D) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -1260,138 +1279,148 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (3) 552 59.9 T
 108 87.98 558 720 R
 7 X
 V
-3 11 Q
-0 X
-0.47 (Stereo pairs and Molscript:) 108 713.33 P
 4 10 Q
-0.42 (Unfortunately Molscript does not pass any information about area, page layout,) 236.21 713.33 P
-0.88 (or even aspect ratio, on to the Raster3D input file. This means that all objects emitted by a Molscript run are) 108 701.33 P
-1.96 (simply placed into a single raster grid description. I.e., the pairs of \322plot\323 and \322end plot\323 statements in a) 108 689.33 P
--0.03 (Molscript input file have no effect in Raster3D mode. Note that the header records controlling this grid are taken) 108 677.33 P
-1.1 (from file) 108 665.33 P
+0 X
+1.96 (simply placed into a single raster grid description. I.e., the pairs of \322plot\323 and \322end plot\323 statements in a) 108 713.33 P
+-0.03 (Molscript input file have no effect in Raster3D mode. Note that the header records controlling this grid are taken) 108 701.33 P
+1.1 (from file) 108 689.33 P
 6 F
-1.1 (header.r3d) 147.94 665.33 P
+1.1 (header.r3d) 147.94 689.33 P
 4 F
-1.1 ( if it exists, otherwise there is an internal set of header records which Molscript uses by) 192.08 665.33 P
-0.94 (default. Therefore a Molscript file which describes a stereo pair as two separate plots will not work correctly) 108 653.33 P
-0.08 (when fed through to) 108 641.33 P
+1.1 ( if it exists, otherwise there is an internal set of header records which Molscript uses by) 192.08 689.33 P
+0.94 (default. Therefore a Molscript file which describes a stereo pair as two separate plots will not work correctly) 108 677.33 P
+0.08 (when fed through to) 108 665.33 P
 5 F
-0.07 (render) 191.59 641.33 P
+0.07 (render) 191.59 665.33 P
 4 F
-0.08 (. To produce a Raster3D stereo pair starting from a Molscript file you have a number) 217.09 641.33 P
-(of options:) 108 629.33 T
-(\245) 108 611.33 T
-(Describe the pair within a single Molscript plot rather than as two separate plots.) 114 611.33 T
--0.15 (\245 Use two Molscript plots, but split them into separate runs. Y) 108 593.33 P
--0.15 (ou can then generate two separate Raster3D images) 352.85 593.33 P
-(which may be pasted side-by-side either electronically \050see below\051 or physically) 108 581.33 T
-(.) 428.21 581.33 T
--0.08 (\245 W) 108 563.33 P
--0.08 (ork from a single Molscript image and generate the stereo pair by manipulating the header records for) 122.55 563.33 P
+0.08 (. To produce a Raster3D stereo pair starting from a Molscript file you have a number) 217.09 665.33 P
+(of options:) 108 653.33 T
+(\245) 121.54 638.33 T
+(Describe the pair within a single Molscript plot rather than as two separate plots.) 135 638.33 T
+(\245) 121.54 623.33 T
+(Use two Molscript plots, but split them into separate runs. Y) 135 623.33 T
+(ou can then generate two separate Raster3D) 375.53 623.33 T
+(images which may be pasted side-by-side either electronically \050see below\051 or physically) 135 611.33 T
+(.) 486.03 611.33 T
+(\245) 121.54 596.33 T
+(W) 135 596.33 T
+(ork from a single Molscript image and generate the stereo pair by manipulating the header records for) 143.63 596.33 T
 5 F
--0.08 (render) 530.54 563.33 P
+(render) 135 584.33 T
 4 F
--0.08 (.) 555.5 563.33 P
-(This is what I normally do. The steps of the process are:) 108 551.33 T
-(1\051) 121.54 533.33 T
-(Run Molscript to generate an input \336le for render) 135 533.33 T
-(. Molscript transforms all coordinates so that the view) 331.53 533.33 T
-(matrix is an identity matrix with scale 1.0) 135 521.33 T
-(2\051) 121.54 506.33 T
-(Run this input \336le through) 135 506.33 T
+(. This is what I normally do. The steps of the process are:) 159.96 584.33 T
+(1\051) 135 569.33 T
+-0.25 (Run Molscript to generate an input \336le for render) 147.6 569.33 P
+-0.25 (. Molscript transforms all coordinates so that the view) 342.1 569.33 P
+(matrix is an identity matrix with scale 1.0) 147.6 557.33 T
+(2\051) 135 542.33 T
+(Run this input \336le through) 147.6 542.33 T
 5 F
-(render) 243.01 506.33 T
+(render) 255.61 542.33 T
 4 F
-(. Y) 267.97 506.33 T
-(ou now have the right half of a stereo pair) 279.18 506.33 T
-(.) 446 506.33 T
-(3\051) 121.54 491.33 T
-(Edit the header records so that the view matrix described by TMA) 135 491.33 T
-(T \050see) 398.42 491.33 T
+(. Y) 280.57 542.33 T
+(ou now have the right half of a stereo pair) 291.78 542.33 T
+(.) 458.6 542.33 T
+(3\051) 135 527.33 T
+(Edit the header records so that the view matrix described by TMA) 147.6 527.33 T
+(T \050see) 411.02 527.33 T
 5 F
-(render) 425.61 491.33 T
+(render) 438.21 527.33 T
 4 F
-( documentation\051 is now:) 451.12 491.33 T
-8 F
-(1) 180 479.33 T
-(0) 203.99 479.33 T
-(0) 227.97 479.33 T
-(0) 251.96 479.33 T
-(0) 180 469.33 T
-(1) 203.99 469.33 T
-(0) 227.97 469.33 T
-(0) 251.96 469.33 T
-(.05) 180 459.33 T
-(0) 203.99 459.33 T
-(1) 227.97 459.33 T
-(1) 251.96 459.33 T
-(0.) 180 449.33 T
-(0.) 203.99 449.33 T
-(0.) 227.97 449.33 T
-(1.0) 251.96 449.33 T
+( documentation\051 is the) 463.72 527.33 T
+(one given below) 147.6 515.33 T
+(. This matrix describes a shear operation, which is more correct than a pure rotation) 213.01 515.33 T
+(matrix for the purpose of generating stereo images.) 147.6 503.33 T
+7 F
+(1) 180 491.33 T
+(0) 203.99 491.33 T
+(0) 227.97 491.33 T
+(0) 251.96 491.33 T
+(0) 180 481.33 T
+(1) 203.99 481.33 T
+(0) 227.97 481.33 T
+(0) 251.96 481.33 T
+(.05) 180 471.33 T
+(0) 203.99 471.33 T
+(1) 227.97 471.33 T
+(1) 251.96 471.33 T
+(0.) 180 461.33 T
+(0.) 203.99 461.33 T
+(0.) 227.97 461.33 T
+(1.0) 251.96 461.33 T
 4 F
--0.02 (This matrix describes a shear operation, which is more correct than a pure rotation matrix for the purpose) 135 436.33 P
-(of generating stereo images.) 135 424.33 T
-(4\051) 121.54 409.33 T
-(Run the edited input \336le through) 135 409.33 T
+(4\051) 135 448.33 T
+(Run the edited input \336le through) 147.6 448.33 T
 5 F
-(render) 267.71 409.33 T
+(render) 280.31 448.33 T
 4 F
-(. Y) 292.66 409.33 T
-(ou now have the left half of a stereo pair) 303.88 409.33 T
-(.) 465.14 409.33 T
-(5\051) 121.54 394.33 T
--0.11 (Y) 135 394.33 P
--0.11 (ou can either print the two images separately and mount them side by side, or mer) 141.22 394.33 P
--0.11 (ge them electronically) 467 394.33 P
--0.18 (before printing. I use the) 135 382.33 P
+(. Y) 305.26 448.33 T
+(ou now have the left half of a stereo pair) 316.48 448.33 T
+(.) 477.74 448.33 T
+(5\051) 135 433.33 T
+(Y) 147.6 433.33 T
+(ou can either print the two images separately and mount them side by side, or mer) 153.82 433.33 T
+(ge them) 481.19 433.33 T
+(electronically before printing. I use the) 147.6 421.33 T
 5 F
--0.17 (montage) 235.13 382.33 P
+(montage) 305.53 421.33 T
 4 F
--0.18 ( command of ImageMagick to combine the separate raster images into a) 269.28 382.33 P
-(single double-width image containing the stereo pair) 135 370.33 T
-(. Here is an ImageMagick command which will) 344.86 370.33 T
-(combine a left and a right image, each 500x500 pixels, into a single stereo pair:) 135 358.33 T
-8 F
-(montage -geometry 500x500+0+0! -borderwidth 0 +frame -label \322\322 \134) 126 336.33 T
-(left.tiff right.tiff stereo.tiff) 173.97 326.33 T
+( command of ImageMagick to combine the separate) 339.68 421.33 T
+(raster images into a single double-width image containing the stereo pair) 147.6 409.33 T
+(. Here is an ImageMagick) 437.96 409.33 T
+(command which will combine a left and a right image, each 500x500 pixels, into a single stereo pair:) 147.6 397.33 T
+7 F
+(montage -geometry 500x500+0+0! -borderwidth 0 +frame -label \322\322 \134) 126 375.33 T
+(left.tiff right.tiff stereo.tiff) 173.97 365.33 T
 4 F
-(6\051) 121.54 303.33 T
-(If you compose separate header \336les in advance, one in which the TMA) 135 303.33 T
-(T records describe the identity) 421.16 303.33 T
-(matrix and another in which TMA) 135 291.33 T
-(T describes the shear matrix, then this procedure can be automated.) 271.3 291.33 T
-0 (Note that creating an empty \336le) 135 279.33 P
+(6\051) 135 342.33 T
+(If you compose separate header \336les in advance, one in which the TMA) 147.6 342.33 T
+(T records describe the identity) 433.76 342.33 T
+(matrix and another in which TMA) 147.6 330.33 T
+(T describes the shear matrix, then this procedure can be automated.) 283.89 330.33 T
+(Note that creating an empty \336le) 147.6 318.33 T
 6 F
-0 (header) 263.78 279.33 P
-0 (..r3d) 290.43 279.33 P
+(header) 276.4 318.33 T
+(..r3d) 303.05 318.33 T
 4 F
-0 ( will cause Molscript to produce an output \336le with no header) 309.31 279.33 P
-(records. Here is a sample shell script:) 135 267.33 T
-8 F
-(#) 126 255.33 T
-(# Make sure header f) 126 245.33 T
-(ile is empty) 245.93 245.33 T
-(#) 126 235.33 T
-(rm header.r3d) 126 225.33 T
-(touch header.r3d) 126 215.33 T
-(#) 126 205.33 T
-(# render image twice, once with header for right, once for left) 126 195.33 T
-(#) 126 185.33 T
-(molscript -r < image.mol > image.r3d) 126 175.33 T
-(cat right_header.r3d image.r3d | render -tiff right.tiff) 126 165.33 T
-(cat left_header.r3d) 126 155.33 T
-(image.r3d | render -tiff left.tiff) 251.93 155.33 T
-(#) 126 145.33 T
-(# combine left and right images into single stereo pair) 126 135.33 T
-(#) 126 125.33 T
-(montage [...options...] left.tiff right.tiff stereo.tiff) 126 115.33 T
+( will cause Molscript to produce an output \336le with no) 321.92 318.33 T
+(header records. Here is a sample shell script:) 147.6 306.33 T
+7 F
+(#) 126 294.33 T
+(# Make sure header f) 126 284.33 T
+(ile is empty) 245.93 284.33 T
+(#) 126 274.33 T
+(rm header.r3d) 126 264.33 T
+(touch header.r3d) 126 254.33 T
+(#) 126 244.33 T
+(# render image twice, once with header for right, once for left) 126 234.33 T
+(#) 126 224.33 T
+(molscript -r < image.mol > image.r3d) 126 214.33 T
+(cat right_header.r3d image.r3d | render -tiff right.tiff) 126 204.33 T
+(cat left_header.r3d) 126 194.33 T
+(image.r3d | render -tiff left.tiff) 251.93 194.33 T
+(#) 126 184.33 T
+(# combine left and right images into single stereo pair) 126 174.33 T
+(#) 126 164.33 T
+(montage [...options...] left.tiff right.tiff stereo.tiff) 126 154.33 T
+3 11 Q
+2.69 (Creating your own colour descriptions:) 108 128.33 P
+4 10 Q
+2.44 (The Raster3D distribution contains a number of pre-defined) 301.33 128.33 P
+0.12 (colouring schemes \050e.g. the shapely.colours file, cpk.colours, and mycolors.pdb\051. If you choose to modify these,) 108 116.33 P
+0.43 (or create your own,) 108 104.33 P
+0.43 (then you should be aware that) 189.92 104.33 P
+5 F
+0.39 (render) 314.62 104.33 P
+4 F
+0.43 ( works internally with the square root of the specified) 340.13 104.33 P
+0.77 (colour values \050yes it\325s a very strange concept!\051. To convert a normal RGB colour triple into a Raster3D color) 108 92.33 P
 FMENDPAGE
 %%EndPage: "3" 4
 %%Page: "4" 4
@@ -1425,128 +1454,124 @@ V
 0 X
 (4) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
-3 11 Q
+4 F
 0 X
-2.69 (Creating your own colour descriptions:) 54 713.33 P
-4 10 Q
-2.44 (The Raster3D distribution contains a number of pre-defined) 247.33 713.33 P
-0.12 (colouring schemes \050e.g. the shapely.colours file, cpk.colours, and mycolors.pdb\051. If you choose to modify these,) 54 701.33 P
-0.43 (or create your own,) 54 689.33 P
-0.43 (then you should be aware that) 135.92 689.33 P
+0.23 (specification it is therefore necessary to square each component. For example, to specify a half-intensity yellow) 54 713.33 P
+1.96 (you would square the components of the pure RGB triplet \0500.5, 0.5, 0.0\051 to yield \0500.25, 0.25, 0.0\051 in the) 54 701.33 P
+3.78 (COLOUR record input to) 54 689.33 P
 5 F
-0.39 (render) 260.62 689.33 P
+3.45 (render) 174.06 689.33 P
 4 F
-0.43 ( works internally with the square root of the specified) 286.13 689.33 P
-0.77 (colour values \050yes it\325s a very strange concept!\051. To convert a normal RGB colour triple into a Raster3D color) 54 677.33 P
-0.23 (specification it is therefore necessary to square each component. For example, to specify a half-intensity yellow) 54 665.33 P
-1.96 (you would square the components of the pure RGB triplet \0500.5, 0.5, 0.0\051 to yield \0500.25, 0.25, 0.0\051 in the) 54 653.33 P
-3.78 (COLOUR record input to) 54 641.33 P
-5 F
-3.45 (render) 174.06 641.33 P
-4 F
-3.78 (. The Raster3D output option to Molscript performs this conversion) 199.57 641.33 P
-2.17 (automatically, so you should not have to alter the colour specifications to switch between PostScript and) 54 629.33 P
-(Raster3D modes.) 54 617.33 T
+3.78 (. The Raster3D output option to Molscript performs this conversion) 199.57 689.33 P
+2.17 (automatically, so you should not have to alter the colour specifications to switch between PostScript and) 54 677.33 P
+(Raster3D modes.) 54 665.33 T
 3 11 Q
-2.09 (Composing \336gures in other programs:) 54 599.33 P
+2.09 (Composing \336gures in other programs:) 54 647.33 P
 4 10 Q
-1.9 ( Suppose you are already working in some interactive graphics) 235.72 599.33 P
--0.2 (program, FRODO for instance, and wish to reproduce the current viewpoint/orientation for a Raster3D picture.) 54 587.33 P
--0.2 (If) 497.34 587.33 P
-1.01 (the program will dump the current view matrix then you will probably be able to use it as a view matrix for) 54 575.33 P
-2.42 (Raster3D also. However many programs \050including FRODO and Molscript\051 dump a matrix which is the) 54 563.33 P
-0.22 (transpose of the matrix used by Raster3D. In this case you need only transpose the 3x3 matrix \050swap the entries) 54 551.33 P
-0.17 (about the diagonal from upper left to lower right\051 before copying it either in the file) 54 539.33 P
+1.9 ( Suppose you are already working in some interactive graphics) 235.72 647.33 P
+-0.2 (program, FRODO for instance, and wish to reproduce the current viewpoint/orientation for a Raster3D picture.) 54 635.33 P
+-0.2 (If) 497.34 635.33 P
+1.01 (the program will dump the current view matrix then you will probably be able to use it as a view matrix for) 54 623.33 P
+2.42 (Raster3D also. However many programs \050including FRODO and Molscript\051 dump a matrix which is the) 54 611.33 P
+0.22 (transpose of the matrix used by Raster3D. In this case you need only transpose the 3x3 matrix \050swap the entries) 54 599.33 P
+0.17 (about the diagonal from upper left to lower right\051 before copying it either in the file) 54 587.33 P
 6 F
-0.17 (setup.matrix) 393.12 539.33 P
+0.17 (setup.matrix) 393.12 587.33 P
 4 F
-0.17 ( \050for use by the) 442.82 539.33 P
+0.17 ( \050for use by the) 442.82 587.33 P
 5 F
-1.44 (setup) 54 527.33 P
+1.61 (balls) 54 575.33 P
 4 F
-1.58 (,) 75.86 527.33 P
+1.76 (,) 72.68 575.33 P
 5 F
-1.44 (rods) 82.43 527.33 P
+1.61 (rods) 79.44 575.33 P
 4 F
-1.58 (, and) 100.19 527.33 P
+1.76 (, and) 97.2 575.33 P
 5 F
-1.44 (ribbon) 125.28 527.33 P
+1.61 (ribbon) 122.66 575.33 P
 4 F
-1.58 ( utilities\051 or directly into the header records input to) 150.77 527.33 P
+1.76 ( utilities\051 or directly into the header records input to) 148.16 575.33 P
 5 F
-1.44 (render) 375.86 527.33 P
+1.61 (render) 375.11 575.33 P
 4 F
-1.58 (. Users of Alwyn Jones\325) 401.37 527.33 P
--0.23 (program O should obtain a copy of the program) 54 515.33 P
+1.76 (. Users of Alwyn Jones\325) 400.62 575.33 P
+-0.23 (program O should obtain a copy of the program) 54 563.33 P
 5 F
--0.22 (o2mol) 245.36 515.33 P
+-0.22 (o2mol) 245.36 563.33 P
 4 F
--0.23 ( from the O ftp site. Once you have composed your view in) 269.49 515.33 P
-3.04 (O you can convert to a Molscript/Raster3D viewpoint description by dumping the O datablock named) 54 503.33 P
-(.GS_REAL) 54 491.33 T
-8 F
-(O> write_form .gs_real omatrix.dat) 72 473.33 T
-(Heap> Format: <cr>) 72 463.33 T
+-0.23 ( from the O ftp site. Once you have composed your view in) 269.49 563.33 P
+3.04 (O you can convert to a Molscript/Raster3D viewpoint description by dumping the O datablock named) 54 551.33 P
+(.GS_REAL) 54 539.33 T
+7 F
+(O> write_form .gs_real omatrix.dat) 72 527.33 T
+(Heap> Format: <cr>) 72 517.33 T
 4 F
-(followed by a shell command) 54 447.33 T
-8 F
-(o2mol < omatrix.dat > o2mol.out) 72 429.33 T
+(followed by a shell command) 54 501.33 T
+7 F
+(o2mol < omatrix.dat > o2mol.out) 72 489.33 T
 4 F
-0.94 (The \336le o2mol.out will now contain instructions for reproducing the O viewpoint in Molscript. Also, the 3x3) 54 413.33 P
-1.08 (matrix which) 54 401.33 P
+0.94 (The \336le o2mol.out will now contain instructions for reproducing the O viewpoint in Molscript. Also, the 3x3) 54 473.33 P
+1.08 (matrix which) 54 461.33 P
 5 F
-0.99 (o2mol) 111.69 401.33 P
+0.99 (o2mol) 111.69 461.33 P
 4 F
-1.08 ( gives as \322for coordinate transforms\323 is in the correct form to use directly as a Raster3D) 135.82 401.33 P
-(matrix if you aren\325) 54 389.33 T
-(t processing with Molscript \336rst.) 129.04 389.33 T
+1.08 ( gives as \322for coordinate transforms\323 is in the correct form to use directly as a Raster3D) 135.82 461.33 P
+(matrix if you aren\325) 54 449.33 T
+(t processing with Molscript \336rst.) 129.04 449.33 T
 3 11 Q
-1.82 (Black & White \336gures:) 54 371.33 P
+1.82 (Black & White \336gures:) 54 431.33 P
 4 10 Q
-1.65 ( It is possible to use a general image processing program \050e.g. ImageMagick\051 to) 164.14 371.33 P
-0.34 (convert a color figure to a monochrome figure. In general a straight conversion will produce an image which is) 54 359.33 P
-0.98 (much too dark. In order to improve the result you can try breaking the conversion up into several steps: first) 54 347.33 P
--0.09 (convert from full 24-bit color to a smaller number of colors \050say 256\051, next apply a substantial gamma correction) 54 335.33 P
-0.02 (\050e.g. gamma) 54 323.33 P
-0.02 (\263) 106.2 323.33 P
-0.02 (2.0\051 to lighten the image, and finally convert the color image to monochrome being sure to select a) 108.7 323.33 P
-0.37 (dithering option if it is available. Some experimentation with this process can produce acceptable, although not) 54 311.33 P
-0.92 (ideal, monochrome images suitable for printing on a standard laser printer. You may have to repeat the color) 54 299.33 P
-0.52 (reduction and gamma correction steps before finally converting to monochrome. Better results can be obtained) 54 287.33 P
-0.19 (by using the auxiliary program) 54 275.33 P
+1.65 ( It is possible to use a general image processing program \050e.g. ImageMagick\051 to) 164.14 431.33 P
+0.34 (convert a color figure to a monochrome figure. In general a straight conversion will produce an image which is) 54 419.33 P
+0.98 (much too dark. In order to improve the result you can try breaking the conversion up into several steps: first) 54 407.33 P
+-0.09 (convert from full 24-bit color to a smaller number of colors \050say 256\051, next apply a substantial gamma correction) 54 395.33 P
+0.02 (\050e.g. gamma) 54 383.33 P
+0.02 (\263) 106.2 383.33 P
+0.02 (2.0\051 to lighten the image, and finally convert the color image to monochrome being sure to select a) 108.7 383.33 P
+0.37 (dithering option if it is available. Some experimentation with this process can produce acceptable, although not) 54 371.33 P
+0.92 (ideal, monochrome images suitable for printing on a standard laser printer. You may have to repeat the color) 54 359.33 P
+0.52 (reduction and gamma correction steps before finally converting to monochrome. Better results can be obtained) 54 347.33 P
+0.19 (by using the auxiliary program) 54 335.33 P
 5 F
-0.18 (avs2ps) 180.72 275.33 P
+0.18 (avs2ps) 180.72 335.33 P
 4 F
-0.19 ( as a filter. This utility will convert any AVS-format image, including the) 208.52 275.33 P
--0.01 (default output stream from) 54 263.33 P
+0.19 ( as a filter. This utility will convert any AVS-format image, including the) 208.52 335.33 P
+-0.01 (default output stream from) 54 323.33 P
 5 F
--0.01 (render) 163.32 263.33 P
+-0.01 (render) 163.32 323.33 P
 4 F
--0.01 (, directly into a dithered black & white PostScript image. As of this writing the) 188.82 263.33 P
+-0.01 (, directly into a dithered black & white PostScript image. As of this writing the) 188.82 323.33 P
 5 F
-(avs2ps) 54 251.33 T
+(avs2ps) 54 311.33 T
 4 F
-( program is included with the Raster3D distribution.) 81.79 251.33 T
+( program is included with the Raster3D distribution.) 81.79 311.33 T
 3 F
-(SOURCE) 54 209.33 T
+(SOURCE) 54 281.33 T
+6 F
+(anonymous ftp site:) 54 265.33 T
 4 F
-(anonymous ftp site:) 126 191.33 T
-(stanzi.bchem.washington.edu \050128.95.12.38\051) 252 191.33 T
-(via WWW) 126 173.33 T
-(:) 168.65 173.33 T
-(ftp://stanzi.bchem.washington.edu/pub/raster3d/raster3d.html) 252 173.33 T
-(contact:) 126 155.33 T
-(Ethan A Merritt) 252 155.33 T
-(Dept of Biological Structure SM-20) 252 143.33 T
-(University of W) 252 131.33 T
-(ashington,) 316.15 131.33 T
-(Seattle W) 252 119.33 T
-(A 98195) 290.03 119.33 T
-(merritt@u.washington.edu) 252 107.33 T
+(ftp.bmsc.washington.edu) 72 251.33 T
+6 F
+(via WWW) 54 233.33 T
+(:) 93.04 233.33 T
+4 F
+(ftp://ftp.bmsc.washington.edu/pub/raster3d/raster3d.html) 72 219.33 T
+(http://www) 72 205.33 T
+(.bmsc.washington.edu/raster3d/raster3d.html) 116.89 205.33 T
+6 F
+(contact:) 54 187.33 T
+4 F
+(Ethan A Merritt) 72 173.33 T
+(Dept of Biological Structure SM-20) 72 159.33 T
+(University of W) 72 145.33 T
+(ashington,) 136.15 145.33 T
+(Seattle W) 72 131.33 T
+(A 98195-7420) 110.03 131.33 T
+(merritt@u.washington.edu) 72 117.33 T
 FMENDPAGE
 %%EndPage: "4" 5
 %%Page: "5" 5
@@ -1566,7 +1591,7 @@ V
 0 X
 (Raster3D) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -1578,7 +1603,7 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (5) 552 59.9 T
 108 87.98 558 720 R
@@ -1653,21 +1678,31 @@ V
 6 F
 1.8 (J. Molec.) 519.29 395.33 P
 (Graphics) 108 383.33 T
-7 F
+8 F
 (6) 147.7 383.33 T
 4 F
 (, 219-220.) 152.7 383.33 T
-2.33 (Merritt, E.A. & Murphy) 108 365.33 P
-2.33 (, M.E.P) 210.94 365.33 P
-2.33 (. \0501994\051 \322Raster3D V) 242.71 365.33 P
-2.33 (ersion 2.0 - A Program for Photorealistic Molecular) 334.62 365.33 P
-(Graphics\323.) 108 353.33 T
+0.28 (Kraulis, P) 108 365.33 P
+0.28 (. \0501991\051 \322MOLSCRIPT) 147.14 365.33 P
+0.28 (: a program to produce both detailed and schematic plots of proteins\323.) 241.86 365.33 P
 6 F
-(Acta Cryst.) 153.51 353.33 T
-7 F
-(D50) 200.99 353.33 T
+0.28 (J. Appl.) 526.91 365.33 P
+(Cryst.) 108 353.33 T
+8 F
+(24) 134.65 353.33 T
 4 F
-(, 869-873.) 218.2 353.33 T
+(, 946-950.) 144.65 353.33 T
+2.33 (Merritt, E.A. & Murphy) 108 335.33 P
+2.33 (, M.E.P) 210.94 335.33 P
+2.33 (. \0501994\051 \322Raster3D V) 242.71 335.33 P
+2.33 (ersion 2.0 - A Program for Photorealistic Molecular) 334.62 335.33 P
+(Graphics\323.) 108 323.33 T
+6 F
+(Acta Cryst.) 153.51 323.33 T
+8 F
+(D50) 200.99 323.33 T
+4 F
+(, 869-873.) 218.2 323.33 T
 FMENDPAGE
 %%EndPage: "5" 6
 %%Page: "6" 6
@@ -1701,7 +1736,7 @@ V
 0 X
 (6) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
@@ -1725,7 +1760,7 @@ V
 (A) 108 759.67 T
 (VS2PS) 112.9 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -1737,7 +1772,7 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (7) 552 59.9 T
 108 87.98 558 720 R
@@ -1757,92 +1792,89 @@ N
 (A) 108 708 T
 (VS2PS) 118.67 708 T
 3 10 Q
-(NAME) 108 678.31 T
+(SYNOPSIS) 108 678.31 T
 5 F
-(avs2ps) 110.5 660.31 T
+(avs2ps) 108 660.31 T
 4 F
-( - convert A) 138.29 660.31 T
-(VS image input on) 185.02 660.31 T
+( converts an A) 135.79 660.31 T
+(VS image input on) 192.51 660.31 T
 6 F
-(stdin) 262.76 660.31 T
+(stdin) 270.25 660.31 T
 4 F
-( to monochrome PostScript on) 282.19 660.31 T
+( to monochrome PostScript on) 289.69 660.31 T
 6 F
-(stdout) 406.3 660.31 T
+(stdout) 413.79 660.31 T
+7 F
+(avs2ps [-b] [-dpi xxx] < inf) 126 648.31 T
+(ile.avs > outf) 293.91 648.31 T
+(ile.ps) 377.86 648.31 T
+5 F
+0.31 (avs2ps) 108 632.31 P
+4 F
+0.34 ( converts a 24-bit color image \336le in A) 135.79 632.31 P
+0.34 (VS format into a dithered monochrome PostScript image with the) 292.08 632.31 P
+0.63 (same number of pixels as the input \336le.) 108 620.31 P
+5 F
+0.58 (avs2ps) 272.68 620.31 P
+4 F
+0.63 ( may be used as a \336lter for the output of the) 300.47 620.31 P
+5 F
+0.58 (render) 484.6 620.31 P
+4 F
+0.63 ( program to) 510.1 620.31 P
+0.27 (produce a PostScript \336le directly) 108 608.31 P
+0.27 (. The code is machine independent, and does not impose restrictions on the tile) 239.45 608.31 P
+(size in the original image. It supersedes less general programs in the viewtools package.) 108 596.31 T
+5 F
+1.44 (avs2ps) 108 578.31 P
+4 F
+1.58 ( converts the input stream to a greyscale image and then applies an empirical algorithm for contrast) 135.79 578.31 P
+1.03 (enhancement, dithering, and error dif) 108 566.31 P
+1.03 (fusion to produce a monochrome output image. The basic approach is a) 260.72 566.31 P
+(variant of Floyd-Steinber) 108 554.31 T
+(g error dif) 208.87 554.31 T
+(fusion.) 249.2 554.31 T
 3 F
-(SYNOPSIS) 108 636.31 T
-8 F
-(avs2ps [-b] [-dpi xxx] < inf) 126 618.31 T
-(ile.avs > outf) 293.91 618.31 T
-(ile.ps) 377.86 618.31 T
-5 F
-0.31 (avs2ps) 108 602.31 P
+(EXAMPLES) 108 530.31 T
 4 F
-0.34 ( converts a 24-bit color image \336le in A) 135.79 602.31 P
-0.34 (VS format into a dithered monochrome PostScript image with the) 292.08 602.31 P
-0.63 (same number of pixels as the input \336le.) 108 590.31 P
-5 F
-0.58 (avs2ps) 272.68 590.31 P
+(Produce an unbordered black & white image suitable for printing on a 300 dpi PostScript printer:) 108 512.31 T
+7 F
+( render < description.r3d | avs2ps > image.ps) 126 500.31 T
 4 F
-0.63 ( may be used as a \336lter for the output of the) 300.47 590.31 P
-5 F
-0.58 (render) 484.6 590.31 P
-4 F
-0.63 ( program to) 510.1 590.31 P
-0.27 (produce a PostScript \336le directly) 108 578.31 P
-0.27 (. The code is machine independent, and does not impose restrictions on the tile) 239.45 578.31 P
-(size in the original image. It supersedes less general programs in the viewtools package.) 108 566.31 T
-3 F
-(EXAMPLES) 108 542.31 T
-4 F
-(Produce an unbordered black & white image suitable for printing on a 300 dpi PostScript printer:) 108 524.31 T
-8 F
-( render < description.r3d | avs2ps > image.ps) 126 506.31 T
-4 F
-(Add a border) 108 490.31 T
-(, and prepare image for a 400 dpi printer:) 160.33 490.31 T
-8 F
+(Add a border) 108 484.31 T
+(, and prepare image for a 400 dpi printer:) 160.33 484.31 T
+7 F
 ( render < description.r3d | avs2ps -b -dpi 400 > image.ps) 126 472.31 T
 3 F
-(OPTIONS) 108 450.31 T
+(OPTIONS) 108 462.31 T
 6 F
-(-b) 108 432.31 T
+(-b) 108 446.31 T
 4 F
-0.09 (Draw a border around the \336gure. By default) 108 414.31 P
+-0.32 (Draw a border around the \336gure. By default) 126 432.31 P
 5 F
-0.08 (avs2ps) 286.62 414.31 P
+-0.29 (avs2ps) 301.39 432.31 P
 4 F
-0.09 ( will produce a borderless image 0.5 inch in from the bottom) 314.41 414.31 P
-(left of the page.) 108 402.31 T
+-0.32 ( will produce a borderless image 0.5 inch in from the) 329.18 432.31 P
+(bottom left of the page.) 126 420.31 T
 6 F
-(-dpi xxx) 108 384.31 T
+(-dpi xxx) 108 402.31 T
 4 F
-0.85 (By default) 108 366.31 P
+(By default) 126 388.31 T
 5 F
-0.77 (avs2ps) 154.11 366.31 P
+(avs2ps) 170.42 388.31 T
 4 F
-0.85 ( writes header records into the PostScript output \336le which are correct for a 300 dpi printer) 181.91 366.31 P
-0.81 (\050e.g. an HP Laserjet IIIsi\051. If there is a mis-match between the header records and the actual resolution of the) 108 354.31 P
--0.2 (printer the image quality is substantially degraded. This option allows one to specify a dif) 108 342.31 P
--0.2 (ferent printer resolution) 463.46 342.31 P
-(\050e.g. -dpi 400 for a Next printer) 108 330.31 T
-(, or -dpi 95 for Display PostScript on a 19\323 1280x1024 workstation screen\051.) 233.61 330.31 T
+( writes header records into the PostScript output \336le which are correct for a 300 dpi) 198.21 388.31 T
+(printer \050e.g. an HP Laserjet IIIsi\051. If there is a mis-match between the header records and the actual) 126 376.31 T
+-0.08 (resolution of the printer the image quality is substantially degraded. This option allows one to specify a) 126 364.31 P
+(dif) 126 352.31 T
+(ferent printer resolution \050e.g. -dpi 400 for a Next printer) 136.92 352.31 T
+(, or -dpi 95 for Display PostScript on a 19\323) 359.96 352.31 T
+(1280x1024 workstation screen\051.) 126 340.31 T
 3 F
-(DESCRIPTION) 108 306.31 T
-5 F
-1.44 (avs2ps) 108 288.31 P
+(AUTHORS) 108 316.31 T
 4 F
-1.58 ( converts the input stream to a greyscale image and then applies an empirical algorithm for contrast) 135.79 288.31 P
-1.03 (enhancement, dithering, and error dif) 108 276.31 P
-1.03 (fusion to produce a monochrome output image. The basic approach is a) 260.72 276.31 P
-(variant of Floyd-Steinber) 108 264.31 T
-(g error dif) 208.87 264.31 T
-(fusion.) 249.2 264.31 T
-3 F
-(AUTHORS) 108 240.31 T
-4 F
-(Ethan A Merritt. Dithering algorithm derived from code by Randy Read and Albert Ber) 108 222.31 T
-(ghuis.) 458.13 222.31 T
+(Ethan A Merritt. Dithering algorithm derived from code by Randy Read and Albert Ber) 108 298.31 T
+(ghuis.) 458.13 298.31 T
 FMENDPAGE
 %%EndPage: "7" 8
 %%Page: "8" 8
@@ -1877,7 +1909,7 @@ V
 0 X
 (8) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
@@ -1900,7 +1932,7 @@ V
 0 X
 (RENDER) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -1912,7 +1944,7 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (9) 552 59.9 T
 108 87.98 558 720 R
@@ -1931,121 +1963,136 @@ N
 0 K
 (RENDER) 108 708 T
 3 10 Q
-(NAME) 108 678.31 T
+(SYNOPSIS) 108 678.31 T
 5 F
 (render) 108 660.31 T
 4 F
-( - image rendering program of Raster3D molecular graphics package) 133.51 660.31 T
-3 F
-(SYNOPSIS) 108 636.31 T
-4 F
-(render [-tif) 108 618.31 T
-(f \336lename] [-sgi \336lename] [-original]) 151.39 618.31 T
-5 F
--0.18 (Render) 108 600.31 P
-4 F
--0.2 ( reads an ascii \336le consisting of several header lines followed by individual object descriptors. The objects) 136.23 600.31 P
-1.29 (are rendered using a fast Z-buf) 108 588.31 P
-1.29 (fer algorithm to produce a high quality pixel image which contains two light) 237.2 588.31 P
-0.37 (sources, specular highlighting, Phong shaded surfaces, and shadows. Output is to) 108 576.31 P
-6 F
-0.37 (stdout) 438.74 576.31 P
-4 F
-0.37 ( [or optional \336le] in the) 463.18 576.31 P
--0.1 (form of a pixel image with 24 bits of color information per pixel. Several utility programs exist which will create) 108 564.31 P
-0.22 (all or part of an acceptable input \336le by reading atomic coordinates from a Brookhaven PDB \336le. These include) 108 552.31 P
-5 F
-0.19 (setup) 108 540.31 P
-4 F
-0.2 (,) 129.86 540.31 P
-5 F
-0.19 (rods) 135.06 540.31 P
-4 F
-0.2 (, and) 152.82 540.31 P
-5 F
-0.19 (ribbon) 175.15 540.31 P
-4 F
-0.2 ( from the Raster3D distribution kit, and Molscript [Per Kraulis \0501991\051) 200.65 540.31 P
-6 F
-0.2 (J. Appl. Cryst.) 484.93 540.31 P
+( is the central image rendering program of the Raster3D molecular graphics package) 133.51 660.31 T
 7 F
-0.2 (24) 545.51 540.31 P
-4 F
-0.2 (,) 555.5 540.31 P
-(946-950].) 108 528.31 T
-3 F
-(EXAMPLES) 108 504.31 T
-4 F
-(Render a simple space-\336lling model coloured by residue type:) 108 486.31 T
-8 F
-(cat mycolors.pdb protein.pdb | setup | render > mypicture.avs) 126 468.31 T
-4 F
-(Display the same picture on an X-windows display directly using ImageMagick:) 108 452.31 T
-8 F
-(cat mycolors.pdb protein.pdb | setup | render | display avs:-) 126 434.31 T
-4 F
-(Render and display the same picture using the SGI libimage format:) 108 418.31 T
-8 F
-(cat mycolors.pdb protein.pdb | setup | render -sgi picture.rgb) 126 400.31 T
-(ipaste picture.rgb) 126 390.31 T
-4 F
-0.4 (Render a stick-\336gure model of a cofactor jointly with a ribbon model of a protein. Note that the header records) 108 374.31 P
-0.8 (are generated by the) 108 362.31 P
+-0.64 (render [-tiff outf) 126 648.31 P
+-0.64 (ile.tiff] [-sgi outf) 232.66 648.31 P
+-0.64 (ile.rgb] [-original] < input.r3d >) 351.32 648.31 P
+(outf) 126 638.31 T
+(ile) 149.99 638.31 T
 5 F
-0.73 (ribbon) 194.43 362.31 P
+-0.18 (Render) 108 622.31 P
 4 F
-0.8 ( command in this case; the -h \337ag suppresses generation of a second set of header) 219.93 362.31 P
-0.02 (records in the) 108 350.31 P
-5 F
-0.02 (rods) 164.97 350.31 P
-4 F
-0.02 ( command. The ImageMagick) 182.73 350.31 P
-5 F
-0.02 (convert) 305.78 350.31 P
-4 F
-0.02 ( command is used to save the resulting image as a TIFF) 335.39 350.31 P
-(\336le.) 108 338.31 T
-8 F
-(ribbon -d4 protein.pdb > ribbon.r3d) 126 320.31 T
-(cat colors.pdb cofactor.pdb | rods -bs -h > cofactor.r3d) 126 310.31 T
-(cat ribbon.r3d cofactor.r3d | render | convert avs:- picture.tiff) 126 300.31 T
-4 F
-0.25 (If TIFF support has been built directly into Raster3D, then the previous command can be modi\336ed to produce a) 108 284.31 P
-(TIFF \336le without conversion:) 108 272.31 T
-8 F
-(cat ribbon.r3d cofactor.r3d | render -tiff picture.tiff) 126 254.31 T
-3 F
-(OPTIONS) 108 232.31 T
+-0.2 ( reads an ascii \336le consisting of several header lines followed by individual object descriptors. The objects) 136.23 622.31 P
+1.29 (are rendered using a fast Z-buf) 108 610.31 P
+1.29 (fer algorithm to produce a high quality pixel image which contains two light) 237.2 610.31 P
+0.37 (sources, specular highlighting, Phong shaded surfaces, and shadows. Output is to) 108 598.31 P
 6 F
-(-tiff \336lename) 108 214.31 T
+0.37 (stdout) 438.74 598.31 P
 4 F
-(Only if compiled with -DTIFF_SUPPOR) 126 200.31 T
-(T) 290.32 200.31 T
-(. By default) 295.69 200.31 T
+0.37 ( [or optional \336le] in the) 463.18 598.31 P
+0 (form of a pixel image with 24 bits of color information per pixel. The default output \336le format is an A) 108 586.31 P
+0 (VS image) 518.3 586.31 P
+-0.15 (\336le. Support for TIFF or SGI libimage image \336les may be optionally included during installation of the Raster3D) 108 574.31 P
+(package.) 108 562.31 T
+2.29 (Several utility programs exist which will create all or part of an acceptable input \336le by reading atomic) 108 544.31 P
+0.59 (coordinates from a Brookhaven PDB \336le. These include) 108 532.31 P
 5 F
-(render) 345.1 200.31 T
+0.54 (balls) 339.52 532.31 P
 4 F
-( will produce an A) 370.61 200.31 T
-(VS-compatible image) 443.7 200.31 T
-(on stdout. The -tif) 126 188.31 T
-(f \337ag will cause it to output a TIFF image to the speci\336ed \336le instead.) 198 188.31 T
+0.59 (,) 358.2 532.31 P
+5 F
+0.54 (rods) 363.79 532.31 P
+4 F
+0.59 (, and) 381.55 532.31 P
+5 F
+0.54 (ribbon) 404.66 532.31 P
+4 F
+0.59 ( from the Raster3D distribution) 430.15 532.31 P
+(kit, and Molscript [Per Kraulis \0501991\051) 108 520.31 T
 6 F
-( -sgi \336lename) 108 170.31 T
+(J. Appl. Cryst.) 262.07 520.31 T
+8 F
+(24) 322.03 520.31 T
 4 F
-(Only if compiled with -DLIBIMAGE_SUPPOR) 126 156.31 T
-(T) 318.62 156.31 T
-(. By default) 323.99 156.31 T
+(, 946-950].) 332.03 520.31 T
+0.37 (Black & white half-toned PostScript output may be obtained by \336ltering the output stream from) 108 502.31 P
 5 F
-(render) 373.4 156.31 T
+0.33 (render) 498.54 502.31 P
 4 F
-( will produce an A) 398.91 156.31 T
-(VS-compatible) 472.01 156.31 T
--0.26 (image on stdout. The -sgi \337ag will cause it to output an SGI libimage style *.r) 126 144.31 P
--0.26 (gb \336le instead. In this case) 433.05 144.31 P
-(default output is to the \336le render) 126 132.31 T
-(.r) 258.7 132.31 T
-(gb, but specifying a \336le on the command line will override this) 264.34 132.31 T
-(default.) 126 120.31 T
+0.37 ( through) 524.04 502.31 P
+(the utility program) 108 490.31 T
+5 F
+(avs2ps) 185.46 490.31 T
+4 F
+(.) 213.25 490.31 T
+3 F
+(EXAMPLES) 108 466.31 T
+4 F
+(Render a simple space-\336lling model coloured by residue type:) 108 448.31 T
+7 F
+(cat mycolors.pdb protein.pdb | balls | render > mypicture.avs) 126 436.31 T
+4 F
+(Display the same picture on an X-windows display directly using ImageMagick:) 108 420.31 T
+7 F
+(cat mycolors.pdb protein.pdb | balls | render | display avs:-) 126 408.31 T
+4 F
+(Render and display the same picture using the SGI libimage format:) 108 392.31 T
+7 F
+(cat mycolors.pdb protein.pdb | balls | render -sgi picture.rgb) 126 380.31 T
+(ipaste picture.rgb) 126 370.31 T
+4 F
+0.4 (Render a stick-\336gure model of a cofactor jointly with a ribbon model of a protein. Note that the header records) 108 354.31 P
+0.8 (are generated by the) 108 342.31 P
+5 F
+0.73 (ribbon) 194.43 342.31 P
+4 F
+0.8 ( command in this case; the -h \337ag suppresses generation of a second set of header) 219.93 342.31 P
+0.02 (records in the) 108 330.31 P
+5 F
+0.02 (rods) 164.97 330.31 P
+4 F
+0.02 ( command. The ImageMagick) 182.73 330.31 P
+5 F
+0.02 (convert) 305.78 330.31 P
+4 F
+0.02 ( command is used to save the resulting image as a TIFF) 335.39 330.31 P
+(\336le.) 108 318.31 T
+7 F
+(ribbon -d4 protein.pdb > ribbon.r3d) 126 306.31 T
+(cat colors.pdb cofactor.pdb | rods -bs -h > cofactor.r3d) 126 296.31 T
+(cat ribbon.r3d cofactor.r3d | render | convert avs:- picture.tiff) 126 286.31 T
+4 F
+0.25 (If TIFF support has been built directly into Raster3D, then the previous command can be modi\336ed to produce a) 108 270.31 P
+(TIFF \336le without conversion:) 108 258.31 T
+7 F
+(cat ribbon.r3d cofactor.r3d | render -tiff picture.tiff) 126 246.31 T
+3 F
+(OPTIONS) 108 236.31 T
+6 F
+(-tiff \336lename) 108 220.31 T
+4 F
+(Only if compiled with -DTIFF_SUPPOR) 126 206.31 T
+(T) 290.32 206.31 T
+(. By default) 295.69 206.31 T
+5 F
+(render) 345.1 206.31 T
+4 F
+( will produce an A) 370.61 206.31 T
+(VS-compatible image) 443.7 206.31 T
+(on stdout. The -tif) 126 194.31 T
+(f \337ag will cause it to output a TIFF image to the speci\336ed \336le instead.) 198 194.31 T
+6 F
+( -sgi \336lename) 108 176.31 T
+4 F
+(Only if compiled with -DLIBIMAGE_SUPPOR) 126 162.31 T
+(T) 318.62 162.31 T
+(. By default) 323.99 162.31 T
+5 F
+(render) 373.4 162.31 T
+4 F
+( will produce an A) 398.91 162.31 T
+(VS-compatible) 472.01 162.31 T
+-0.26 (image on stdout. The -sgi \337ag will cause it to output an SGI libimage style *.r) 126 150.31 P
+-0.26 (gb \336le instead. In this case) 433.05 150.31 P
+(default output is to the \336le render) 126 138.31 T
+(.r) 258.7 138.31 T
+(gb, but specifying a \336le on the command line will override this) 264.34 138.31 T
+(default.) 126 126.31 T
 FMENDPAGE
 %%EndPage: "9" 10
 %%Page: "10" 10
@@ -2079,7 +2126,7 @@ V
 0 X
 (10) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
@@ -2114,38 +2161,54 @@ V
 -0.12 (The required header records of a render input \336le are described below) 54 531.33 P
 -0.12 (. Except where noted, each item is on a line) 331 531.33 P
 (by itself in free format. The names are of variables in the program source code.) 54 519.33 T
-(TITLE) 54 501.33 T
-(Anything you like, up to 80 characters.) 72 487.33 T
-(NTX,NTY) 54 469.33 T
-(Number of \322tiles\323 in each direction. \050The output display is considered to be divided up into an array of) 72 455.33 T
-(identical rectangular tiles.\051 The maximum is 192 unless you have increased MAXNTX and MAXNTY) 72 443.33 T
-(in render) 72 431.33 T
-(.f.) 107.25 431.33 T
-(NPX,NPY) 54 413.33 T
-(Number of computing pixels per tile in each direction. Maximum = 36 \050MAXNPX, MAXNPY in) 72 399.33 T
-(render) 72 387.33 T
-(.f\051) 96.98 387.33 T
-(SCHEME) 54 369.33 T
-(Pixel averaging \050anti-aliasing\051 scheme \0501, 2, or 3\051, where) 72 355.33 T
-(1 means 1 computing pixel for 1 output pixel) 90 341.33 T
-(2 means 2x2 computing pixels for 1 output pixel) 90 327.33 T
-(3 means 3x3 computing pixels for 2x2 output pixels) 90 313.33 T
--0.19 (\050i.e. scheme 1 produces a NTX*NPX by NTY*NPY pixel image, scheme 3 produces a \0502/3\051NTX*NPX) 72 299.33 P
-(by \0502/3\051NTY*NPY image\051. Increased anti-aliasing \050schemes 2 or 3\051 produces a scene in which objects) 72 287.33 T
-(have less jagged edges, at the cost of additional computation.) 72 275.33 T
-(Note that scheme 3 requires that NPX and NPY be multiples of 3.) 72 261.33 T
-(BKGND) 54 243.33 T
-(Background colour \050red, green, and blue components, each in the range 0 to 1\051.) 72 229.33 T
-(SHADOW) 54 211.33 T
-(T to calculate shadowing within the scene, F to omit shadows) 72 197.33 T
-(IPHONG) 54 179.33 T
-(Phong power \050e.g., 25\051 for specular highlights. A smaller value results in a lar) 72 165.33 T
-(ger spot.) 382.99 165.33 T
-(IPHONG = 0 disables specular highlighting and all processing of ribbon triangles) 72 151.33 T
-(STRAIT) 54 133.33 T
--0.31 (Straight-on \050secondary\051 light source contribution \050e.g., 0.15\051. The primary light source contribution \050see) 72 119.33 P
-(also SOURCE below\051 is given by PRIMAR = 1 - STRAIT) 72 107.33 T
-(.) 305.66 107.33 T
+6 F
+(TITLE) 54 491.33 T
+4 F
+(Anything you like, up to 80 characters.) 72 477.33 T
+6 F
+(NTX,NTY) 54 459.33 T
+4 F
+(Number of \322tiles\323 in each direction. \050The output display is considered to be divided up into an array of) 72 445.33 T
+(identical rectangular tiles.\051 The maximum is 192 unless you have increased MAXNTX and MAXNTY) 72 433.33 T
+(in render) 72 421.33 T
+(.f.) 107.25 421.33 T
+6 F
+(NPX,NPY) 54 403.33 T
+4 F
+(Number of computing pixels per tile in each direction. Maximum = 36 \050MAXNPX, MAXNPY in) 72 389.33 T
+(render) 72 377.33 T
+(.f\051) 96.98 377.33 T
+6 F
+(SCHEME) 54 359.33 T
+4 F
+(Pixel averaging \050anti-aliasing\051 scheme \0501, 2, or 3\051, where) 72 345.33 T
+(1 means 1 computing pixel for 1 output pixel) 90 331.33 T
+(2 means 2x2 computing pixels for 1 output pixel) 90 317.33 T
+(3 means 3x3 computing pixels for 2x2 output pixels) 90 303.33 T
+-0.19 (\050i.e. scheme 1 produces a NTX*NPX by NTY*NPY pixel image, scheme 3 produces a \0502/3\051NTX*NPX) 72 289.33 P
+(by \0502/3\051NTY*NPY image\051. Increased anti-aliasing \050schemes 2 or 3\051 produces a scene in which objects) 72 277.33 T
+(have less jagged edges, at the cost of additional computation.) 72 265.33 T
+(Note that scheme 3 requires that NPX and NPY be multiples of 3.) 72 251.33 T
+6 F
+(BKGND) 54 233.33 T
+4 F
+(Background colour \050red, green, and blue components, each in the range 0 to 1\051.) 72 219.33 T
+6 F
+(SHADOW) 54 201.33 T
+4 F
+(T to calculate shadowing within the scene, F to omit shadows) 72 187.33 T
+6 F
+(IPHONG) 54 169.33 T
+4 F
+(Phong power \050e.g., 25\051 for specular highlights. A smaller value results in a lar) 72 155.33 T
+(ger spot.) 382.99 155.33 T
+(IPHONG = 0 disables specular highlighting and all processing of ribbon triangles) 72 141.33 T
+6 F
+(STRAIT) 54 123.33 T
+4 F
+-0.31 (Straight-on \050secondary\051 light source contribution \050e.g., 0.15\051. The primary light source contribution \050see) 72 109.33 P
+(also SOURCE below\051 is given by PRIMAR = 1 - STRAIT) 72 97.33 T
+(.) 305.66 97.33 T
 FMENDPAGE
 %%EndPage: "10" 11
 %%Page: "11" 11
@@ -2165,7 +2228,7 @@ V
 0 X
 (RENDER) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -2177,25 +2240,30 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (11) 546.01 59.9 T
 108 87.98 558 720 R
 7 X
 V
-4 10 Q
+6 10 Q
 0 X
 (AMBIEN) 108 713.33 T
+4 F
 (Ambient illumination contribution \050e.g., 0.05\051. Increasing the ambient light will reduce the contrast) 126 699.33 T
 (between shadowed and non-shadowed regions.) 126 687.33 T
+6 F
 (SPECLR) 108 669.33 T
+4 F
 (Specular re\337ection contribution \050e.g., 0.25\051.) 126 655.33 T
 (The dif) 126 641.33 T
 (fuse re\337ection quantity is given by DIFFUS = 1 - \050AMBIEN+SPECLR\051. Ambient and dif) 154.96 641.33 T
 (fuse) 513.08 641.33 T
 -0.1 (re\337ections are chromatic, taking on the speci\336ed colour of each object, whereas specular re\337ections are) 126 629.33 P
 (white.) 126 617.33 T
+6 F
 (EYEPOS) 108 599.33 T
+4 F
 (Y) 126 585.33 T
 (ou can think of the image produced by) 132.22 585.33 T
 5 F
@@ -2208,12 +2276,16 @@ V
 (the narrow dimension of the described scene. A very lar) 126 549.33 T
 (ge value of EYEPOS will yield a scene with) 349.53 549.33 T
 (essentially no parallax or perspective.) 126 537.33 T
+6 F
 (SOURCE) 108 519.33 T
+4 F
 (Primary light source position \050e.g., 1 1 1\051. This is a white light point source at in\336nite distance in the) 126 505.33 T
 (direction of the vector given \050see note on co-ordinate convention below\051. The secondary light source is) 126 493.33 T
 (always head-on. Only the primary light source casts shadows.) 126 481.33 T
+6 F
 (TMA) 108 463.33 T
-(T) 129.1 463.33 T
+(T) 127.62 463.33 T
+4 F
 (Homogeneous global transformation for input objects, given as a 4x4 matrix on 4 lines just as you) 126 449.33 T
 -0.2 (would write it if you intended it to be a post\336x \050suf) 126 437.33 P
 -0.2 (\336x\051 operator) 327.62 437.33 P
@@ -2240,30 +2312,30 @@ V
 ([x\375 y\375 z\375] = \0501/h\253\051[x\253 y\253 z\253]) 242.58 365.33 T
 4 F
 (.) 350.03 365.33 T
+6 F
 (INMODE) 108 347.33 T
+4 F
 -0.13 (Object input mode \0501, 2, or 3\051, where mode 1 means that all objects are triangles, mode 2 means that all) 126 333.33 P
 -0.15 (objects are spheres, and mode 3 means that each object will be preceded by a record containing a single) 126 321.33 P
 (number indicating its type. The Raster3D programs use only mode 3.) 126 309.33 T
-(type 1 = triangle) 144 297.33 T
-(type 2 = sphere) 144 285.33 T
-(type 3 = round-ended cylinder) 144 273.33 T
-(type 5 = \337at-ended cylinder) 144 261.33 T
-(type 6 = plane \050triangle with in\336nite extent\051) 144 249.33 T
-(INFMT or INFMTS) 108 231.33 T
-(Object input format speci\336er\050s\051. For object input modes 1 and 2, there is just one format speci\336er) 126 217.33 T
-(INFMT for the corresponding object type, while for mode 3, there are three format speci\336ers INFMTS) 126 205.33 T
-(on three lines. The \336rst describes the format for a triangle, the second for a sphere, and the third for a) 126 193.33 T
--0.02 (cylinder) 126 181.33 P
--0.02 (. Each format speci\336er is either a Fortran format enclosed in parentheses, or a single asterisk to) 158.2 181.33 P
-(indicate free-format input. Parameters are read in the order) 126 169.33 T
-(triangle or plane \050object types 1 or 6\051:) 144 155.33 T
-(x1, y1, z1, x2, y2, z2, x3, y3, z3, red, green, blue) 324 155.33 T
-(sphere \050object type 2\051:) 144 141.33 T
-(x, y) 324 141.33 T
-(, z, radius, red, green, blue) 338.34 141.33 T
-(cylinder \050object type 3 or 5\051:) 144 127.33 T
-(x1, y1, z1, R1, x2, y2, z2, R2, red, green, blue) 324 127.33 T
-(\050R1 is the cylinder radius, R2 is currently ignored\051.) 324 113.33 T
+(type 1 = triangle) 144 295.33 T
+(type 2 = sphere) 144 281.33 T
+(type 3 = round-ended cylinder) 144 267.33 T
+(type 5 = \337at-ended cylinder) 144 253.33 T
+(type 6 = plane \050triangle with in\336nite extent\051) 144 239.33 T
+(type 7 = explicit surface normals at vertices of previous triangle \050new in version 2.1\051) 144 225.33 T
+(type 8 = explicit material properties for subsequent objects \050new in version 2.1\051) 144 211.33 T
+(type 9 = terminate previous explicit material properties \050new in version 2.1\051) 144 197.33 T
+(type 0 = end of input \336le) 144 183.33 T
+6 F
+(INFMT or INFMTS) 108 165.33 T
+4 F
+(Object input format speci\336er\050s\051. For object input modes 1 and 2, there is just one format speci\336er) 126 151.33 T
+(INFMT for the corresponding object type, while for mode 3, there are three format speci\336ers INFMTS) 126 139.33 T
+(on three lines. The \336rst describes the format for a triangle, the second for a sphere, and the third for a) 126 127.33 T
+-0.02 (cylinder) 126 115.33 P
+-0.02 (. Each format speci\336er is either a Fortran format enclosed in parentheses, or a single asterisk to) 158.2 115.33 P
+(indicate free-format input. Parameters are read in the order) 126 103.33 T
 FMENDPAGE
 %%EndPage: "11" 12
 %%Page: "12" 12
@@ -2297,71 +2369,91 @@ V
 0 X
 (12) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
-3 F
+4 F
 0 X
-(SAMPLE HEADER) 54 713.33 T
-8 F
-(My picture. \050describes a 1280 x 1024 pixel anti-aliased image\051) 72 695.33 T
-(80 64) 72 685.33 T
-(tiles in x,y 24 24 pixels \050x,y\051 per tile) 162 685.33 T
-(3) 72 675.33 T
-(anti-aliasing level 3; 3x3->2x2) 162 675.33 T
-(0 0 0) 72 665.33 T
-(black background) 162 665.33 T
-(F) 72 655.33 T
-(no shadows cast) 162 655.33 T
-(25) 72 645.33 T
-(Phong power) 162 645.33 T
-(0.25) 72 635.33 T
-(secondary light contribution) 162 635.33 T
-(0.05) 72 625.33 T
-(ambient light contribution) 162 625.33 T
-(0.25) 72 615.33 T
-(specular ref) 162 615.33 T
-(lection component) 233.96 615.33 T
-(4.0) 72 605.33 T
-(eye position) 162 605.33 T
-(1 1 1) 72 595.33 T
-(main light source position \050from over right shoulder\051) 162 595.33 T
-(1 0 0 0) 72 585.33 T
-(view matrix describing input coordinate transformation) 162 585.33 T
-(0 1 0 0) 72 575.33 T
-(0 0 1 0) 72 565.33 T
-(0 0 0 0.6) 72 555.33 T
-(no translation; enlarge objects in picture by 66% \0501/.6\051) 162 555.33 T
-(3) 72 545.33 T
-(mixed objects) 162 545.33 T
-(*) 72 535.33 T
-(\050free format triangle and plane descriptors\051) 162 535.33 T
-(*) 72 525.33 T
-(\050free format sphere descriptors\051) 162 525.33 T
-(*) 72 515.33 T
-(\050free format cylinder descriptors\051) 162 515.33 T
+(triangle or plane \050object types 1 or 6\051:) 90 713.33 T
+(x1, y1, z1, x2, y2, z2, x3, y3, z3, red, green, blue) 270 713.33 T
+(sphere \050object type 2\051:) 90 699.33 T
+(x, y) 270 699.33 T
+(, z, radius, red, green, blue) 284.34 699.33 T
+(cylinder \050object type 3 or 5\051:) 90 685.33 T
+(x1, y1, z1, R1, x2, y2, z2, R2, red, green, blue) 270 685.33 T
+(\050R1 is the cylinder radius, R2 is currently ignored\051.) 270 671.33 T
 3 F
-(SAMPLE INPUT DA) 54 483.33 T
-(T) 142.85 483.33 T
-(A FOLLOWING HEADER) 148.41 483.33 T
+(Additional object types) 54 647.33 T
 4 F
-(The following records describe a single red triangle and a single blue sphere) 54 465.33 T
-8 F
-(1) 72 447.33 T
-(-.1 0. 0.) 72 437.33 T
-( .1 0. 0.) 137.96 437.33 T
-(0. -.2 0.5) 209.92 437.33 T
-(1.0 0.0 0.0) 299.87 437.33 T
-(2) 72 427.33 T
-(0.3 0.3 0.0) 72 417.33 T
-(0.1) 167.95 417.33 T
-(0.0 0.0 1.0) 209.92 417.33 T
-(0) 72 407.33 T
+0.04 (V) 54 629.33 P
+0.04 (ersion 2.1 of the Raster3D supports a few new object types. These are intended to provide additional \337exibility) 60.11 629.33 P
+1.7 (in adapting other molecular graphics tools to compose \336gures for Raster3D to render) 54 617.33 P
+1.7 (. These are mostly of) 413.08 617.33 P
+(interest to programmers, as the utilities supplied with the package currently make no use of them.) 54 605.33 T
+6 F
+(Object type 7) 54 577.33 T
+4 F
+(Explicit vertex normals for preceeding triangle object. This object must directly follow the triangle) 72 563.33 T
+(object, and uses the same format. The intended use of this object type is to allow rendering of arbitrary) 72 551.33 T
+(molecular surfaces.) 72 539.33 T
+6 F
+(Object type 8) 54 521.33 T
+4 F
+(Material properties. These values override the speci\336cation of lighting and specular highlighting in the) 72 507.33 T
+(header records, allowing some objects to have dif) 72 495.33 T
+(ferent surface properties from the rest. The speci\336ed) 270 495.33 T
+(values will apply to all subsequent objects until an object of type 9 is encountered. The parameters are) 72 483.33 T
+(read in free format from the following line:) 72 471.33 T
+(MPHONG - \050\337oating point\051 override global Phong parameter for specular highlighting) 90 457.33 T
+(MSPEC - \050\337oating point\051 override global specular scattering contribution) 90 443.33 T
+(SR,SG,SB - RGB triple specifying color of re\337ected light \050by default all re\337ections are white\051) 90 429.33 T
+(TEXMAP - texture map \050not yet implemented\051) 90 415.33 T
+6 F
+(Object type 9) 54 397.33 T
+4 F
+-0.31 (T) 72 383.33 P
+-0.31 (erminates previous set of special material properties. The rest of this record is ignored, so object type 9) 77.41 383.33 P
+(may also be used as a comment record.) 72 371.33 T
 3 F
-(AUTHORS) 54 385.33 T
-4 F
-(Originally written by David J. Bacon. Extensions, revisions, and modi\336cations by Ethan A Merritt.) 54 367.33 T
+(SAMPLE HEADER) 54 347.33 T
+7 F
+(My picture. \050describes a 1280 x 1024 pixel anti-aliased image\051) 72 329.33 T
+(80 64) 72 319.33 T
+(tiles in x,y 24 24 pixels \050x,y\051 per tile) 162 319.33 T
+(3) 72 309.33 T
+(anti-aliasing level 3; 3x3->2x2) 162 309.33 T
+(0 0 0) 72 299.33 T
+(black background) 162 299.33 T
+(F) 72 289.33 T
+(no shadows cast) 162 289.33 T
+(25) 72 279.33 T
+(Phong power) 162 279.33 T
+(0.25) 72 269.33 T
+(secondary light contribution) 162 269.33 T
+(0.05) 72 259.33 T
+(ambient light contribution) 162 259.33 T
+(0.25) 72 249.33 T
+(specular ref) 162 249.33 T
+(lection component) 233.96 249.33 T
+(4.0) 72 239.33 T
+(eye position) 162 239.33 T
+(1 1 1) 72 229.33 T
+(main light source position \050from over right shoulder\051) 162 229.33 T
+(1 0 0 0) 72 219.33 T
+(view matrix describing input coordinate transformation) 162 219.33 T
+(0 1 0 0) 72 209.33 T
+(0 0 1 0) 72 199.33 T
+(0 0 0 0.6) 72 189.33 T
+(no translation; enlarge objects in picture by 66% \0501/.6\051) 162 189.33 T
+(3) 72 179.33 T
+(mixed objects) 162 179.33 T
+(*) 72 169.33 T
+(\050free format triangle and plane descriptors\051) 162 169.33 T
+(*) 72 159.33 T
+(\050free format sphere descriptors\051) 162 159.33 T
+(*) 72 149.33 T
+(\050free format cylinder descriptors\051) 162 149.33 T
 FMENDPAGE
 %%EndPage: "12" 13
 %%Page: "13" 13
@@ -2379,9 +2471,9 @@ N
 V
 0 8 Q
 0 X
-(RIBBON) 108 759.67 T
+(RENDER) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -2393,9 +2485,143 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
 (13) 546.01 59.9 T
+108 87.98 558 720 R
+7 X
+V
+3 10 Q
+0 X
+(SAMPLE INPUT DA) 108 713.33 T
+(T) 196.85 713.33 T
+(A FOLLOWING HEADER) 202.41 713.33 T
+4 F
+(The following records describe a single red triangle and a single blue sphere) 108 695.33 T
+7 F
+(1) 126 683.33 T
+(-.1 0. 0.) 126 673.33 T
+( .1 0. 0.) 191.96 673.33 T
+(0. -.2 0.5) 263.92 673.33 T
+(1.0 0.0 0.0) 353.87 673.33 T
+(2) 126 663.33 T
+(0.3 0.3 0.0) 126 653.33 T
+(0.1) 221.95 653.33 T
+(0.0 0.0 1.0) 263.92 653.33 T
+(0) 126 643.33 T
+3 F
+(INCREASING THE ARRA) 108 621.33 T
+(Y SIZES IN RENDER) 221.31 621.33 T
+4 F
+-0.14 (If you are creating images of very lar) 108 603.33 P
+-0.14 (ge proteins, or if you are rendering surfaces with many facets, then you may) 255.32 603.33 P
+(\336ll the storage arrays in render) 108 591.33 T
+(. If so you will get an error message something like) 229.85 591.33 T
+7 F
+(STOP 1234 **** too many objects - increase MAXOBJ and recompile) 126 573.33 T
+4 F
+(The parameters which you may need to increase are contained in the following lines of) 108 557.33 T
+6 F
+(r) 458.01 557.33 T
+(ender) 461.53 557.33 T
+(.f) 483.17 557.33 T
+4 F
+(:) 488.45 557.33 T
+7 F
+(*) 126 545.33 T
+(* Maximum number of objects \050was 7500\051) 126 535.33 T
+(PARAMETER \050MAXOBJ = 25000\051) 126 525.33 T
+(*) 126 515.33 T
+(* Array elements available for object details) 126 505.33 T
+(PARAMETER \050MAXDET = 250 000, MAXSDT = 250 000\051) 126 495.33 T
+(*) 126 485.33 T
+(* Array elements available for sorted lists \050\322short\323 lists\051) 126 475.33 T
+(PARAMETER \050MAXSHR = 150 000, MAXSSL = 150 000\051) 126 465.33 T
+4 F
+0.47 (Increase the appropriate P) 108 449.33 P
+0.47 (ARAMETER values by editing) 212.57 449.33 P
+6 F
+0.47 (r) 342.72 449.33 P
+0.47 (ender) 346.24 449.33 P
+0.47 (.f) 367.89 449.33 P
+4 F
+0.47 (, and recompile the render program by typing) 373.16 449.33 P
+(\322make render\323.) 108 437.33 T
+3 F
+(AUTHORS) 108 413.33 T
+4 F
+(Originally written by David J. Bacon. Extensions, revisions, and modi\336cations by Ethan A Merritt.) 108 395.33 T
+FMENDPAGE
+%%EndPage: "13" 14
+%%Page: "14" 14
+612 792 0 FMBEGINPAGE
+54 738 504 738 2 L
+7 X
+0 K
+V
+0.25 H
+0 Z
+0 X
+N
+54 747 504 765 R
+7 X
+V
+0 8 Q
+0 X
+(RENDER) 54 759.67 T
+(Raster3D V) 408.76 759.67 T
+(ersion 2.0) 449.54 759.67 T
+54 72 504 72 2 L
+7 X
+V
+2 Z
+0 X
+N
+54 55.94 504 67.9 R
+7 X
+V
+2 12 Q
+0 X
+(14) 54 59.9 T
+1 10 Q
+( 14 June 1995) 252 59.9 T
+54 87.98 504 720 R
+7 X
+V
+FMENDPAGE
+%%EndPage: "14" 15
+%%Page: "15" 15
+612 792 0 FMBEGINPAGE
+108 738 558 738 2 L
+7 X
+0 K
+V
+0.25 H
+0 Z
+0 X
+N
+108 747 558 765 R
+7 X
+V
+0 8 Q
+0 X
+(RIBBON) 108 759.67 T
+(Raster3D V) 462.76 759.67 T
+(ersion 2.1) 503.54 759.67 T
+108 72 558 72 2 L
+7 X
+V
+2 Z
+0 X
+N
+108 55.94 558 67.9 R
+7 X
+V
+1 10 Q
+0 X
+(14 June 1995) 309 59.9 T
+2 12 Q
+(15) 546.01 59.9 T
 108 87.98 558 720 R
 7 X
 V
@@ -2412,104 +2638,107 @@ N
 0 K
 (RIBBON) 108 708 T
 3 10 Q
-(NAME) 108 678.31 T
+(SYNOPSIS) 108 678.31 T
+7 F
+(ribbon [-h] [-d[012345]] pdbf) 126 660.31 T
+(ile) 299.9 660.31 T
+4 F
+(or \050to take PDB records from stdin\051) 108 644.31 T
+7 F
+(ribbon [-h] -d[012345] -) 126 632.31 T
 5 F
-(ribbon) 108 660.31 T
+0.82 (Ribbon) 108 616.31 P
 4 F
-(- preprocessor for ribbon models in Raster3D molecular graphics package) 135.77 660.31 T
-3 F
-(SYNOPSIS) 108 636.31 T
-8 F
-(ribbon [-h] [-d[012345]] pdbf) 126 618.31 T
-(ile) 299.9 618.31 T
-4 F
-(or \050to take PDB records from stdin\051) 108 602.31 T
-8 F
-(ribbon [-h] -d[012345] -) 126 584.31 T
-5 F
-0.82 (Ribbon) 108 568.31 P
-4 F
-0.9 ( reads a Brookhaven PDB coordinate \336le and produces a \336le on) 136.22 568.31 P
+0.9 ( reads a Brookhaven PDB coordinate \336le and produces a \336le on) 136.22 616.31 P
 6 F
-0.9 (stdout) 403.46 568.31 P
+0.9 (stdout) 403.46 616.31 P
 4 F
-0.9 (containing Raster3D descriptor) 431.3 568.31 P
-0.35 (records for a ribbon representation constructed from a triangular mesh. The \336le produced by ribbon may be fed) 108 556.31 P
-(directly to) 108 544.31 T
+0.9 (containing Raster3D descriptor) 431.3 616.31 P
+0.35 (records for a ribbon representation constructed from a triangular mesh. The \336le produced by ribbon may be fed) 108 604.31 P
+(directly to) 108 592.31 T
 5 F
-(render) 151.31 544.31 T
+(render) 151.31 592.31 T
 4 F
-( or it may be combined with descriptor \336les produced by other Raster3D utilities.) 176.81 544.31 T
+( or it may be combined with descriptor \336les produced by other Raster3D utilities.) 176.81 592.31 T
 3 F
-(EXAMPLES) 108 520.31 T
+(EXAMPLES) 108 568.31 T
 4 F
-0.38 (T) 108 502.31 P
-0.38 (o describe a the entire protein chain as a single ribbon colored smoothly from blue at the N-terminus to red at) 113.41 502.31 P
-(the C-terminus:) 108 490.31 T
-8 F
-(ribbon -d2 protein.pdb | render > chain_picture.avs) 126 472.31 T
+0.38 (T) 108 550.31 P
+0.38 (o describe a the entire protein chain as a single ribbon colored smoothly from blue at the N-terminus to red at) 113.41 550.31 P
+(the C-terminus:) 108 538.31 T
+7 F
+(ribbon -d2 protein.pdb | render > chain_picture.avs) 126 526.31 T
 4 F
-(T) 108 456.31 T
-(o color a multi-chain protein with speci\336ed colors for each chain:) 113.41 456.31 T
-8 F
-(cat chaincolors.pdb protein.pdb | ribbon -d5 - > chains.r3d) 126 438.31 T
+(T) 108 510.31 T
+(o color a multi-chain protein with speci\336ed colors for each chain:) 113.41 510.31 T
+7 F
+(cat chaincolors.pdb protein.pdb | ribbon -d5 - > chains.r3d) 126 498.31 T
 3 F
-(OPTIONS) 108 416.31 T
+(OPTIONS) 108 488.31 T
 6 F
-(-h) 108 398.31 T
+(-h) 108 472.31 T
 4 F
--0.01 (Suppress header records in output. By default) 108 380.31 P
+(Suppress header records in output. By default) 126 458.31 T
 5 F
--0.01 (ribbon) 292.79 380.31 P
+(ribbon) 310.87 458.31 T
 4 F
--0.01 ( will produce an output \336le which starts with header records) 318.29 380.31 P
-0.25 (containing a default set of scaling and processing options. The -h \337ag will suppress these header records so that) 108 368.31 P
-0.8 (the output \336le contains only triangle descriptors. This option is useful for producing \336les which describe only) 108 356.31 P
-(part of a scene, and which are to be later combined with descriptor \336les produced by other programs.) 108 344.31 T
+( will produce an output \336le which starts with) 336.36 458.31 T
+-0.3 (header records containing a default set of scaling and processing options. The -h \337ag will suppress these) 126 446.31 P
+(header records so that the output \336le contains only triangle descriptors. This option is useful for) 126 434.31 T
+(producing \336les which describe only part of a scene, and which are to be later combined with descriptor) 126 422.31 T
+(\336les produced by other programs.) 126 410.31 T
 6 F
-(-d[012345]) 108 326.31 T
+(-d[012345]) 108 392.31 T
 4 F
-0.84 (By default) 108 308.31 P
+(By default) 126 378.31 T
 5 F
-0.76 (ribbon) 154.09 308.31 P
+(ribbon) 170.42 378.31 T
 4 F
-0.84 ( requires interactive input to select ribbon parameters and coloring information. Five default) 179.59 308.31 P
-0.06 (coloring schemes are implemented, however) 108 296.31 P
-0.06 (, and these may be selected as a command line option to bypass any) 286.31 296.31 P
-(interactive input.) 108 284.31 T
-(-d or -d0) 126 266.31 T
-(same as -d2 below) 180 266.31 T
-(-d1) 126 254.31 T
-(solid color ribbon \050defaults to blue\051) 180 254.31 T
-(-d2) 126 242.31 T
-(shade from blue at N-terminus to red at C-terminus) 180 242.31 T
-(-d3) 126 230.31 T
-(one surface of ribbon is blue, other surface is grey) 180 230.31 T
-(-d4) 126 218.31 T
-(shade front surface from blue to red, back surface is grey) 180 218.31 T
-(-d5) 126 206.31 T
-(color separate chains using successive color cards from input stream. Note that pattern) 180 206.31 T
-(matching on the color records is) 180 194.31 T
+( requires interactive input to select ribbon parameters and coloring information. Five) 195.91 378.31 T
+(default coloring schemes are implemented, however) 126 366.31 T
+(, and these may be selected as a command line) 334.33 366.31 T
+(option to bypass any interactive input.) 126 354.31 T
+(-d or -d0) 126 340.31 T
+(same as -d2 below) 180 340.31 T
+(-d1) 126 326.31 T
+(solid color ribbon \050defaults to blue\051) 180 326.31 T
+(-d2) 126 312.31 T
+(shade from blue at N-terminus to red at C-terminus) 180 312.31 T
+(-d3) 126 298.31 T
+(one surface of ribbon is blue, other surface is grey) 180 298.31 T
+(-d4) 126 284.31 T
+(shade front surface from blue to red, back surface is grey) 180 284.31 T
+(-d5) 126 270.31 T
+(color separate chains using successive color cards from input stream. Note that pattern) 180 270.31 T
+(matching on the color records is) 180 256.31 T
 6 F
-(not) 311.02 194.31 T
+(not) 311.02 256.31 T
 4 F
-( done; colors are simply taken sequentially as new) 323.79 194.31 T
-(chains are encountered.) 180 182.31 T
+( done; colors are simply taken sequentially as new) 323.79 256.31 T
+(chains are encountered.) 180 242.31 T
 3 F
-(DESCRIPTION) 108 158.31 T
+(DESCRIPTION) 108 218.31 T
 4 F
-0.16 (The input to) 108 140.31 P
+0.16 (The input to) 108 200.31 P
 5 F
-0.14 (ribbon) 159.84 140.31 P
+0.14 (ribbon) 159.84 200.31 P
 4 F
-0.16 ( consists of a single text \336le containing colour information [optional] and atomic coordinates) 185.34 140.31 P
-0.03 (in Brookhaven PDB data bank format. Only CA and carbonyl O atom records are required; all other input atoms) 108 128.31 P
-2.4 (are ignored. Ribbon parameters and colouring speci\336ed interactively when the program is run. Keyboard) 108 116.31 P
-0.9 (interaction may be bypassed by selecting one of the default colouring schemes using the -d \337ag. A triangular) 108 104.31 P
-0.25 (mesh ribbon is output as Raster3D descriptor records. By default the output \336le contains a set of header records) 108 92.31 P
+0.16 ( consists of a single text \336le containing colour information [optional] and atomic coordinates) 185.34 200.31 P
+0.03 (in Brookhaven PDB data bank format. Only CA and carbonyl O atom records are required; all other input atoms) 108 188.31 P
+2.4 (are ignored. Ribbon parameters and colouring speci\336ed interactively when the program is run. Keyboard) 108 176.31 P
+0.9 (interaction may be bypassed by selecting one of the default colouring schemes using the -d \337ag. A triangular) 108 164.31 P
+0.25 (mesh ribbon is output as Raster3D descriptor records. By default the output \336le contains a set of header records) 108 152.31 P
+0.87 (as required by the) 108 140.31 P
+5 F
+0.79 (render) 185.31 140.31 P
+4 F
+0.87 ( program. The header is constructed to include a TMA) 210.82 140.31 P
+0.87 (T matrix corresponding to the) 435.15 140.31 P
+1.58 (transformation matrix contained in \336le setup.matrix \050if it exists\051, or to the Eulerian angles contained in \336le) 108 128.31 P
+(setup.angles \050if it exists\051.) 108 116.31 T
 FMENDPAGE
-%%EndPage: "13" 14
-%%Page: "14" 14
+%%EndPage: "15" 16
+%%Page: "16" 16
 612 792 0 FMBEGINPAGE
 54 738 504 738 2 L
 7 X
@@ -2538,49 +2767,40 @@ N
 V
 2 12 Q
 0 X
-(14) 54 59.9 T
+(16) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
-4 F
+5 F
 0 X
-0.87 (as required by the) 54 713.33 P
-5 F
-0.79 (render) 131.31 713.33 P
+0.77 (Ribbon) 54 713.33 P
 4 F
-0.87 ( program. The header is constructed to include a TMA) 156.82 713.33 P
-0.87 (T matrix corresponding to the) 381.15 713.33 P
-1.58 (transformation matrix contained in \336le setup.matrix \050if it exists\051, or to the Eulerian angles contained in \336le) 54 701.33 P
-(setup.angles \050if it exists\051.) 54 689.33 T
+0.84 ( produces a continuous smooth trace of the protein backbone. For more complicated representations of) 82.22 713.33 P
+(protein secondary structure it is better to use a dif) 54 701.33 T
+(ferent program, e.g. Molscript, rather than) 251.73 701.33 T
 5 F
-0.77 (Ribbon) 54 671.33 P
+(ribbon) 422.71 701.33 T
 4 F
-0.84 ( produces a continuous smooth trace of the protein backbone. For more complicated representations of) 82.22 671.33 P
-(protein secondary structure it is better to use a dif) 54 659.33 T
-(ferent program, e.g. Molscript, rather than) 251.73 659.33 T
-5 F
-(ribbon) 422.71 659.33 T
-4 F
-(.) 448.2 659.33 T
+(.) 448.2 701.33 T
 3 F
-(ENVIRONMENT) 54 635.33 T
+(ENVIRONMENT) 54 677.33 T
 4 F
-(The \336les setup.matrix and setup.angles, if they exist, af) 54 617.33 T
-(fect the header records produced by) 274.23 617.33 T
+(The \336les setup.matrix and setup.angles, if they exist, af) 54 659.33 T
+(fect the header records produced by) 274.23 659.33 T
 5 F
-(ribbon) 419.65 617.33 T
+(ribbon) 419.65 659.33 T
 4 F
-(.) 445.14 617.33 T
+(.) 445.14 659.33 T
 3 F
-(AUTHORS) 54 593.33 T
+(AUTHORS) 54 635.33 T
 4 F
-1.18 (Original ribbon code written by Phil Evans for the CCP4 version of FRODO. Modi\336cation to describe solid) 54 575.33 P
-(ribbons as triangular mesh for Phong shading in Raster3D package by Ethan A Merritt.) 54 563.33 T
+1.18 (Original ribbon code written by Phil Evans for the CCP4 version of FRODO. Modi\336cation to describe solid) 54 617.33 P
+(ribbons as triangular mesh for Phong shading in Raster3D package by Ethan A Merritt.) 54 605.33 T
 FMENDPAGE
-%%EndPage: "14" 15
-%%Page: "15" 15
+%%EndPage: "16" 17
+%%Page: "17" 17
 612 792 0 FMBEGINPAGE
 108 738 558 738 2 L
 7 X
@@ -2597,7 +2817,7 @@ V
 0 X
 (RODS) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -2609,9 +2829,9 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
-(15) 546.01 59.9 T
+(17) 546.01 59.9 T
 108 87.98 558 720 R
 7 X
 V
@@ -2628,111 +2848,115 @@ N
 0 K
 (RODS) 108 708 T
 3 10 Q
-(NAME) 108 678.31 T
+(SYNOPSIS) 108 682.31 T
 5 F
-(rods) 108 660.31 T
+(rods) 108 664.31 T
 4 F
-(- preprocessor for ball-and-stick models in Raster3D molecular graphics package) 128.04 660.31 T
-3 F
-(SYNOPSIS) 108 636.31 T
-8 F
-(rods [-h] [-b]) 126 618.31 T
+( is a preprocessor for ball-and-stick \336gures in the Raster3D molecular graphics package) 125.76 664.31 T
+7 F
+(rods [-h] [-b]) 126 652.31 T
 5 F
--0.01 (Rods) 108 602.31 P
+0.13 (rods) 108 636.31 P
 4 F
--0.01 ( reads a \336le describing atom colours and/or a Brookhaven PDB coordinate \336le and produces on) 128.49 602.31 P
+0.14 ( reads a \336le describing atom colours and/or a Brookhaven PDB coordinate \336le and produces on) 125.76 636.31 P
 6 F
--0.01 (stdout) 511.38 602.31 P
+0.14 (stdout) 511.07 636.31 P
 4 F
--0.01 ( a \336le) 535.81 602.31 P
-0.9 (containing Raster3D descriptor records. The \336le produced by) 108 590.31 P
+0.14 ( a \336le) 535.51 636.31 P
+0.9 (containing Raster3D descriptor records. The \336le produced by) 108 624.31 P
 5 F
-0.82 (rods) 362.51 590.31 P
+0.82 (rods) 362.51 624.31 P
 4 F
-0.9 ( may be fed directly to) 380.27 590.31 P
+0.9 ( may be fed directly to) 380.27 624.31 P
 5 F
-0.82 (render) 478.37 590.31 P
+0.82 (render) 478.37 624.31 P
 4 F
-0.9 ( or it may be) 503.88 590.31 P
-(combined with descriptor \336les produced by other Raster3D utilities.) 108 578.31 T
+0.9 ( or it may be) 503.88 624.31 P
+(combined with descriptor \336les produced by other Raster3D utilities.) 108 612.31 T
 3 F
-(EXAMPLES) 108 554.31 T
+(EXAMPLES) 108 588.31 T
 4 F
-(T) 108 536.31 T
-(o describe a simple bonds-only model coloured by residue type:) 113.41 536.31 T
-8 F
-(cat mycolours.pdb protein.pdb | rods | render > mypicture.avs) 126 518.31 T
+(T) 108 570.31 T
+(o describe a simple bonds-only model coloured by residue type:) 113.41 570.31 T
+7 F
+(cat mycolours.pdb protein.pdb | rods | render > mypicture.avs) 126 558.31 T
 4 F
-(T) 108 502.31 T
-(o render the same molecule as ball-and-stick:) 113.41 502.31 T
-8 F
-(cat mycolours.pdb protein.pdb | rods -b | render > mypicture.avs) 126 484.31 T
+(T) 108 542.31 T
+(o render the same molecule as ball-and-stick:) 113.41 542.31 T
+7 F
+(cat mycolours.pdb protein.pdb | rods -b | render > mypicture.avs) 126 530.31 T
 3 F
-(OPTIONS) 108 462.31 T
+(OPTIONS) 108 510.31 T
 6 F
-(-h) 108 444.31 T
+(-h) 108 494.31 T
 4 F
-0.46 (Suppress header records in output. By default) 108 426.31 P
+(Suppress header records in output. By default) 126 480.31 T
 5 F
-0.42 ( rods) 293.12 426.31 P
+( rods) 308.37 480.31 T
 4 F
-0.46 ( will produce an output \336le which starts with header records) 313.58 426.31 P
-0.25 (containing a default set of scaling and processing options. The -h \337ag will suppress these header records so that) 108 414.31 P
--0.05 (the output \336le contains only sphere descriptors. This option is useful for producing \336les which describe only part) 108 402.31 P
-(of a scene, and which are to be later combined with descriptor \336les produced by other programs.) 108 390.31 T
+( will produce an output \336le which starts with header) 328.41 480.31 T
+-0.3 (records containing a default set of scaling and processing options. The -h \337ag will suppress these header) 126 468.31 P
+(records so that the output \336le contains only sphere descriptors. This option is useful for producing \336les) 126 456.31 T
+(which describe only part of a scene, and which are to be later combined with descriptor \336les produced) 126 444.31 T
+(by other programs.) 126 432.31 T
 6 F
-(-b) 108 372.31 T
+(-b) 108 414.31 T
 4 F
-0.47 (By default) 108 354.31 P
+(By default) 126 400.31 T
 5 F
-0.43 (rods) 153.36 354.31 P
+(rods) 170.42 400.31 T
 4 F
-0.47 ( will describe bonds only; the -b \337ag will cause it to include spheres at the atom positions also,) 171.12 354.31 P
-(yielding a ball-and-stick representation.) 108 342.31 T
+( will describe bonds only; the -b \337ag will cause it to include spheres at the atom) 188.18 400.31 T
+(positions also, yielding a ball-and-stick representation.) 126 388.31 T
 3 F
-(DESCRIPTION) 108 318.31 T
+(DESCRIPTION) 108 364.31 T
 4 F
-2.62 (The input to) 108 300.31 P
+2.62 (The input to) 108 346.31 P
 5 F
-2.39 (rods) 167.22 300.31 P
+2.39 (rods) 167.22 346.31 P
 4 F
-2.62 ( consists of a single text \336le containing colour information and atomic coordinates in) 184.98 300.31 P
-1.31 (Brookhaven PDB data bank format. Coordinates are output as Raster3D descriptor records with colours and) 108 288.31 P
-0.29 (sphere radii assigned according to the COLO records described below) 108 276.31 P
-0.29 (. Ball-and-stick \336gures have atoms drawn) 390.01 276.31 P
-0.42 (at 0.2 * V) 108 264.31 P
-0.42 (an der W) 147.56 264.31 P
-0.42 (aals radius, connected by rods with 0.2 \201 cylindrical radius. Atoms are connected if they lie) 184.23 264.31 P
-(closer to each other than 0.6 * the sum of their V) 108 252.31 T
-(an der W) 302.3 252.31 T
-(aals radii.) 338.13 252.31 T
-1.3 (By default the output \336le contains a set of header records as required by the) 108 234.31 P
+2.62 ( consists of a single text \336le containing colour information and atomic coordinates in) 184.98 346.31 P
+1.31 (Brookhaven PDB data bank format. Coordinates are output as Raster3D descriptor records with colours and) 108 334.31 P
+0.29 (sphere radii assigned according to the COLO records described below) 108 322.31 P
+0.29 (. Ball-and-stick \336gures have atoms drawn) 390.01 322.31 P
+0.42 (at 0.2 * V) 108 310.31 P
+0.42 (an der W) 147.56 310.31 P
+0.42 (aals radius, connected by rods with 0.2 \201 cylindrical radius. Atoms are connected if they lie) 184.23 310.31 P
+(closer to each other than 0.6 * the sum of their V) 108 298.31 T
+(an der W) 302.3 298.31 T
+(aals radii.) 338.13 298.31 T
+1.3 (By default the output \336le contains a set of header records as required by the) 108 280.31 P
 5 F
-1.19 (render) 432.07 234.31 P
+1.19 (render) 432.07 280.31 P
 4 F
-1.3 ( program. The header is) 457.58 234.31 P
-0.2 (constructed to include a TMA) 108 222.31 P
-0.2 (T matrix corresponding to the transformation matrix contained in \336le setup.matrix) 227.6 222.31 P
-2.04 (\050if it exists\051, or to the Eulerian angles contained in \336le setup.angles \050if it exists\051. Header records may be) 108 210.31 P
-(suppressed using the -h option.) 108 198.31 T
-0.66 (Colours are assigned to atoms using a matching process, using COLOUR records prepended to the input PDB) 108 180.31 P
--0.11 (\336le. Raster3D uses a pseudo-PDB record type with the same basic layout as the above but with COLO in the \336rst) 108 168.31 P
-(4 columns:) 108 156.31 T
+1.3 ( program. The header is) 457.58 280.31 P
+0.2 (constructed to include a TMA) 108 268.31 P
+0.2 (T matrix corresponding to the transformation matrix contained in \336le setup.matrix) 227.6 268.31 P
+2.04 (\050if it exists\051, or to the Eulerian angles contained in \336le setup.angles \050if it exists\051. Header records may be) 108 256.31 P
+(suppressed using the -h option.) 108 244.31 T
+0.66 (Colours are assigned to atoms using a matching process, using COLOUR records prepended to the input PDB) 108 226.31 P
+-0.11 (\336le. Raster3D uses a pseudo-PDB record type with the same basic layout as the above but with COLO in the \336rst) 108 214.31 P
+(4 columns:) 108 202.31 T
 6 F
-(Columns) 126 138.31 T
-(Contents) 180 138.31 T
+(Columns) 126 178.31 T
+(Contents) 180 178.31 T
 4 F
-( 1 - 4) 126 128.31 T
-(COLO) 180 128.31 T
-( 7 - 30) 126 118.31 T
-(Mask \050described below\051) 180 118.31 T
-( 31 - 38) 126 108.31 T
-(Red component) 180 108.31 T
-( 39 - 46) 126 98.31 T
-(Green component) 180 98.31 T
+( 1 - 4) 126 164.31 T
+(COLO) 180 164.31 T
+( 7 - 30) 126 150.31 T
+(Mask \050described below\051) 180 150.31 T
+( 31 - 38) 126 136.31 T
+(Red component) 180 136.31 T
+( 39 - 46) 126 122.31 T
+(Green component) 180 122.31 T
+( 47 - 54) 126 108.31 T
+(Blue component) 180 108.31 T
+( 55 - 60) 126 94.31 T
+(van der W) 180 94.31 T
+(aals radius in Angstroms) 220.83 94.31 T
 FMENDPAGE
-%%EndPage: "15" 16
-%%Page: "16" 16
+%%EndPage: "17" 18
+%%Page: "18" 18
 612 792 0 FMBEGINPAGE
 54 738 504 738 2 L
 7 X
@@ -2761,74 +2985,69 @@ N
 V
 2 12 Q
 0 X
-(16) 54 59.9 T
+(18) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
 4 F
 0 X
-( 47 - 54) 72 713.33 T
-(Blue component) 126 713.33 T
-( 55 - 60) 72 703.33 T
-(van der W) 126 703.33 T
-(aals radius in Angstroms) 166.83 703.33 T
-( 61 - 80) 72 693.33 T
-(Comments) 126 693.33 T
-0.46 (Note that the Red, Green, and Blue components are in the same positions as the X, Y) 54 677.33 P
-0.46 (, and Z components of an) 400.11 677.33 P
--0.08 (A) 54 665.33 P
--0.08 (T) 60.11 665.33 P
--0.08 (OM or HET) 66.03 665.33 P
--0.08 (A record, and the van der W) 113.92 665.33 P
--0.08 (aals radius goes in place of the Occupancy) 226.14 665.33 P
--0.08 (. The Red, Green, and Blue) 395.05 665.33 P
-(components must all be in the range 0 to 1.) 54 653.33 T
-0.38 (The Mask \336eld is used in the matching process as follows. First the program reads in and stores all the A) 54 635.33 P
-0.38 (T) 479.47 635.33 P
-0.38 (OM,) 485.4 635.33 P
-0.91 (HET) 54 623.33 P
-0.91 (A, and COLO records in input order) 72.63 623.33 P
-0.91 (. Then it goes through each stored A) 222.7 623.33 P
-0.91 (T) 373.39 623.33 P
-0.91 (OM/HET) 379.32 623.33 P
-0.91 (A record in turn, and) 416.83 623.33 P
--0.02 (searches for a COLO record that matches the A) 54 611.33 P
--0.02 (T) 242.58 611.33 P
--0.02 (OM/HET) 248.5 611.33 P
--0.02 (A record in all of columns 7 through 30. The \336rst such) 286.01 611.33 P
-(COLO record to be found determines the colour and radius of the atom.) 54 599.33 T
-0.19 (In order that one COLO record can provide colour and radius speci\336cations for more than one atom \050e.g., based) 54 581.33 P
-0.54 (on residue or atom type, or any other criterion for which labels can be given somewhere in columns 7 through) 54 569.33 P
-1.63 (30\051, the # symbol is treated as a wildcard. I.e., a # in a COLO record matches any character found in the) 54 557.33 P
-0 (corresponding column in an A) 54 545.33 P
-0 (T) 174.48 545.33 P
-0 (OM or HET) 180.41 545.33 P
-0 (A record. All other characters must match exactly) 228.46 545.33 P
-0 (. Note that the very) 427.11 545.33 P
-0.04 (last COLO record in the input should have # symbols in all of columns 7 through 30 in order to provide a colour) 54 533.33 P
-1.42 (for any atom whose A) 54 521.33 P
-1.42 (T) 147.38 521.33 P
-1.42 (OM/HET) 153.31 521.33 P
-1.42 (A record fails to match any previous COLO record. This idea of matching) 190.82 521.33 P
-(masks for colour speci\336cations is due to Colin Broughton.) 54 509.33 T
+( 61 - 80) 72 713.33 T
+(Comments) 126 713.33 T
+0.46 (Note that the Red, Green, and Blue components are in the same positions as the X, Y) 54 695.33 P
+0.46 (, and Z components of an) 400.11 695.33 P
+-0.08 (A) 54 683.33 P
+-0.08 (T) 60.11 683.33 P
+-0.08 (OM or HET) 66.03 683.33 P
+-0.08 (A record, and the van der W) 113.92 683.33 P
+-0.08 (aals radius goes in place of the Occupancy) 226.14 683.33 P
+-0.08 (. The Red, Green, and Blue) 395.05 683.33 P
+(components must all be in the range 0 to 1.) 54 671.33 T
+0.38 (The Mask \336eld is used in the matching process as follows. First the program reads in and stores all the A) 54 653.33 P
+0.38 (T) 479.47 653.33 P
+0.38 (OM,) 485.4 653.33 P
+0.91 (HET) 54 641.33 P
+0.91 (A, and COLO records in input order) 72.63 641.33 P
+0.91 (. Then it goes through each stored A) 222.7 641.33 P
+0.91 (T) 373.39 641.33 P
+0.91 (OM/HET) 379.32 641.33 P
+0.91 (A record in turn, and) 416.83 641.33 P
+-0.02 (searches for a COLO record that matches the A) 54 629.33 P
+-0.02 (T) 242.58 629.33 P
+-0.02 (OM/HET) 248.5 629.33 P
+-0.02 (A record in all of columns 7 through 30. The \336rst such) 286.01 629.33 P
+(COLO record to be found determines the colour and radius of the atom.) 54 617.33 T
+0.19 (In order that one COLO record can provide colour and radius speci\336cations for more than one atom \050e.g., based) 54 599.33 P
+0.54 (on residue or atom type, or any other criterion for which labels can be given somewhere in columns 7 through) 54 587.33 P
+1.63 (30\051, the # symbol is treated as a wildcard. I.e., a # in a COLO record matches any character found in the) 54 575.33 P
+0 (corresponding column in an A) 54 563.33 P
+0 (T) 174.48 563.33 P
+0 (OM or HET) 180.41 563.33 P
+0 (A record. All other characters must match exactly) 228.46 563.33 P
+0 (. Note that the very) 427.11 563.33 P
+0.04 (last COLO record in the input should have # symbols in all of columns 7 through 30 in order to provide a colour) 54 551.33 P
+1.42 (for any atom whose A) 54 539.33 P
+1.42 (T) 147.38 539.33 P
+1.42 (OM/HET) 153.31 539.33 P
+1.42 (A record fails to match any previous COLO record. This idea of matching) 190.82 539.33 P
+(masks for colour speci\336cations is due to Colin Broughton.) 54 527.33 T
 3 F
-(ENVIRONMENT) 54 485.33 T
+(ENVIRONMENT) 54 503.33 T
 4 F
-(The \336les setup.matrix and setup.angles, if they exist, af) 54 467.33 T
-(fect the header records produced by) 274.23 467.33 T
+(The \336les setup.matrix and setup.angles, if they exist, af) 54 485.33 T
+(fect the header records produced by) 274.23 485.33 T
 5 F
-(rods) 419.65 467.33 T
+(rods) 419.65 485.33 T
 4 F
-(.) 437.41 467.33 T
+(.) 437.41 485.33 T
 3 F
-(AUTHORS) 54 443.33 T
+(AUTHORS) 54 461.33 T
 4 F
-(Ethan A Merritt) 54 425.33 T
+(Ethan A Merritt) 54 443.33 T
 FMENDPAGE
-%%EndPage: "16" 17
-%%Page: "17" 17
+%%EndPage: "18" 19
+%%Page: "19" 19
 612 792 0 FMBEGINPAGE
 108 738 558 738 2 L
 7 X
@@ -2843,9 +3062,9 @@ N
 V
 0 8 Q
 0 X
-(SETUP) 108 759.67 T
+(BALLS) 108 759.67 T
 (Raster3D V) 462.76 759.67 T
-(ersion 2.0) 503.54 759.67 T
+(ersion 2.1) 503.54 759.67 T
 108 72 558 72 2 L
 7 X
 V
@@ -2857,9 +3076,9 @@ N
 V
 1 10 Q
 0 X
-(1 February 1995) 309 59.9 T
+(14 June 1995) 309 59.9 T
 2 12 Q
-(17) 546.01 59.9 T
+(19) 546.01 59.9 T
 108 87.98 558 720 R
 7 X
 V
@@ -2874,107 +3093,122 @@ N
 3 18 Q
 0 X
 0 K
-(SETUP) 108 708 T
+(BALLS) 108 708 T
 3 10 Q
-(NAME) 108 678.31 T
+(SYNOPSIS) 108 678.31 T
 5 F
-(setup) 108 660.31 T
+-0.03 (balls) 108 660.31 P
 4 F
-( - preprocessor for space-\336lling models in Raster3D molecular graphics package) 129.86 660.31 T
-3 F
-(SYNOPSIS) 108 636.31 T
-8 F
-(setup [-h]) 126 618.31 T
+-0.04 ( is a preprocessor which prepares a description of a space-\336lling model for the Raster3D molecular graphics) 126.68 660.31 P
+(package) 108 648.31 T
+7 F
+(balls [-h]) 126 636.31 T
 5 F
--0.12 (Setup) 108 602.31 P
+0.08 (balls) 108 620.31 P
 4 F
--0.14 ( reads a \336le describing atom colours and/or a Brookhaven PDB coordinate \336le and produces on) 130.77 602.31 P
+0.09 ( reads a \336le describing atom colours and/or a Brookhaven PDB coordinate \336le and produces on) 126.68 620.31 P
 6 F
--0.14 (stdout) 511.63 602.31 P
+0.09 (stdout) 511.18 620.31 P
 4 F
--0.14 ( a \336le) 536.07 602.31 P
-0.73 (containing Raster3D descriptor records for each atom in the input \336le. The \336le produced by) 108 590.31 P
+0.09 ( a \336le) 535.61 620.31 P
+0.91 (containing Raster3D descriptor records for each atom in the input \336le. The \336le produced by) 108 608.31 P
 5 F
-0.67 (setup) 487.04 590.31 P
+0.83 (balls) 489.69 608.31 P
 4 F
-0.73 ( may be fed) 508.9 590.31 P
-(directly to) 108 578.31 T
+0.91 ( may be fed) 508.37 608.31 P
+(directly to) 108 596.31 T
 5 F
-(render) 151.31 578.31 T
+(render) 151.31 596.31 T
 4 F
-( or it may be combined with descriptor \336les produced by other Raster3D utilities.) 176.81 578.31 T
+( or it may be combined with descriptor \336les produced by other Raster3D utilities.) 176.81 596.31 T
 3 F
-(EXAMPLES) 108 554.31 T
+1.54 (Note) 108 578.31 P
 4 F
-(T) 108 536.31 T
-(o describe a simple space-\336lling model coloured by residue type:) 113.41 536.31 T
-8 F
-(cat mycolours.pdb protein.pdb | setup | render > mypicture.avs) 126 518.31 T
+1.54 (:) 127.43 578.31 P
+5 F
+1.41 (balls) 134.25 578.31 P
 4 F
-(T) 108 502.31 T
-(o include a pre-selected view matrix with the same model:) 113.41 502.31 T
-8 F
-(cp view1.matrix setup.matrix) 126 484.31 T
-(cat mycolours.pdb protein.pdb | setup | render > mypicture.avs) 126 474.31 T
+1.54 ( used to be called) 152.93 578.31 P
+5 F
+1.41 (setup) 232.55 578.31 P
 4 F
-(T) 108 458.31 T
-(o prepend header records describing a pre-selected scale and view:) 113.41 458.31 T
-8 F
-(cat mycolours.pdb protein.pdb | setup -h > balls.r3d) 126 440.31 T
-(cat header.r3d balls.r3d | render > mypicture.avs) 126 430.31 T
+1.54 ( in previous releases of Raster3D. The name has been changed to avoid) 254.4 578.31 P
+1.51 (con\337icts with other programs called \322setup\323 on some systems. For compatibility with previous versions the) 108 566.31 P
+(command) 108 554.31 T
+5 F
+(setup) 149.92 554.31 T
+4 F
+( may be installed as a symbolic link to) 171.77 554.31 T
+5 F
+(balls) 327.52 554.31 T
+4 F
+(.) 346.2 554.31 T
 3 F
-(OPTIONS) 108 408.31 T
+(EXAMPLES) 108 530.31 T
+4 F
+(T) 108 512.31 T
+(o describe a simple space-\336lling model coloured by residue type:) 113.41 512.31 T
+7 F
+(cat mycolours.pdb protein.pdb | balls | render > mypicture.avs) 126 500.31 T
+4 F
+(T) 108 484.31 T
+(o include a pre-selected view matrix with the same model:) 113.41 484.31 T
+7 F
+(cp view1.matrix setup.matrix) 126 472.31 T
+(cat mycolours.pdb protein.pdb | balls | render > mypicture.avs) 126 462.31 T
+4 F
+(T) 108 446.31 T
+(o prepend header records describing a pre-selected scale and view:) 113.41 446.31 T
+7 F
+(cat mycolours.pdb protein.pdb | balls -h > balls.r3d) 126 434.31 T
+(cat header.r3d balls.r3d | render > mypicture.avs) 126 424.31 T
+3 F
+(OPTIONS) 108 404.31 T
 6 F
-(-h) 108 390.31 T
+(-h) 108 388.31 T
 4 F
-0.2 (Suppress header records in output. By default) 108 372.31 P
+(Suppress header records in output. By default) 126 374.31 T
 5 F
-0.19 (setup) 294.29 372.31 P
+(balls) 310.87 374.31 T
 4 F
-0.2 ( will produce an output \336le which starts with header records) 316.14 372.31 P
-0.25 (containing a default set of scaling and processing options. The -h \337ag will suppress these header records so that) 108 360.31 P
--0.05 (the output \336le contains only sphere descriptors. This option is useful for producing \336les which describe only part) 108 348.31 P
-(of a scene, and which are to be later combined with descriptor \336les produced by other programs.) 108 336.31 T
+( will produce an output \336le which starts with header) 329.55 374.31 T
+-0.3 (records containing a default set of scaling and processing options. The -h \337ag will suppress these header) 126 362.31 P
+(records so that the output \336le contains only sphere descriptors. This option is useful for producing \336les) 126 350.31 T
+(which describe only part of a scene, and which are to be later combined with descriptor \336les produced) 126 338.31 T
+(by other programs.) 126 326.31 T
 3 F
-(DESCRIPTION) 108 312.31 T
+(DESCRIPTION) 108 302.31 T
 4 F
-2.36 (The input to) 108 294.31 P
+2.56 (The input to) 108 284.31 P
 5 F
-2.16 (setup) 166.45 294.31 P
+2.34 (balls) 167.05 284.31 P
 4 F
-2.36 ( consists of a single text \336le containing colour information and atomic coordinates in) 188.31 294.31 P
-1.31 (Brookhaven PDB data bank format. Coordinates are output as Raster3D descriptor records with colours and) 108 282.31 P
--0.09 (sphere radii assigned according to the COLO records described below) 108 270.31 P
--0.09 (. By default the output \336le contains a set of) 386.64 270.31 P
-2.4 (header records as required by the render program. The header is constructed to include a TMA) 108 258.31 P
-2.4 (T matrix) 520.9 258.31 P
-0.47 (corresponding to the transformation matrix contained in \336le setup.matrix \050if it exists\051, or to the Eulerian angles) 108 246.31 P
-(contained in \336le setup.angles \050if it exists\051.) 108 234.31 T
-0.66 (Colours are assigned to atoms using a matching process, using COLOUR records prepended to the input PDB) 108 216.31 P
--0.11 (\336le. Raster3D uses a pseudo-PDB record type with the same basic layout as the above but with COLO in the \336rst) 108 204.31 P
-(4 columns:) 108 192.31 T
+2.56 ( consists of a single text \336le containing colour information and atomic coordinates in) 185.73 284.31 P
+1.31 (Brookhaven PDB data bank format. Coordinates are output as Raster3D descriptor records with colours and) 108 272.31 P
+-0.09 (sphere radii assigned according to the COLO records described below) 108 260.31 P
+-0.09 (. By default the output \336le contains a set of) 386.64 260.31 P
+2.4 (header records as required by the render program. The header is constructed to include a TMA) 108 248.31 P
+2.4 (T matrix) 520.9 248.31 P
+0.47 (corresponding to the transformation matrix contained in \336le setup.matrix \050if it exists\051, or to the Eulerian angles) 108 236.31 P
+(contained in \336le setup.angles \050if it exists\051.) 108 224.31 T
+0.66 (Colours are assigned to atoms using a matching process, using COLOUR records prepended to the input PDB) 108 206.31 P
+-0.11 (\336le. Raster3D uses a pseudo-PDB record type with the same basic layout as the above but with COLO in the \336rst) 108 194.31 P
+(4 columns:) 108 182.31 T
 6 F
-(Columns) 126 174.31 T
-(Contents) 180 174.31 T
+(Columns) 126 158.31 T
+(Contents) 180 158.31 T
 4 F
-( 1 - 4) 126 164.31 T
-(COLO) 180 164.31 T
-( 7 - 30) 126 154.31 T
-(Mask \050described below\051) 180 154.31 T
-( 31 - 38) 126 144.31 T
-(Red component) 180 144.31 T
-( 39 - 46) 126 134.31 T
-(Green component) 180 134.31 T
-( 47 - 54) 126 124.31 T
-(Blue component) 180 124.31 T
-( 55 - 60) 126 114.31 T
-(van der W) 180 114.31 T
-(aals radius in Angstroms) 220.83 114.31 T
-( 61 - 80) 126 104.31 T
-(Comments) 180 104.31 T
+( 1 - 4) 126 144.31 T
+(COLO) 180 144.31 T
+( 7 - 30) 126 130.31 T
+(Mask \050described below\051) 180 130.31 T
+( 31 - 38) 126 116.31 T
+(Red component) 180 116.31 T
+( 39 - 46) 126 102.31 T
+(Green component) 180 102.31 T
 FMENDPAGE
-%%EndPage: "17" 18
-%%Page: "18" 18
+%%EndPage: "19" 20
+%%Page: "20" 20
 612 792 0 FMBEGINPAGE
 54 738 504 738 2 L
 7 X
@@ -2989,7 +3223,7 @@ N
 V
 0 8 Q
 0 X
-(SETUP) 54 759.67 T
+(BALLS) 54 759.67 T
 (Raster3D V) 408.76 759.67 T
 (ersion 2.0) 449.54 759.67 T
 54 72 504 72 2 L
@@ -3003,74 +3237,81 @@ N
 V
 2 12 Q
 0 X
-(18) 54 59.9 T
+(20) 54 59.9 T
 1 10 Q
-( 1 February 1995) 252 59.9 T
+( 14 June 1995) 252 59.9 T
 54 87.98 504 720 R
 7 X
 V
 4 F
 0 X
-0.46 (Note that the Red, Green, and Blue components are in the same positions as the X, Y) 54 713.33 P
-0.46 (, and Z components of an) 400.11 713.33 P
--0.08 (A) 54 701.33 P
--0.08 (T) 60.11 701.33 P
--0.08 (OM or HET) 66.03 701.33 P
--0.08 (A record, and the van der W) 113.92 701.33 P
--0.08 (aals radius goes in place of the Occupancy) 226.14 701.33 P
--0.08 (. The Red, Green, and Blue) 395.05 701.33 P
-(components must all be in the range 0 to 1.) 54 689.33 T
-0.38 (The Mask \336eld is used in the matching process as follows. First the program reads in and stores all the A) 54 671.33 P
-0.38 (T) 479.47 671.33 P
-0.38 (OM,) 485.4 671.33 P
-0.91 (HET) 54 659.33 P
-0.91 (A, and COLO records in input order) 72.63 659.33 P
-0.91 (. Then it goes through each stored A) 222.7 659.33 P
-0.91 (T) 373.39 659.33 P
-0.91 (OM/HET) 379.32 659.33 P
-0.91 (A record in turn, and) 416.83 659.33 P
--0.02 (searches for a COLO record that matches the A) 54 647.33 P
--0.02 (T) 242.58 647.33 P
--0.02 (OM/HET) 248.5 647.33 P
--0.02 (A record in all of columns 7 through 30. The \336rst such) 286.01 647.33 P
-(COLO record to be found determines the colour and radius of the atom.) 54 635.33 T
-0.19 (In order that one COLO record can provide colour and radius speci\336cations for more than one atom \050e.g., based) 54 617.33 P
-0.54 (on residue or atom type, or any other criterion for which labels can be given somewhere in columns 7 through) 54 605.33 P
-1.63 (30\051, the # symbol is treated as a wildcard. I.e., a # in a COLO record matches any character found in the) 54 593.33 P
-0 (corresponding column in an A) 54 581.33 P
-0 (T) 174.48 581.33 P
-0 (OM or HET) 180.41 581.33 P
-0 (A record. All other characters must match exactly) 228.46 581.33 P
-0 (. Note that the very) 427.11 581.33 P
-0.04 (last COLO record in the input should have # symbols in all of columns 7 through 30 in order to provide a colour) 54 569.33 P
-1.42 (for any atom whose A) 54 557.33 P
-1.42 (T) 147.38 557.33 P
-1.42 (OM/HET) 153.31 557.33 P
-1.42 (A record fails to match any previous COLO record. This idea of matching) 190.82 557.33 P
-(masks for colour speci\336cations is due to Colin Broughton.) 54 545.33 T
-2.78 (Several \336les of COLO records, including one based on Bob Fletterick\325) 54 527.33 P
-2.78 (s \322Shapely Models\323 and another) 363.54 527.33 P
-(mimicking CPK model parts, are provided as samples.) 54 515.33 T
+( 47 - 54) 72 713.33 T
+(Blue component) 126 713.33 T
+( 55 - 60) 72 699.33 T
+(van der W) 126 699.33 T
+(aals radius in Angstroms) 166.83 699.33 T
+( 61 - 80) 72 685.33 T
+(Comments) 126 685.33 T
+0.46 (Note that the Red, Green, and Blue components are in the same positions as the X, Y) 54 667.33 P
+0.46 (, and Z components of an) 400.11 667.33 P
+-0.08 (A) 54 655.33 P
+-0.08 (T) 60.11 655.33 P
+-0.08 (OM or HET) 66.03 655.33 P
+-0.08 (A record, and the van der W) 113.92 655.33 P
+-0.08 (aals radius goes in place of the Occupancy) 226.14 655.33 P
+-0.08 (. The Red, Green, and Blue) 395.05 655.33 P
+(components must all be in the range 0 to 1.) 54 643.33 T
+0.38 (The Mask \336eld is used in the matching process as follows. First the program reads in and stores all the A) 54 625.33 P
+0.38 (T) 479.47 625.33 P
+0.38 (OM,) 485.4 625.33 P
+0.91 (HET) 54 613.33 P
+0.91 (A, and COLO records in input order) 72.63 613.33 P
+0.91 (. Then it goes through each stored A) 222.7 613.33 P
+0.91 (T) 373.39 613.33 P
+0.91 (OM/HET) 379.32 613.33 P
+0.91 (A record in turn, and) 416.83 613.33 P
+-0.02 (searches for a COLO record that matches the A) 54 601.33 P
+-0.02 (T) 242.58 601.33 P
+-0.02 (OM/HET) 248.5 601.33 P
+-0.02 (A record in all of columns 7 through 30. The \336rst such) 286.01 601.33 P
+(COLO record to be found determines the colour and radius of the atom.) 54 589.33 T
+0.19 (In order that one COLO record can provide colour and radius speci\336cations for more than one atom \050e.g., based) 54 571.33 P
+0.54 (on residue or atom type, or any other criterion for which labels can be given somewhere in columns 7 through) 54 559.33 P
+1.63 (30\051, the # symbol is treated as a wildcard. I.e., a # in a COLO record matches any character found in the) 54 547.33 P
+0 (corresponding column in an A) 54 535.33 P
+0 (T) 174.48 535.33 P
+0 (OM or HET) 180.41 535.33 P
+0 (A record. All other characters must match exactly) 228.46 535.33 P
+0 (. Note that the very) 427.11 535.33 P
+0.04 (last COLO record in the input should have # symbols in all of columns 7 through 30 in order to provide a colour) 54 523.33 P
+1.42 (for any atom whose A) 54 511.33 P
+1.42 (T) 147.38 511.33 P
+1.42 (OM/HET) 153.31 511.33 P
+1.42 (A record fails to match any previous COLO record. This idea of matching) 190.82 511.33 P
+(masks for colour speci\336cations is due to Colin Broughton.) 54 499.33 T
+2.78 (Several \336les of COLO records, including one based on Bob Fletterick\325) 54 481.33 P
+2.78 (s \322Shapely Models\323 and another) 363.54 481.33 P
+(mimicking CPK model parts, are provided as samples.) 54 469.33 T
 3 F
-(ENVIRONMENT) 54 491.33 T
+(ENVIRONMENT) 54 445.33 T
 4 F
-(The \336les setup.matrix and setup.angles, if they exist, af) 54 473.33 T
-(fect the header records produced by) 274.23 473.33 T
+(The \336les setup.matrix and setup.angles, if they exist, af) 54 427.33 T
+(fect the header records produced by) 274.23 427.33 T
 5 F
-(setup) 419.65 473.33 T
+(balls) 419.65 427.33 T
 4 F
-(.) 441.51 473.33 T
+(.) 438.33 427.33 T
 3 F
-(AUTHORS) 54 449.33 T
+(AUTHORS) 54 403.33 T
 4 F
-(Originally written by David J. Bacon and W) 54 431.33 T
-(ayne F) 230.3 431.33 T
-(. Anderson. Extensions and revisions by Ethan A Merritt.) 256.43 431.33 T
+(Originally written by David J. Bacon and W) 54 385.33 T
+(ayne F) 230.3 385.33 T
+(. Anderson. Extensions and revisions by Ethan A Merritt.) 256.43 385.33 T
 FMENDPAGE
-%%EndPage: "18" 19
+%%EndPage: "20" 21
 %%Trailer
 %%BoundingBox: 0 0 612 792
-%%Pages: 18 1
+%%Pages: 20 1
 %%DocumentFonts: AvantGarde-Demi
 %%+ Palatino-Italic
 %%+ Palatino-Bold
@@ -3078,6 +3319,6 @@ FMENDPAGE
 %%+ Times-Roman
 %%+ Helvetica-Narrow-BoldOblique
 %%+ Times-Italic
-%%+ Times-Bold
 %%+ Courier
+%%+ Times-Bold
 %%+ Helvetica

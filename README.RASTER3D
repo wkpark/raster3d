@@ -15,10 +15,6 @@ PROGRAM:
 
 AVAILABILITY:
 	Raster3d is freely available but unsupported. 
-	Programs for previewing and figure composition are written
-	for IRIS4D workstations (GL graphics), but all other code is
-	intended to be machine-independent. The current version is 2.0,
-	please see README.2.0 for further information.
 
 REFERENCES:
 	original implementation:
@@ -40,10 +36,12 @@ AUTHORS:
 	and Ethan A Merritt
 
 SOURCE:
-	ftp:	stanzi.bchem.washington.edu   (128.95.12.38)
-	www:	ftp://stanzi.bchem.washington.edu/pub/raster3d/raster3d.html
+	ftp:	ftp.bmsc.washington.edu
+	www:	http://www.bmsc.washington.edu/raster3d/raster3d.html
 
 	contact:		Ethan A Merritt
-				Dept of Biological Structure SM-20
-				University of Washington, Seattle WA 98195
-				merritt@u.washington.edu
+				Dept of Biological Structure Box 357420
+				University of Washington 
+				Seattle WA 98195-7420
+
+	Email:			merritt@u.washington.edu

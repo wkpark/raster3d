@@ -12,7 +12,7 @@ cat chaincolours.pdb LT.pdb > temp.tmp
 #
 # space-filling representation of protein atoms
 #
-setup -h < temp.tmp > balls.r3d
+balls -h < temp.tmp > balls.r3d
 #
 # draw oligosaccharide as stick model
 #

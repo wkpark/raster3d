@@ -59,7 +59,7 @@ produce a monochrome output image.
 .SH SOURCE
 .TP 5
 	anonymous ftp site:	
-                stanzi.bchem.washington.edu   (128.95.12.38)
+                ftp.bmsc.washington.edu
 .TP 5
 	contact:		
                 Ethan A Merritt

@@ -31,7 +31,7 @@ FFLAGS   = -a -w
 INCLUDES =	-I/usr/include/gr
 
 RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
-PROGS    =	setup rods ribbon render avs2ps
+PROGS    =	balls rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
@@ -53,8 +53,8 @@ ribbon:	$(RIBOBJS)
 rods:
 	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods
 
-setup:
-	$(FC) $(FFLAGS) setup.f $(CFLAGS) $(LDFLAGS) -o setup
+balls:
+	$(FC) $(FFLAGS) balls.f $(CFLAGS) $(LDFLAGS) -o balls
 
 local.o: local.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
@@ -66,6 +66,9 @@ render:	render.f local.o
 
 avs2ps:	avs2ps.c
 	$(CC) $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm
+
+setup:	balls
+	ln -s balls setup
 
 $(RIBOBJS):
 	$(F2) $(FFLAGS) $*.f

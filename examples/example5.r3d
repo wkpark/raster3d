@@ -1,0 +1,46 @@
+Example of object types 8 + 9 to change material surface properites
+32 32     tiles in x,y
+18 18     pixels (x,y) per tile
+3         3x3 virtual pixels -> 2x2 pixels
+0 0 0     black background colour
+F         no shadows cast
+25        Phong power
+0.15      secondary light contribution
+0.05      ambient light contribution
+0.25      specular reflection component
+4.0       eye position
+1 1 1     main light source position
+1 0 0 0   input coordinate, radius transformation
+0 1 0 0
+0 0 1 0
+0 0 0 2
+3         mixed objects
+*
+*
+*
+9 This is purely a comment record (since there is no previous object)
+9 The following objects will get the properties defined in the header
+2
+ -0.3  0.0 0.0    0.2    0.7 0.3 0.1
+2
+ -0.3  0.5 0.0    0.2    0.7 0.7 0.6
+2
+ -0.3 -0.5 0.0    0.2    0.4 0.2 0.9
+9 Now we specify material properties which override the header values
+8
+  5.0  0.5               1.0 1.0 0.0
+2
+  0.3  0.0 0.0    0.2    0.7 0.3 0.1
+9 Another set of material properties which override the header values
+8
+  7.0  0.6               0.5 0.7 1.0
+2
+  0.3  0.5 0.0    0.2    0.7 0.7 0.6
+9 Another set of material properties which override the header values
+8
+  1.0  0.0               0.0 0.0 0.0
+2
+  0.3 -0.5 0.0    0.2    0.4 0.2 0.9
+9 This record is NOT just a comment; it terminates the special material
+0
+

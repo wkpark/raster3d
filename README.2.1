@@ -1,6 +1,6 @@
-most recent change:	  1-Mar-1995
+most recent change:	  1-May-1995
 
-The file Raster3D_2.03.tar.Z contains version 2.03 of RASTER3D.
+The file Raster3D_2.1.tar.Z contains version 2.1 of RASTER3D.
 It is a unified distribution which has been tested on the following 
 machines:
 
@@ -11,10 +11,20 @@ machines:
 	SUN Sparc  / SUNOS 4.1.3_U1
 	Intel 486 / linux
 
-Changes since first official release of version 2.0:
+New in version 2.1:
 
-- fixed bug which caused truncation of cylinders pointing toward viewer
-- new sections in documentation
+- updated documentation, including html versions
+- new object types for rendering
+	type 7:	explicit vertex normals for triangle
+	type 8: special material properties for lighting model
+	type 9: terminates previous special material, may be used as comment
+- renamed "setup" to be "balls", in hope of avoiding conflicts with
+  other system-dependent utilities called "setup"
+- more accounting information reported in render
+
+
+Other changes since first distribution of version 2.0:
+
 - fixed bug in input format and accounting of PLANE objects
 - added machine-independent utility filter avs2ps to produce dithered
   black&white PostScript output (supercedes machine-dependent stuff in
@@ -22,36 +32,6 @@ Changes since first official release of version 2.0:
 - added patch for Molscript V1.4 so that dotted lines can be passed
   on to Raster3D
 - fixed bug which could cause end of cylinder to have a bite out of it
-
-Changes since the beta-test of version 2.0:
-
-- fixed input format bug for PLANE objects
-- cross-tested with Molscript V1.4
-- a few syntax changes to make the IBM RS6000/AIX xlf compiler happier
-  (note that "happier" != "happy"; the code is largely untested under AIX)
-- support direct output of TIFF image file (requires libtiff.a)
-
-
-Version 2.0 is very close to the previous DS5000 version (Mar 1993).
-Differences include:
-
-- handle possible divide-by-zero errors if duplicate or 0 size cylinders
-- fixed a number of long-standing bugs in shadowing code
-- fixed y-axis definition of movable light source
-- inclusion of SGI libimage support and combined
-  Ultrix/Irix/OSF distribution kit
-- suite of example scripts
-
-Compared to the previous SGI distribution kit, this one has:
-
-- more consistent use of stdin/stdout so that pipes work between modules
-- forward and backward source compatibility with other Raster3D versions
-- added -h option to setup/ribbon/rods to suppress header records in output
-- added -d# option (# is color scheme) to setup which forces default
-  parameters and no interactive input.
-- new object type PLANE (=6) , same format as TRIANGLE but extends from front
-  plane of view to pseudo-horizon at back clipping limit. Color saturation
-  falls off with depth.
 
 The render program may be run with any one of four output modes
 currently supported in the file local.c:

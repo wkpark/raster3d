@@ -15,7 +15,7 @@ FFLAGS  = -O -static -w1
 INCLUDES=	-I/usr/local/include/ -I/usr/local/include/tiff
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	setup rods ribbon render avs2ps
+PROGS   =	balls rods ribbon render setup avs2ps
 
 all:	$(PROGS)
 
@@ -43,3 +43,6 @@ render:	render.f local.o
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps -lm
+
+setup:	balls
+	ln -s balls setup

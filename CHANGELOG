@@ -1,3 +1,8 @@
+30-Jun-95	Version 2.1 release via ftp and www
+28-Apr-95	object types 7/8/9 folded back into regular distribution (V2.1)
+		Rename setup to balls; change references everywhere
+		HTML version of documentation
+13-Apr-95	remove unused code from modsubs.f which made solaris unhappy
 01-Mar-95	V2.03 onto ftp site
 24-Feb-95	Fix bug in CYL1 routine which caused pieces of cylinder ends
 		to disappear if they tipped too far toward the viewer

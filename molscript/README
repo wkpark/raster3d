@@ -5,12 +5,11 @@ Raster3D (basically just CPK models).
 
 You can contact Per Kraulis at the address:
 
-	Dr. Per Kraulis
-	Center for Structural Biochemistry   phone: +46 8 608 9266
-	The Karolinska Institute             fax:   +46 8 608 9290
-	NOVUM                                email: pjk@oyster.csb.ki.se
-	141 57 Huddinge
-	SWEDEN
+	Per Kraulis, Ph.D.
+	Pharmacia
+	Biopharmaceuticals R&D, N62:5     phone +46 8 695 78 34
+	S-112 87 Stockholm                fax   +46 8 695 40 82
+	SWEDEN                            email per.kraulis@sto.pharmacia.se
 
 This directory contains a diff file which can be used to patch Molscript
 version 1.4 so that dotted lines can be output in Raster3D mode.  You

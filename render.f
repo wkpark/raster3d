@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.0 April 1994
+*     Version 2.1 May 1995
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -19,7 +19,11 @@
 * EAM Apr 1994	- Version 2.0 release
 *		  TIFF output support in local.c
 *		  minor changes to fortran source to make IBM xlf compiler happy
-* EAM Feb 1995	- 2.03 fixes bug in CYL1 routine, and makes linux happy
+*
+* EAM Sep 1994	- EXPERIMENTAL VERSION WITH OBJECT TYPES 7, 8, 9
+* EAM Jan 1995	- move DATA statement to make linux happy
+* EAM Mar 1995	- fix bug in routine CYL1 which took bites out of cylinder ends
+* EAM May 1995	- fold object types 7/8/9 back into distributed code for V2.1
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -109,8 +113,35 @@
 *         - type 4:  trcone made of spheres (3rd format) not implemented
 *         - type 5:  cylinder with flat ends (3rd format) EAM
 *         - type 6:  plane (=triangle with infinite extent) (1st format) EAM
+*         - type 7:  normal vectors for previous triangle (1st format) EAM
+*         - type 8:  material definition which applies to subsequent objects EAM
+*         - type 9:  end previous material EAM
 *         - type 0:  no more objects (equivalent to eof)
 *
+*-----------------------------------------------------------------------------
+* EAM Sep 1994
+*	
+*	New object types added, first actual release to include these will
+*	probably be V2.1
+*
+*	1) Object type 7 signals an extra record giving explicit vertex normals
+*	for a single triangle. This extra record must directly follow the 
+*	corresponding triangle and uses the same format.
+*
+*	2) Object type 8 signals an extra record giving extra or more explicit
+*	material properties object.  Current (trial) contents of record are:
+*	    MPHONG	- overrides global Phong power for specular reflections
+*	    MSPEC	- overrides global specular scattering contribution
+*	    SR,SG,SB	- red/green/blue components for specular highlighting
+*	    TEXMAP	- pointer to texture map (Don't I wish!)
+*	These material properties remain in effect for subsequent objects 
+*	until object type 9 appears to terminate the effect.
+*
+*	3) Object type 9 terminates effect of previous materials property
+*	(if any). Since the record is otherwise ignored, type 9 records
+*	may be inserted to delineate meta-objects or act as comments.
+*
+*-----------------------------------------------------------------------------
 *
 *     Object space convention:
 *
@@ -134,8 +165,7 @@
 *     - pixels are SQRTed before output to preserve precision
 *     - output records are written in Fortran "unformatted" format
 *
-* David Bacon's comments from Version 1.0 
-*	(ref: Bacon & Anderson, 1988)
+* David Bacon's comments from Version 1.0
 *
 *     Bugs:
 *
@@ -219,19 +249,22 @@
       PARAMETER (INPUT=5, OUTPUT=2, NOISE=0)
 *
 *     Other possibly platform-dependent stuff
-      PARAMETER (SLOP=0.1)
+      PARAMETER (SLOP= 0.1)
 *
 *     Codes for triangle, sphere, truncated cone, and string of pearls
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
       INTEGER PLANE, MXTYPE
       PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
       PARAMETER (CYLIND = 3, CYLFLAT= 5)
-      PARAMETER (PLANE = 6)
-      PARAMETER (MXTYPE = 6)
+      PARAMETER (PLANE    = 6)
+      PARAMETER (NORMS    = 7)
+      PARAMETER (MATERIAL = 8)
+      PARAMETER (MATEND   = 9)
+      PARAMETER (MXTYPE   = 9)
 *
 *     Bit definitions for FLAG array
-      INTEGER    RIBBON
-      PARAMETER (RIBBON=4)
+      INTEGER    FLAT,   RIBBON,   SURFACE,   PROPS
+      PARAMETER (FLAT=2, RIBBON=4, SURFACE=8, PROPS=16)
 *
 *     $$$$$$$$$$$$$   ARRAY SIZE LIMITS START HERE   $$$$$$$$$$$$$$
 *
@@ -260,8 +293,9 @@
       PARAMETER (OUTSIZ = MAXNTX*MAXNPX*MAXNPY)
 *
 *
-*     Maximum number of objects (was 7500)
-      PARAMETER (MAXOBJ = 20000)
+*     Maximum number of objects
+***   PARAMETER (MAXOBJ =  7500)
+      PARAMETER (MAXOBJ = 25000)
 *
 *     Array elements available for object details
 ***   PARAMETER (MAXDET = 150 000, MAXSDT = 150 000)
@@ -328,6 +362,7 @@
 *     Stuff for shading
       REAL*4 NL(3),NORMAL(3),LDOTN
       REAL RGBCUR(3),RGBSHD(3),RGBFUL(3)
+      REAL SPECOL(3)
 *
 *     The s & m guys are for the shadow box in the following
 *
@@ -338,7 +373,7 @@
       INTEGER TYPE(MAXOBJ)
 *
 *     Object flags, parallel to list
-*     (currently only holds marker for RIBBON triangles or FLAT cylinders)
+*     (currently holds marker for RIBBON triangles or FLAT cylinders, etc)
       INTEGER FLAG(MAXOBJ)
 *
 *     Object details, shadow object details
@@ -396,11 +431,15 @@ C     INTEGER HEADER(8)
       IDET(TRCONE) = 11
       IDET(CYLIND) = 11
       IDET(PLANE)  = 12
+      IDET(NORMS ) = 9
+      IDET(MATERIAL) = 5
 *
       KDET(TRIANG) = 16
       KDET(SPHERE) = 7
       KDET(CYLIND) = 11
       KDET(PLANE)  = 7
+      KDET(NORMS ) = 6
+      KDET(MATERIAL) = 5
 *
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
@@ -408,10 +447,14 @@ C     INTEGER HEADER(8)
 *     A plane really has no shadow details, 
 *     but indexing seems to require a nonzero value
       SDET(PLANE)  = 1
+*     Ditto for normals, which aren't really separate objects at all
+      SDET(NORMS ) = 1
+*     Double ditto for material properties
+      SDET(MATERIAL) = 1
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
-      WRITE (NOISE,*) 'Raster3D rendering program V2.03 Mar 1995'
+      WRITE (NOISE,*) 'Raster3D rendering program V2.1 May 1995'
       WRITE (NOISE,*) 'If you publish figures generated by this ',
      &                'program please cite '
       WRITE (NOISE,*) 'Bacon & Anderson (1988) ',
@@ -643,6 +686,9 @@ C	Header records and picture title
 4       CONTINUE
 	INFLGS(PLANE) = INFLGS(TRIANG)
 	INFMTS(PLANE) = INFMTS(TRIANG)
+	INFLGS(NORMS) = INFLGS(TRIANG)
+	INFMTS(NORMS) = INFMTS(TRIANG)
+	INFLGS(MATERIAL) = .TRUE.
       ELSE
         CALL ASSERT (.FALSE.,'crash 4')
       ENDIF
@@ -682,11 +728,18 @@ c
       DO 662 I = 1,MAXOBJ
 	FLAG(I) = 0
   662 CONTINUE
+      nprops  = 0
+      npropm  = 0
+      nsphere = 0
+      ncylind = 0
+      nplanes = 0
+      mstate  = 0
 c
 c     Objects in, and count up objects that may impinge on each tile
       NDET = 0
       IF (SHADOW) MDET = 0
       N = 0
+c
 7     CONTINUE
       IF (INMODE.EQ.1.OR.INMODE.EQ.2) THEN
         INTYPE = INMODE
@@ -695,7 +748,10 @@ c     Objects in, and count up objects that may impinge on each tile
         IF (INTYPE.EQ.0) GO TO 50
 	IF (INTYPE .EQ. CYLFLAT) THEN
 		INTYPE = CYLIND
-		FLAG(N+1) = CYLFLAT
+		FLAG(N+1) = OR( FLAG(N+1), FLAT )
+	ELSEIF (INTYPE .EQ. MATEND) THEN
+		MSTATE = 0
+		GOTO 7
 	ENDIF
         CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
 c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
@@ -750,6 +806,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         CALL ASSERT (GRN.LE.1., 'grn > 1 in triangle')
         CALL ASSERT (BLU.LE.1., 'blu > 1 in triangle')
         CALL ASSERT (IDET(INTYPE).EQ.12,'idet(1).ne.12')
+	IF (MSTATE.EQ.MATERIAL) THEN
+	  FLAG(N) = OR(FLAG(N),PROPS)
+	  NPROPS  = NPROPS + 1
+	ENDIF
 *	update true coordinate limits
 	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A,X3A)
 	TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A,X3A)
@@ -925,6 +985,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         CALL ASSERT (GRN.LE.1., 'grn > 1 in sphere')
         CALL ASSERT (BLU.LE.1., 'blu > 1 in sphere')
         CALL ASSERT (IDET(INTYPE).EQ.7,'idet(2).ne.7')
+	IF (MSTATE.EQ.MATERIAL) THEN
+	  FLAG(N) = OR(FLAG(N),PROPS)
+	  NPROPS  = NPROPS + 1
+	ENDIF
 *	update true coordinate limits
 	TRULIM(1,1) = MIN( TRULIM(1,1), XA )
 	TRULIM(1,2) = MAX( TRULIM(1,2), XA )
@@ -956,6 +1020,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         DETAIL(NDET+7) = BLU
         CALL ASSERT (KDET(INTYPE).EQ.7,'kdet(2).ne.7')
         NDET = NDET + KDET(INTYPE)
+	nsphere = nsphere + 1
 *       tally for tiles the object might impinge on
         IXLO = (XC-RC)/NPX + 1
         IXHI = (XC+RC)/NPX + 1
@@ -1032,6 +1097,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         CALL ASSERT (GRN.LE.1., 'grn > 1 in cylinder')
         CALL ASSERT (BLU.LE.1., 'blu > 1 in cylinder')
         CALL ASSERT (IDET(INTYPE).EQ.11,'idet(1).ne.11')
+	IF (MSTATE.EQ.MATERIAL) THEN
+	  FLAG(N) = OR(FLAG(N),PROPS)
+	  NPROPS  = NPROPS + 1
+	ENDIF
 *	update true coordinate limits
 	TRULIM(1,1) = MIN( TRULIM(1,1), X1A,X2A)
 	TRULIM(1,2) = MAX( TRULIM(1,2), X1A,X2A)
@@ -1080,6 +1149,7 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         DETAIL(NDET+11) = BLU
         CALL ASSERT (KDET(INTYPE).EQ.11,'kdet(1).ne.11')
         NDET = NDET + KDET(INTYPE)
+	ncylind = ncylind + 1
 *       tally for tiles the object might impinge on
         IXLO = MIN(X1C-R1C,X2C-R2C)  / NPX + 1
         IXHI = MAX(X1C+R1C,X2C+R2C)  / NPX + 1
@@ -1147,6 +1217,67 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 716       CONTINUE
         ENDIF
 *
+      ELSEIF (INTYPE.EQ.NORMS) THEN
+*	vertex normals as given (these belong to previous triangle)
+        X1A = BUF(1)
+        Y1A = BUF(2)
+        Z1A = BUF(3)
+        X2A = BUF(4)
+        Y2A = BUF(5)
+        Z2A = BUF(6)
+        X3A = BUF(7)
+        Y3A = BUF(8)
+        Z3A = BUF(9)
+*	Apply rotation matrix, but not translation components
+	X1A = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
+	Y1A = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
+	Z1A = X1A*TMAT(1,3) + Y1A*TMAT(2,3) + Z1A*TMAT(3,3)
+	X2A = X2A*TMAT(1,1) + Y2A*TMAT(2,1) + Z2A*TMAT(3,1)
+	Y2A = X2A*TMAT(1,2) + Y2A*TMAT(2,2) + Z2A*TMAT(3,2)
+	Z2A = X2A*TMAT(1,3) + Y2A*TMAT(2,3) + Z2A*TMAT(3,3)
+	X3A = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
+	Y3A = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
+	Z3A = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+*	Normalize vector (probably not necessary)
+	D = SQRT(X1A*X1A + Y1A*Y1A + Z1A*Z1A)
+	X1B = X1A / D
+	Y1B = Y1A / D
+	Z1B = Z1A / D
+	D = SQRT(X2A*X2A + Y2A*Y2A + Z2A*Z2A)
+	X2B = X2A / D
+	Y2B = Y2A / D
+	Z2B = Z2A / D
+	D = SQRT(X3A*X3A + Y3A*Y3A + Z3A*Z3A)
+	X3B = X3A / D
+	Y3B = Y3A / D
+	Z3B = Z3A / D
+*       We only need to save the first two components of the normal?
+	DETAIL(NDET+1) = X1B
+	DETAIL(NDET+2) = Y1B
+	DETAIL(NDET+3) = X2B
+	DETAIL(NDET+4) = Y2B
+	DETAIL(NDET+5) = X3B
+	DETAIL(NDET+6) = Y3B
+	NDET = NDET + KDET(INTYPE)
+	IF (SHADOW) THEN
+	  MDET = MDET + SDET(INTYPE)
+	ENDIF
+*
+*	Material properties are saved with no further manipulation
+*
+      ELSEIF (INTYPE .EQ. MATERIAL) THEN
+	DETAIL(NDET+1) = BUF(1)
+	DETAIL(NDET+2) = BUF(2)
+	DETAIL(NDET+3) = BUF(3)
+	DETAIL(NDET+4) = BUF(4)
+	DETAIL(NDET+5) = BUF(5)
+	NDET = NDET + KDET(INTYPE)
+	IF (SHADOW) THEN
+	  MDET = MDET + SDET(INTYPE)
+	ENDIF
+	MSTATE = MATERIAL
+	NPROPM = NPROPM + 1
+*
       ELSEIF (INTYPE.EQ.TRCONE) THEN
         CALL ASSERT(.FALSE.,'trcones coming soon...')
       ELSEIF (INTYPE.EQ.PEARLS) THEN
@@ -1159,9 +1290,6 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 *     here for end of objects
 *
 50    CONTINUE
-      WRITE (NOISE,*) 'n=',N,' maxobj=',MAXOBJ
-      WRITE (NOISE,*) 'ndet=',NDET,' maxdet=',MAXDET
-      IF (SHADOW) WRITE (NOISE,*) 'mdet=',MDET,' maxsdt=',MAXSDT
 *    
       WRITE (NOISE,*) 'True center of input coordinates (not used):'
 	XA = (TRULIM(1,1) + TRULIM(1,2)) / 2.0
@@ -1169,22 +1297,33 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	ZA = (TRULIM(3,1) + TRULIM(3,2)) / 2.0
       WRITE (NOISE,*) XA, YA, ZA
 *
-*     Check list for special objects (ribbon triangles)
+*     Check list for special objects 
+*     Triangle types first (vanilla/ribbon/surface)
       NRIB = 0
+      NSUR = 0
       NTRI = 0
       DO 55 I = 2, N-1
 	IF (TYPE(I).EQ.TRIANG) THEN
 	  NTRI = NTRI + 1
+*	  Allow IPHONG=0 to disable special processing of triangles
 	  IF (IPHONG.EQ.0) GOTO 54
-	  J = LIST(I-1)
-	  K = LIST(I)
-	  L = LIST(I+1)
+*	  Check for surface triangle (explicit normals in next record)
+	  IF (TYPE(I+1) .EQ. NORMS) THEN
+	    FLAG(I) = OR( FLAG(I), SURFACE )
+	    GOTO 54
+	  END IF
+*	  Check for ribbon triangles,
 *	  can't possibly be one unless surrounded by other triangles
-	  IF (TYPE(I-1).NE.TRIANG .OR. TYPE(I+1).NE.TRIANG) THEN
-	    FLAG(I) = 0
+	  IPREV = I - 1
+	  INEXT = I + 1
+	  IF (TYPE(IPREV).NE.TRIANG .OR. TYPE(INEXT).NE.TRIANG) THEN
+	    FLAG(I) = AND( FLAG(I), .NOT. RIBBON )
 	    GOTO 54
 	  END IF
 *         trailing vertex must match one in previous triangle
+	  J = LIST(IPREV)
+	  K = LIST(I)
+	  L = LIST(INEXT)
 	  DO 51 II = 1, 3
 	    KK = K+II
 	    IF   (DETAIL(KK).NE.DETAIL(J+II+3)
@@ -1196,14 +1335,28 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	    IF   (DETAIL(KK).NE.DETAIL(L+II-3)
      &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
 52	  CONTINUE
-	  FLAG(I) = RIBBON
+	  FLAG(I) = OR ( FLAG(I), RIBBON )
 54	  CONTINUE
-	  IF (FLAG(I).EQ.RIBBON) NRIB = NRIB + 1
+	  IF (AND(FLAG(I),RIBBON).NE.0)  NRIB = NRIB + 1
+	  IF (AND(FLAG(I),SURFACE).NE.0) NSUR = NSUR + 1
 	END IF
 55    CONTINUE
 56    CONTINUE
-      IF (NTRI.NE.0) WRITE(NOISE,*) 'normal triangles =',NTRI-NRIB
-      IF (NRIB.NE.0) WRITE(NOISE,*) 'ribbon triangles =',NRIB
+*
+      WRITE(NOISE,*)'-------------------------------'
+      IF (NSPHERE.NE.0) WRITE(NOISE,*)'        spheres   =',NSPHERE
+      IF (NCYLIND.NE.0) WRITE(NOISE,*)'        cylinders =',NCYLIND
+      NTRI = NTRI - (NRIB + NSUR)
+      IF (NTRI.NE.0) WRITE(NOISE,*)   'normal triangles  =',NTRI
+      IF (NRIB.NE.0) WRITE(NOISE,*)   'ribbon triangles  =',NRIB
+      IF (NSUR.NE.0) WRITE(NOISE,*)   'surface triangles =',NSUR
+      IF (NPROPM.NE.0) WRITE(NOISE,*) 'special materials =',NPROPM
+      WRITE(NOISE,*)                  '    total objects =',N
+      WRITE(NOISE,*)'-------------------------------'
+*
+      WRITE (NOISE,*) 'ndet  =',NDET,' maxdet=',MAXDET
+      IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' maxsdt=',MAXSDT
+*
 *
 *     Sort objects, fill in "short lists" as indices into main list
 *     (note that it would lend itself better to "parallel
@@ -1232,6 +1385,9 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	  ZTEMP(I) = MAX(Z1+R1,Z2+R2)
 	ELSEIF (TYPE(I).EQ.PLANE) THEN
 *	  EAM Mar 1993 (but not sure it's necessary)
+	  ZTEMP(I) = SCALE + 1.0
+	ELSEIF (TYPE(I).EQ.NORMS .OR. TYPE(I).EQ.MATERIAL) THEN
+*	  EAM Mar 1994 (not sure this is needed either)
 	  ZTEMP(I) = SCALE + 1.0
         ELSE
           CALL ASSERT(.FALSE.,'crash 60')
@@ -1302,6 +1458,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	  IXHI = NTX
 	  IYLO = 1
 	  IYHI = NTY
+        ELSEIF (TYPE(IND).EQ.NORMS) THEN
+	  GOTO 81
+        ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
+	  GOTO 81
 	ELSE
           CALL ASSERT(.FALSE.,'crash 80')
         ENDIF
@@ -1353,6 +1513,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	    ZTEMP(I) = MAX(Z1+R1,Z2+R2)
 	  ELSEIF (TYPE(I).EQ.PLANE) THEN
 *	    no shadows for plane surface
+	  ELSEIF (TYPE(I).EQ.NORMS) THEN
+*	    and certainly not for normals
+	  ELSEIF (TYPE(I).EQ.MATERIAL) THEN
+*	    or surface properties
           ELSE
             CALL ASSERT(.FALSE.,'crash 160')
           ENDIF
@@ -1419,6 +1583,10 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
             IYHI = MAX(Y1+R1,Y2+R2) / NPY + 1
 	  ELSEIF (TYPE(IND).EQ.PLANE) THEN
 *           no shadows for plane surface
+	    GOTO 181
+          ELSEIF (TYPE(IND).EQ.NORMS) THEN
+	    GOTO 181
+          ELSEIF (TYPE(IND).EQ.MATERIAL) THEN
 	    GOTO 181
           ELSE
             CALL ASSERT(.FALSE.,'crash 180')
@@ -1514,20 +1682,40 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 *             update values for object having highest z here yet
               ZTOP = ZP
               INDTOP = IND
-*	      Use Phong shading for ribbon triangles.
-*	      We take normal of this triangle for "middle" vertex normal,
-*	      normal of previous triangle for "trailing" vertex normal,
-*	      normal of next triangle for "leading" vertex normal.
-*	      Then we use linear interpolation of vertex normals.
-	      IF (FLAG(IND).EQ.RIBBON) THEN
+*	
+*	      Use Phong shading for surface and ribbon triangles.
+	      IF (AND(FLAG(IND),SURFACE).NE.0) THEN
 		V = (Y3-Y1)*(X2-X1) - (X3-X1)*(Y2-Y1)
 		W = (XP-X1)*(Y3-Y1) - (YP-Y1)*(X3-X1)
 		ALPHA = W / V
 		BETA  = S / V
-		AT = DETAIL(10 + LIST(IND-1))
-		BT = DETAIL(11 + LIST(IND-1))
-		AL = DETAIL(10 + LIST(IND+1))
-		BL = DETAIL(11 + LIST(IND+1))
+		CALL ASSERT(TYPE(IND+1).EQ.NORMS,'lost normals')
+		A1 = DETAIL(1 + LIST(IND+1))
+		B1 = DETAIL(2 + LIST(IND+1))
+		A2 = DETAIL(3 + LIST(IND+1))
+		B2 = DETAIL(4 + LIST(IND+1))
+		A3 = DETAIL(5 + LIST(IND+1))
+		B3 = DETAIL(6 + LIST(IND+1))
+		NORMAL(1) = -A1 -ALPHA*(A2-A1) -BETA*(A3-A1)
+		NORMAL(2) = -B1 -ALPHA*(B2-B1) -BETA*(B3-B1)
+		NORMAL(3) = 1.
+*	      For ribbon triangles we take this normal for "middle" vertex,
+*	      normal of previous triangle for "trailing" vertex normal,
+*	      normal of next triangle for "leading" vertex normal.
+*	      Then we use linear interpolation of vertex normals.
+	      ELSE IF (AND(FLAG(IND),RIBBON).NE.0) THEN
+		IPREV = IND - 1
+		INEXT = IND + 1
+		CALL ASSERT(TYPE(IPREV).EQ.TRIANG,'lost triangle')
+		CALL ASSERT(TYPE(INEXT).EQ.TRIANG,'lost triangle')
+		V = (Y3-Y1)*(X2-X1) - (X3-X1)*(Y2-Y1)
+		W = (XP-X1)*(Y3-Y1) - (YP-Y1)*(X3-X1)
+		ALPHA = W / V
+		BETA  = S / V
+		AT = DETAIL(10 + LIST(IPREV))
+		BT = DETAIL(11 + LIST(IPREV))
+		AL = DETAIL(10 + LIST(INEXT))
+		BL = DETAIL(11 + LIST(INEXT))
 		NORMAL(1) = -AT -ALPHA*(A-AT) -BETA*(AL-AT)
 		NORMAL(2) = -BT -ALPHA*(B-BT) -BETA*(BL-BT)
 		NORMAL(3) = 1.
@@ -1712,9 +1900,8 @@ C             CALL ASSERT (K.LT.MDET,'k>=mdet')
                 Y2 = SDTAIL(K+6)
                 Z2 = SDTAIL(K+7)
 		R2 = R1
-*		EAM Feb 93 - this section of code has been wrong til now!
-*               Test first to see if entire cylinder is below current top
-*		object in shadow space
+*		EAM Feb 93 - Test first to see if entire cylinder is below 
+*		current top object in shadow space
 		IF (MAX( Z1+R1, Z2+R2 ) .LT. ZSTOP) GOTO 270
 *	        Now find Z coord (ZTEST) in pixel space of point on
 *	        surface of cylinder with these X and Y coords
@@ -1819,7 +2006,6 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
                 PSPEC = PSP**IPHONG * PRIMAR*SPECLR
               ENDIF
             ENDIF
-          ENDIF
 *
 *         experience has shown the "spots" on dark objects to be rather
 *         overpowering, especially by comparison to those on brighter
@@ -1830,15 +2016,52 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 *         colour seems to come through more clearly, and they don't
 *         appear more specular than the brighter objects.
 *         the funny coefficients are ntsc:
+            BRIGHT = 0.2 + 0.8 * SQRT(0.299*RGBCUR(1) +
+     &                                0.587*RGBCUR(2) +
+     &                                0.114*RGBCUR(3))
+            SSPEC = SSPEC * BRIGHT
+            PSPEC = PSPEC * BRIGHT
+          ENDIF
 *
-          BRIGHT = 0.2 + 0.8 * SQRT(0.299*RGBCUR(1) +
-     &                              0.587*RGBCUR(2) +
-     &                              0.114*RGBCUR(3))
-          SSPEC = SSPEC * BRIGHT
-          PSPEC = PSPEC * BRIGHT
+*	  Extra properties make specular highlighting calculation a
+*	  bit more complex - EAM Oct 1994
+*	  First we have to back up to find the MATERIAL description
+*
+	  IF (  (AND(FLAG(INDTOP),PROPS).NE.0)
+     &    .AND. (NORMAL(3).GT.0) ) THEN
+            K = INDTOP
+272         K = K - 1
+	    IF (TYPE(K).NE.MATERIAL) GOTO 272
+	    K = LIST(K)
+	    PHONGM    = DETAIL(K+1)
+	    SPECM     = DETAIL(K+2)
+	    SPECOL(1) = DETAIL(K+3)
+	    SPECOL(2) = DETAIL(K+4)
+	    SPECOL(3) = DETAIL(K+5)
+	    DIFFM     = 1. - (SPECM + AMBIEN)
+	    SDIFF     = SDIFF * DIFFM / DIFFUS
+ 	    PDIFF     = PDIFF * DIFFM / DIFFUS
+	    IF (SSP .GE. PHOBND)
+     &          SSPEC = SSP**PHONGM * STRAIT*SPECM
+	    IF ((PSP .GE. PHOBND) .AND. (LDOTN.GT.0)) THEN
+                PSPEC = PSP**PHONGM * PRIMAR*SPECM
+	    ELSE
+	        PSPEC = 0.0
+	    ENDIF
+*
+*	  The usual case is no special surface properties
+*
+	  ELSE
+	    SPECOL(1) = 1.0
+	    SPECOL(2) = 1.0
+	    SPECOL(3) = 1.0
+	  END IF
+*
+*         We now return you to your regular processing
+*
           DO 280 KC = 1, 3
-            C2ND = RGBCUR(KC)*(AMBIEN+SDIFF) + SSPEC
-            CSUN = RGBCUR(KC)*PDIFF          + PSPEC
+            C2ND = RGBCUR(KC)*(AMBIEN+SDIFF) + SSPEC * SPECOL(KC)
+            CSUN = RGBCUR(KC)*PDIFF          + PSPEC * SPECOL(KC)
             RGBSHD(KC) = C2ND
             RGBFUL(KC) = C2ND + CSUN
 280       CONTINUE
@@ -1850,12 +2073,10 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 *         should be a shadow-space object's co-ordinate no
 *         further than that from the primary light source
 *         (modulo the empirical slop factor).
-C Top conditional is in DEBUGGING
-	  IF (INDTOP.EQ.INDSTP) THEN
+          IF (INDTOP.EQ.INDSTP) THEN
             TILE(1,I,J) = RGBFUL(1)
             TILE(2,I,J) = RGBFUL(2)
             TILE(3,I,J) = RGBFUL(3)
-C Top conditional is in DEBUGGING
           ELSE IF (ZS+SLOP.GE.ZSTOP) THEN
             TILE(1,I,J) = RGBFUL(1)
             TILE(2,I,J) = RGBFUL(2)

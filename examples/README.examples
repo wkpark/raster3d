@@ -1,4 +1,4 @@
-This directory contains three example uses of Raster3D, which
+This directory contains some example uses of Raster3D, which
 may serve as confirmation of successful installation or as
 models for general use.
 
@@ -7,16 +7,25 @@ John Cristy's ImageMagick is installed on your system as an image
 viewer.  If it is, then executing these shell scripts should produce
 an image on your X-windows screen.
 
+Example 1
+=========
+
 Example 1 uses the ribbon utility to draw a quick picture of a
 pentamer with separate colours for each chain.  I'm sure you
 could do a better job of picking colour schemes if you tried.
 example1.sgi is the same as example1.script, except that it
 assumes that you are using the SGI libimage utilities as a viewer.
 
-Example 2 excercises the utilities setup and rods, and shows off
+Example 2
+=========
+
+Example 2 excercises the utilities balls and rods, and shows off
 the new object types supported by the rendering code.
 example2.sgi is the same as example2.script, except that it
 assumes that you are using the SGI libimage utilities as a viewer.
+
+Examples 3 and 4
+================
 
 The 3rd and 4th examples provided here correspond to a figure of the 
 galactose binding site in the E. coli Heat-labile enterotoxin.  
@@ -34,3 +43,21 @@ The example4.script requires that Molscript version 1.4 is installed and
 that you have built TIFF support into the Raster3D package. It should
 start with the Molscript input file and produce a TIFF file containing 
 the same image produced by example3.
+
+Example 5
+=========
+
+Example 5 is an input file to render. It illustrates the use of the
+new object types 8 + 9 to change the material properties for individual
+objects in the figure.  To run it through render you can type something
+like:
+	render < example5.r3d | display avs:-          		(ImageMagick)
+	render -sgi test.rgb < example5.r3d ; ipaste test.rgb  	(SGI)
+    or
+	render -tiff test.tiff < example5.r3d			(TIFF file)
+
+You should get two columns of balls which are identical except for their 
+surface properties.  Balls in the left column are rendered according to
+the values in the header records.  Balls in the right column are identical
+to those on the left except that they are rendered using explicit material 
+surface properties which override the header values.
