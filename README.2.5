@@ -1,8 +1,13 @@
 
-most recent change:	   31-Jan-2000
+most recent change:	   11-Mar-2000
 
-The file Raster3D_2.5b.tar.Z contains the full source distribution for
-version 2.5b (beta release) of RASTER3D.
+The file Raster3D_2.5c.tar.Z contains the full source distribution for
+version 2.5c of RASTER3D.
+
+Version 2.5c contains minor bug-fixes to the 2.5b beta release version,
+as well as additions to PostScript label processing (see r3dtops 
+documentation and example 7 in the /examples directory).
+
 
 This is a unified distribution which has been tested on the following 
 machines:
@@ -10,9 +15,10 @@ machines:
 	Alpha / OSF 4.0
 	SGI / Irix 6.2 6.5
 	IBM RS6000 / AIX
+	SUNOS (g77/gcc)
 	Intel Pentium / linux (Redhat 6.1)
 
-Previous versions have been tested under Irix 5.3, SUNOS, and other
+Previous versions have been tested under Irix 5.3 and other
 flavors of linux.  If you run into installation problems, please let
 me know (particularly if you can also tell me what you needed to fix!)
 
@@ -42,6 +48,7 @@ New in version 2.5:
 			Label processing (previous stand-alone program
 			r3dtops) folded into the render program. Scripts
 			label3d and stereo3d modified to match this change.
+			Indirect file references default to extension *.r3d
 
 - Documentation
 			HTML documentation now in separate subdirectory.

@@ -1,3 +1,9 @@
+10-Mar-2000	V2.5c (minor bugfixes)
+		local.c picks up version from VERSION include file 
+		Fortran files pick up version from VERSION.incl
+		forgive IPHONG entered as floating point
+		Add '.r3d' to indirect file names if initial open fails
+		Add TeX-like syntax options to r3dtops label processing
  1-Feb-2000	V2.5b general release
 15-Dec-99	Oops. all-zero input line is legal for LABELs
 11-Nov-99	V2.5alpha

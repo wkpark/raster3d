@@ -691,11 +691,11 @@ stream. Multiple levels of file indirection are possible.
 The requested file is first searched for relative to the current directory.
 If this search fails, the file is searched for relative to the directory
 specified by the environmental variable R3D_LIB.
-Typically this would be set via a command such as
-<pre>
-	setenv R3D_LIB /usr/local/src/raster3d/materials
+Typically this would be set via a command such as 
+<pre> 
+csh/tcsh:    setenv R3D_LIB /usr/local/src/raster3d/materials
+sh/ksh:      R3D_LIB=/usr/local/src/raster3d/materials; export R3D_LIB
 </pre>
-
 
 <h4>
 <a name="sample_data">

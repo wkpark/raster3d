@@ -15,6 +15,9 @@
 *					in terms of 3 rotation angles
 *
 *     I/O units for colour/co-ordinate input, specs output, user output
+*     
+      INCLUDE 'VERSION.incl'
+*
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
       PARAMETER (MAXCOL=5000, MAXATM=300000)
@@ -68,7 +71,7 @@ c
 	end do
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'balls - Raster3D version 2.5'
+	WRITE(OUTPUT,'(A,A)') 'balls - Raster3D ', VERSION
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         anti-aliasing 3x3 -> 2x2 pixels'

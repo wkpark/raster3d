@@ -66,6 +66,11 @@
   JSAMPROW			jpeg_row[1];
 #endif
 
+/* Pick up version number from same include file used by Makefile */
+char *
+#include "VERSION"
+;
+
 /* Define bits in returned status */
 #define		ANTIALIAS	007
 #define		INVERT		010
@@ -75,7 +80,6 @@
 #define		ALPHACHANNEL	040
 
 int		alpha_channel = 0;
-char *version = "Raster3D V2.5b" ;
 
 /* HPUX lacks Fortran intrinsic functions AND and OR for some reason, */
 /* so I put a copy here. On the other hand HPUX has an unusually sane */
@@ -207,7 +211,7 @@ if (*option == 0)
       }
     else if (strncmp( (char *)buffer1, "  ", 2) != 0)
       {
-	fprintf(stderr, "\nVersion 2.5b");
+	fprintf(stderr, "\nRaster3D Version %s",VERSION);
       	if (strncmp( (char *)buffer1, "-help", 5) != 0)
 	    fprintf(stderr, "\n Unfamiliar switch: %12.12s", buffer1);
 	fprintf(stderr, "\n\n Usage:");
@@ -309,7 +313,7 @@ else if (*option == 1)
 	    ofile = "render.tif";
 	tfile=TIFFOpen(ofile,"w");
 	TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	TIFFSetField(tfile,TIFFTAG_SOFTWARE,version);
+	TIFFSetField(tfile,TIFFTAG_SOFTWARE,VERSION);
 	TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
 	TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
@@ -583,7 +587,7 @@ else if (*option == 4)
 #ifdef JPEG_SUPPORT
     if (mode == 4)
 	{
-	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char*)version,strlen(version));
+	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char*)VERSION,strlen(VERSION));
 	jpeg_write_marker(&cinfo,JPEG_COM,"\n",2);
 	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char *)buffer1,80);
 	}

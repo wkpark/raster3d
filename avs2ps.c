@@ -40,7 +40,7 @@ unsigned char	 obyte;
 float   pixinch = 300;		/* default to 300dpi printer resolution */
 int	bflag   = NO;		/* default to no border around image */
 int	usagerr = NO;
-int	ny, nx, nb, br;
+int	ny, nx, nb;
 float	x_origin, y_origin, x_scale, y_scale;
 time_t	date;
 
@@ -96,8 +96,8 @@ time_t	date;
     
     printf ("%%!PS-Adobe-2.0\n");
     printf ("%%%%Title: Raster3d picture dithered to monochrome\n");
-    printf ("%%%%Creator: %s using avs2ps\n", 
-  	   getenv("USER"));
+    printf ("%%%%Creator: %s using avs2ps V2.5\n", 
+  	   (char *)getenv("USER"));
     printf ("%%%%CreationDate: %s", ctime(&date));
     printf ("%%%%BoundingBox: %d %d %d %d\n", (int)x_origin,
   	   (int)y_origin, (int)(x_origin + x_scale + 1.0), 
@@ -118,7 +118,7 @@ time_t	date;
 /* Read in first row of image, converting to greyscale image as we go */
     for (i=0; i<xsize; i++)
 	{
-	getchar(); 			/* skip alpha byte */
+	alpha = getchar(); 			/* skip alpha byte */
 	red   = warp( getchar() ); 
 	green = warp( getchar() ); 
 	blue  = warp( getchar() ); 
@@ -133,7 +133,7 @@ time_t	date;
 	if (j != ysize)			/* No read on last+1th row */
 	for (i=0; i<xsize; i++)
 	    {
-	    getchar(); 			/* skip alpha byte */
+	    alpha = getchar(); 			/* skip alpha byte */
 	    red   = warp( getchar() ); 
 	    green = warp( getchar() ); 
 	    blue  = warp( getchar() ); 

@@ -82,7 +82,7 @@ LIBS     =  -limage -ltiff
 LDFLAGS	= 
 
 RIBOBJS	=	ribbon.o ribbon1.o modsubs.o
-PROGS	=	balls normal3d rastep rods ribbon render avs2ps
+PROGS	=	balls normal3d rastep rods ribbon render avs2ps rings3d
 
 all:	$(PROGS)
 

@@ -1,5 +1,5 @@
 Example of labels in Raster3D/ghostscript
-64 64     tiles in x,y
+64 70     tiles in x,y
  8  8     pixels (x,y) per tile
 4         anti-aliasing
 0 0.05 0   background colour

@@ -14,5 +14,8 @@
 # system of the view matrix
 @ex7_labels.r3d
 #
+# Illustration of TeX-like label syntax
+@ex7_tex.r3d
+#
 # Now a description of a labeled alpha-helix
 @ex7_helix.r3d

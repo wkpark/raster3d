@@ -142,12 +142,13 @@ There are some gotchas, however:
 	  by the byte order in AVS files.  To work around this problem I
 	  added a conditional compilation flag -DNETWORKBYTEORDER in
 	  the Makefile.
-I haven't tried the g77 compiler, but I am told that it doesn't like the
-Q formats in ribbon1.f
+In Redhat 6.1 "f77" is a symlink to the g77 compiler. The package works
+when compiled with g77, but runs slower than it does when compiled by a
+better compiler (e.g. Portland, ABsoft, DEC).
 
-Sun, HP
-=======
-No reported problems, but I don't have access to these platforms so 
+HP
+==
+No reported problems, but I don't have access to this platform so 
 I haven't checked the package myself.  If you can confirm that it works
 as distributed, I'd appreciate the information.  If you had to make
 changes, I'd be even more appreciative if you'd let me know what they

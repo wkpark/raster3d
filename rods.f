@@ -19,6 +19,8 @@
 *	don't draw bonds across alternate chain locations
 *
 *------------------------------------------------------------------------------
+      INCLUDE 'VERSION.incl'
+*
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
@@ -108,7 +110,7 @@ c
 	call exit(-1)
   799	continue
 c
-      write (noise,*) 'Raster3D rods program V2.5b'
+      write (noise,*) 'Raster3D rods program ',VERSION
       if (bcflag) then
         write (noise,*) 'Atom colors will be assigned based on Biso'
         write (noise,*) '    from dark blue = Bmin =', Bmin
@@ -125,7 +127,7 @@ C
 	call view_matrix
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'rods V2.5b'
+	WRITE(OUTPUT,'(A,A)') 'rods ',VERSION
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '4         anti-aliasing'
@@ -303,6 +305,11 @@ C
 	CLOSE = CLOSE**2
 	IF (ATOM(IATM)(17:17).NE.' ' .AND. ATOM(JATM)(17:17).NE.' '
      &     .AND. ATOM(IATM)(17:17).NE.ATOM(JATM)(17:17)) GOTO 150
+c
+c 4-Feb-2000	also force chain ID's to be the same
+c
+	IF (ATOM(IATM)(22:22).NE.' ' .AND. ATOM(JATM)(22:22).NE.' '
+     &     .AND. ATOM(IATM)(22:22).NE.ATOM(JATM)(22:22)) GOTO 150
 	IF (DIST .LE. CLOSE) THEN
 	  if (bcflag) then
 	    ICOL = 1

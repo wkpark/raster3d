@@ -53,7 +53,7 @@ FFLAGS   = -O -w
 INCLUDES =	-I/usr/include
 
 RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
-PROGS    =	balls rastep rods ribbon render avs2ps normal3d
+PROGS    =	balls rastep rods ribbon render avs2ps normal3d rings3d
 
 all:	$(PROGS)
 

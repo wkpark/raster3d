@@ -40,7 +40,7 @@ DEFINES	=	-DTIFF_SUPPORT -DTIFF_INVERT -DIMAGEPIPE
 INCLUDES =	-I/usr/local/include/ -I/usr/local/include/tiff
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	balls normal3d rastep rods ribbon render avs2ps
+PROGS   =	balls normal3d rastep rods ribbon render avs2ps rings3d
 
 all:	$(PROGS)
 

@@ -36,6 +36,8 @@
 *		    6:      use prefixed COLOR cards (as in SETUP/RENDER)
 *				(implemented 4-Aug-1997 EAM)
 *		COLOR1,COLOR2,COLOR3	RGB components (9f8.0)
+*
+      INCLUDE 'VERSION.incl'
 c                                             
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (OUTPUT=6, NOISE=0)
@@ -108,7 +110,7 @@ c
 c
 	if (hflag) goto 10
 c
-      WRITE(OUTPUT,'(A)') 'C-alpha ribbon - Raster3D V2.5'
+      WRITE(OUTPUT,'(A,A)') 'C-alpha ribbon - Raster3D ',VERSION
       WRITE(OUTPUT,'(A)') '80 64     tiles in x,y'
       WRITE(OUTPUT,'(A)') ' 8  8     pixels (x,y) per tile'
       WRITE(OUTPUT,'(A)') '4         anti-aliasing 3x3 into 2x2 pixels'

@@ -9,6 +9,8 @@
 *------------------------------------------------------------------------------
 	implicit none
 c
+	include 'VERSION.incl'
+c
 c     I/O units and environmental control
 c
 	integer input, output, noise
@@ -148,7 +150,7 @@ c
   199	continue
 	if (.not.bflag .and. .not.pflag) sflag = .true.
 c
-	write (noise,*) 'Raster3D rings3d program (27-May-99)'
+	write (noise,*) 'Raster3D rings3d program ',VERSION
 c
 c     Read in colours first
 c

@@ -1,0 +1,19 @@
+#
+# TeX-style label options
+#
+# Begin absolute coords
+15
+#
+10
+'Times-Roman' 9. 'Left-align'
+11
+-.47 .35 -.5   .3 .4 .9
+T_EX-like syntax: 
+10
+'Times-Roman' 12. 'Offset'
+11
+0 0 0          .3 .4 .9
+ O^{\delta1} - N^{\epsilon2} = 2.7Å
+#
+# End absolute coords
+9

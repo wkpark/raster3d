@@ -58,6 +58,9 @@
 *		  clean up output formats a little
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
+*
+      INCLUDE 'VERSION.incl'
+*
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
       PARAMETER (MAXCOL=5000, MAXATM=300000)
@@ -280,8 +283,8 @@ c Table 6.1 of the ORTEP manual
 c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
-     &                  'V2.5b'
-	write (noise,*) 'E A Merritt -  15 Jan 2000'
+     &                  VERSION
+	write (noise,*) 'E A Merritt -  25 Feb 2000'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -310,8 +313,8 @@ c
       endif
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A,I5,A)') 
-     &     'Raster3D thermal ellipsoid program V2.5b',
+	WRITE(OUTPUT,'(A,A,I5,A)') 
+     &     'Raster3D thermal ellipsoid program ',VERSION,
      &     INT(prob*100.+0.5), '% probability bounds'
      	if (mini) then
 	  WRITE(OUTPUT,'(A)') '22  26    tiles in x,y'
