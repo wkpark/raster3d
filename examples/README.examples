@@ -62,16 +62,18 @@ did not pass labels through to Raster3D.
 Example 5 adds a transparent molecular surface around the galactose
 molecule in example 3. This is a fairly complicated example which
 illustrates merging Raster3D input files created by two different
-programs, in this case Molscript and GRASP.  It also illustrates the use
-of the normal3d program to modify a render input file by applying the
-transformation matrix described in the header records. I have included a
+programs, in this case Molscript and GRASP.   I have included a
 Raster3D input file produced from a GRASP V1.1 surface file by a
 conversion program. I have not included the actual GRASP file because
 the format of such files is both version and machine dependent. A copy
 of the "ungrasp" utility program I used for conversion is included in
 the directory ../grasp, but you may have to modify this source depending
-on your local installation.  Finally, the molecular surface in this
-example illustrates the support for rendering transparent objects in Raster3D.
+on your local installation. 
+This example illustrates:
+	- the inclusion of a molecular surface file
+	- the specification of a transparent surface
+	- application of a post-multiplied rotation/translation matrix
+	- uncompression of a gzipped input file during processing
 
 Note:  It would be a more informative figure if the accessible surface
 of the protein were shown, rather than that of the bound sugar.  However

@@ -1,5 +1,5 @@
 	subroutine parse
-c	Version 2.5d
+c	Version 2.5f
 c
 	common /options/ nscheme, nax, nay, invert, otmode, quality
      &                 , lflag, fontscale
@@ -57,6 +57,8 @@ c
 	    	nscheme = 1
 	    else if (option(1:6).eq.'-alpha') then
 	    	nscheme = 0
+	    else if (option(1:7).eq.'-transp') then
+	    	nscheme = 0
 	    else if (option(1:5).eq.'-qual') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
@@ -70,6 +72,7 @@ c
 		end do
 		read (option(1:kbrk-1),*,err=10,end=10) nax
 		read (option(kbrk+1:15),*,err=10,end=10) nay
+		if (nscheme.lt.0) nscheme = -4
 	    else if (option(1:6).eq.'-label') then
 	    	lflag = .true.
 		call getarg( iarg+1, option )

@@ -1,56 +1,25 @@
 #!/bin/csh
-#!/bin/csh
-# E A Merritt February 1996
+# E A Merritt November 2000
 # Illustration of complex figure created by merging files from
 # Raster3D, Molscript, and GRASP.
+# This example also test on-the-fly uncompression of input files,
+# and in-line specification of post-rotation and translation.
 # 
 # We start with 
 #	1) example3.r3d
 #	   This is the Raster3D input file created by Molscript in example3.
 #	   Molscript has already normalized the input coordinates so that
-#	   the transformation matrix is the identity matrix. We will have
-#	   to convert all other files to match this.
+#	   the transformation matrix is the identity matrix. Molscript V1
+#	   used to re-scale also, but as of version 2 the coordinates are
+#	   still in orthogonal Angstroms.
 #	2) gal.srf
 #	   A GRASP surface file describing the molecular surface of the
-#	   galactose residue taken from the same PDB file as used in 
-#	   example3.
-#	3) gal_srf.r3d
+#	   galactose residue taken from the same PDB file as used in example3.
+#	3) gal_srf.r3d.gz
 #	   A Raster3D input file created by running the "ungrasp" utility
-#	   on the file gal.srf.
-#	4) header5.r3d
-#	   A set of Raster3D header records corresponding to the view
-#	   used by Molscript in example3. The appropriate transformation 
-#	   matrix, including translation, must be taken from the
-#	   terminal output of Molscript. 
+#	   on the file gal.srf and then compressing it using gzip.
+#	4) ex5_matrix.r3d
+#	   A rotation matrix and translation corresponding to that already
+#	   used by Molscript in example3.
 #
-# First we merge the appropriate header records with the surface description
-# to create a Raster3D input file describing the molecular surface of the
-# galactose molecule as seen in example3.
-#
-zcat gal_srf.r3d.Z | cat header5.r3d - > temp1.r3d
-#
-# Now we run the description through the normal3d program to apply the
-# transformation matrix described in the header records. It should now
-# be compatible with the file created directly by Molscript. We strip
-# the header records off (-h option) in this case because we want to 
-# append it to another file which already has header records.
-#
-normal3d -h < temp1.r3d > temp2.r3d
-#
-# OK. Now we build our complete input file by concatenating
-#	example3.r3d	The galactose binding site in LT, as composed by
-#			Molscript in example3, including header records
-#	transparent.r3d A material description record which will cause 
-#			subsequent objects to be rendered as transparent
-#	temp2.r3d	The normalized surface description we just made
-#
-cat example3.r3d transparent.r3d temp2.r3d > example5.r3d
-#
-# Now render it!
-#
-render < example5.r3d | display avs:- &
-#
-# Clean up
-#
-rm -f temp1.r3d temp2.r3d
-rm -f example5.r3d
+render < example5.r3d | display avs:- 

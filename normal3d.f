@@ -1,6 +1,6 @@
       PROGRAM NORMAL3D
 *
-*     Version 2.5d 1-Jun-2000
+*     Version 2.5e 21-Sep-2000
 *
 * EAM Jan 1996	- Initial release as part of version 2.2
 * EAM Aug 1996	- Add -expand option to deal with file indirection
@@ -17,6 +17,7 @@
 * EAM Jul 1999	- preliminary work towards a post-hoc rotation option
 * EAM Jan 2000	- V2.5b general release
 * EAM Feb 2000	- compatible with new object type VERTRANSP
+* EAM Sep 2000	- V2.5e uncompress files ending in .Z or .gz
 *
 *	This program is part of the Raster3D package.
 *	It is simply a stripped down version of the input section of 
@@ -243,6 +244,10 @@ c
       REAL 	GLOWSRC(3), GLOWCOL(3), GDIST(3), GLOWRAD, GLOW
       INTEGER	GOPT, GPHONG
 *
+* Support for decompression on the fly
+      EXTERNAL ungz
+      INTEGER  ungz
+*
 *     Keep track of actual coordinate limits (for information only)
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
      &                , ISOLATION
@@ -280,6 +285,53 @@ c
       SDET(VERTEXRGB) = 1
       SDET(VERTRANSP) = 1
 *
+c
+c	-h option suppresses header records in output
+c	-expand option expands and in-lines all file indirection
+c		(and normalizes the in-lined data)
+c	-noexpand (the default) simply copies file indirection commands
+c		to output file
+c	-stereo will create parallel files left.r3d and right.r3d
+c	-debug  requests additional output information
+c
+      HFLAG = .FALSE.
+      XFLAG = .FALSE.
+      SFLAG = .FALSE.
+      NARG  = IARGC()
+      DO i = 1, NARG
+	CALL GETARG(I,FLAGS)
+	IF (FLAGS(1:2) .EQ. '-h') THEN
+		HFLAG   = .TRUE.
+	ELSE IF (FLAGS(1:4) .EQ. '-exp') THEN
+		XFLAG   = .TRUE.
+	ELSE IF (FLAGS(1:2) .EQ. '-s') THEN
+		SFLAG   = .TRUE.
+	ELSE IF (FLAGS(1:6) .EQ. '-debug') THEN
+		VERBOSE = .TRUE.
+	ELSE
+	    WRITE (NOISE,*) 'Raster3D Normalization Program ',
+     &				VERSION
+	    WRITE (NOISE,'(/,A)') 'syntax:'
+	    WRITE (NOISE,'(A,A)')
+     &		'  normal3d [-h] [-expand] [-stereo] ',
+     &		'< infile.r3d > outfile.r3d'
+     	    WRITE (NOISE,'(4X,A)')
+     &		'-h        suppress header records in output',
+     &		'-expand   expand and in-line all file indirection',
+     &		'-stereo   create parallel files left.r3d and right.r3d'
+     	    CALL EXIT(0)
+	ENDIF
+      ENDDO
+      IF (SFLAG) THEN
+	HFLAG = .TRUE.
+	OPEN(UNIT=LEFT,FILE='left.r3d',
+     &       CARRIAGECONTROL='LIST',
+     &	     STATUS='UNKNOWN')
+	OPEN(UNIT=RIGHT,FILE='right.r3d',
+     &       CARRIAGECONTROL='LIST',
+     &	     STATUS='UNKNOWN')
+      ENDIF
+*
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
@@ -298,35 +350,6 @@ c
      &                '  merritt@u.washington.edu','       %'
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
-c
-c	-h option suppresses header records in output
-c	-expand option expands and in-lines all file indirection
-c		(and normalizes the in-lined data)
-c	-noexpand (the default) simply copies file indirection commands
-c		to output file
-c	-stereo will create parallel files left.r3d and right.r3d
-c	-debug  requests additional output information
-c
-      HFLAG = .FALSE.
-      XFLAG = .FALSE.
-      SFLAG = .FALSE.
-      NARG  = IARGC()
-      DO i = 1, NARG
-	CALL GETARG(I,FLAGS)
-	IF (FLAGS(1:2) .EQ. '-h')     HFLAG   = .TRUE.
-	IF (FLAGS(1:4) .EQ. '-exp')   XFLAG   = .TRUE.
-	IF (FLAGS(1:2) .EQ. '-s')     SFLAG   = .TRUE.
-	IF (FLAGS(1:6) .EQ. '-debug') VERBOSE = .TRUE.
-      ENDDO
-      IF (SFLAG) THEN
-	HFLAG = .TRUE.
-	OPEN(UNIT=LEFT,FILE='left.r3d',
-     &       CARRIAGECONTROL='LIST',
-     &	     STATUS='UNKNOWN')
-	OPEN(UNIT=RIGHT,FILE='right.r3d',
-     &       CARRIAGECONTROL='LIST',
-     &	     STATUS='UNKNOWN')
-      ENDIF
 *
 *     Ready for input records
       ILEVEL = 0
@@ -350,6 +373,7 @@ c
 	OPEN (UNIT=INPUT0,ERR=101,STATUS='OLD',FILE=TITLE(J:80))
 	WRITE (NOISE,'(A,A)') '  + Opening input file ',TITLE(J:80)
 	INPUT = INPUT0
+	ILEVEL = 1
 	READ (INPUT,'(A)',ERR=101) TITLE
 	IF (TITLE(1:1).EQ.'#') GOTO 100
 	GOTO 102
@@ -648,11 +672,13 @@ C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
       IF (SFLAG) CLOSE(RIGHT)
 c
 c     Done with header records
+c     As of V2.5e, keep reading until file ends
+c     >>> This is a change <<<
 c
-      IF (INPUT.NE.STDIN) THEN
-	CLOSE(INPUT)
-	INPUT = STDIN
-      ENDIF
+c     IF (INPUT.NE.STDIN) THEN
+c	CLOSE(INPUT)
+c	INPUT = STDIN
+c     ENDIF
 *
 *
 c
@@ -688,21 +714,45 @@ c     Aug 1996 - allow file indirection
       ELSE
  	CALL ASSERT(ILEVEL.LT.MAXLEV, 
      &	            'Too many levels of indirection')
+     	J = 1
 	K = 80
  	DO I=80,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
 	  IF (LINE(I:I).EQ.'#') K = I-1
 	  IF (LINE(I:I).EQ.'!') K = I-1
+	  IF (LINE(I:I).EQ.CHAR(0)) K = I-1
+	  IF (LINE(I:I).EQ.'	') LINE(I:I) = ' '
  	ENDDO
 	DO I=J,K
 	  IF (LINE(I:I).NE.' ') L = I
 	ENDDO
 	K = L
+	IF (LINE(K:K).EQ.'Z' .or. LINE(K-1:K).eq.'gz') THEN
+cdebug
+cdebug	    ungz will uncompress into a temporary file, which ought to be
+cdebug	    deleted later.  Unfortunately, that's hard to do in g77, since
+cdebug	    it doesn't support dispose='DELETE'.
+	    line(k+1:k+1) = char(0)
+	    if (0 .gt. ungz( line(j:k+1), fullname )) goto 74
+	    j = 1
+	    k = 80
+	    do i=80,2,-1
+	      if (fullname(i:i).eq.' ')     k = i-1
+	      if (fullname(i:i).eq.char(0)) k = i-1
+	    enddo
+	    if (verbose) 
+     &		write(noise,*) 'Creating temporary file: ',fullname(j:k)
+	    open (unit=input0+ilevel,err=74,status='OLD',
+     &		  DISPOSE='DELETE',
+     &		  file=fullname(j:k))
+	    fullname = line(2:80)
+	    goto 72
+cdebug
+	ENDIF
    70	CONTINUE
 	OPEN (UNIT=INPUT0+ILEVEL,ERR=71,STATUS='OLD',
-Cf90 &        ACTION='READ',
-     &	      FILE=LINE(J:LEN(LINE)))
-	FULLNAME = LINE(J:LEN(LINE))
+     &	      FILE=LINE(J:K))
+	FULLNAME = LINE(J:K)
 	GOTO 72
    71	CONTINUE
 	IF (LINE(K-3:K).NE.'.r3d') THEN
@@ -710,8 +760,8 @@ Cf90 &        ACTION='READ',
 	    LINE(K-3:K) = '.r3d'
 	    GOTO 70
 	ENDIF
-	CALL LIBLOOKUP( LINE(J:80), FULLNAME )
-	OPEN (UNIT=INPUT0+ILEVEL,ERR=73,STATUS='OLD',FILE=FULLNAME)
+	CALL LIBLOOKUP( LINE(J:K), FULLNAME )
+	OPEN (UNIT=INPUT0+ILEVEL,ERR=74,STATUS='OLD',FILE=FULLNAME)
    72	CONTINUE
 	DO I = 80,2,-1
 	  IF (FULLNAME(I:I).EQ.' ') J = I
@@ -720,7 +770,7 @@ Cf90 &        ACTION='READ',
 	INPUT  = INPUT0+ILEVEL
  	ILEVEL = ILEVEL + 1
  	GOTO 7
-   73	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(2:80)
+   74	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
  	GOTO 7
       ENDIF
 c
@@ -941,8 +991,11 @@ c
 	IF (OPT(4).GT.0) THEN
 	  DO I = 1, OPT(4)
             READ (INPUT,'(A)',END=50) LINE
-	    IF (LINE(1:9).EQ.'FRONTCLIP') THEN
-	      READ(LINE(11:72),*) ZCLIP
+	    DO J = 80, 1, -1
+	      IF (LINE(J:J).NE.' '.AND.LINE(J:J).NE.'	') L = J
+	    ENDDO
+	    IF (LINE(L:L+8).EQ.'FRONTCLIP') THEN
+	      READ(LINE(L+10:72),*) ZCLIP
 	      ZCLIP = ZCLIP / TMAT(4,4)
 	      WRITE(OUTPUT,'(A9,1X,F9.3)') 'FRONTCLIP',ZCLIP
 	    ELSE
@@ -1022,21 +1075,24 @@ c
 *
       ELSEIF (INTYPE.EQ.GPROP) THEN
 	read (input,702,end=50) line
-	if (line(1:3).eq.'FOG') then
+	do j = 80, 1, -1
+	    if (line(j:j).ne.' '.and.line(j:j).ne.'	') l = j
+	enddo
+	if (line(l:l+2).eq.'FOG') then
 	    write(output,1) line
-	else if (line(1:9).EQ.'FRONTCLIP') then
-	    read (line(11:72),*) zclip
+	else if (line(l:l+8).EQ.'FRONTCLIP') then
+	    read (line(l+10:72),*) zclip
 	    zclip = zclip / TMAT(4,4)
 	    write(output,'(''FRONTCLIP '',f7.3)') zclip
-	else if (line(1:8).EQ.'BACKCLIP') then
+	else if (line(l:l+7).EQ.'BACKCLIP') then
 	    read (line(10:72),*) zclip
 	    zclip = zclip / TMAT(4,4)
 	    write(output,'(''BACKCLIP '',f7.3)') zclip
-	else if (line(1:8).eq.'ROTATION') then
+	else if (line(l:l+7).eq.'ROTATION') then
 	    read (input,*,err=48) ((RAFTER(i,j),j=1,3),i=1,3)
 	    call qsetup
 	    write(output,'(''DUMMY ROTATION'')')
-	else if (line(1:11).eq.'TRANSLATION') then
+	else if (line(l:l+10).eq.'TRANSLATION') then
 	    read (input,*,err=48) (TAFTER(i),i=1,3)
 	    write(output,'(''DUMMY TRANSLATION'')')
 	else
@@ -1061,7 +1117,7 @@ c
 50    CONTINUE
       IF (ILEVEL.GT.0) THEN
 	ILEVEL = ILEVEL - 1
-	WRITE (NOISE,*) ' - closing indirect input file'
+	IF (VERBOSE) WRITE (NOISE,*) ' - closing indirect input file'
 	CLOSE(INPUT)
 	IF (ILEVEL.EQ.0) THEN
 	  INPUT = STDIN

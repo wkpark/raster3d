@@ -228,9 +228,7 @@ if (*option == 0)
 	fprintf(stderr,
 		"\n     render -tiff [outfile]        output to TIFF file (defaults to render.tif)");
 	fprintf(stderr,
-		"\n     render -out outfile.xxx       pipe output to ImageMagick for");
-	fprintf(stderr,
-		"\n                                   conversion to image type xxx");
+		"\n     render -out outfile.xxx       pipe output via ImageMagick to get image type xxx");
 	fprintf(stderr,"\n");
 	fprintf(stderr,"\n Options:");
 	fprintf(stderr,"\n   these over-ride contents of input stream header records \n");
@@ -242,7 +240,8 @@ if (*option == 0)
 	fprintf(stderr,"\n    -labels               write labels to PostScript file label3d.ps");
 	fprintf(stderr,"\n    -invert               invert y axis");
 	fprintf(stderr,"\n    -size HHHxVVV         specify size of output image in pixels");
-	fprintf(stderr,"\n\n");
+	fprintf(stderr,"\n    -transparent          same as -alpha (SCHEME 0)");
+	fprintf(stderr,"\n");
 	exit(-1);
       }
 

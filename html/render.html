@@ -44,6 +44,7 @@ Options:
     -fontscale FF         multiplier for PostScript label fonts
     -labels [outfile.ps]  write labels to PostScript file [default: label3d.ps]
     -size HHHxVVV         specify size of output image in pixels
+    -transparent          same as -alpha (SCHEME 0)
 </listing>
 
 
@@ -171,6 +172,10 @@ can be modified to produce a TIFF file without conversion:
     <dt><i>-tiff filename.tiff</i>
     <dd>Only if compiled with -DTIFF_SUPPORT.
 	The -tiff flag will cause render to output a TIFF image to the specified file.
+    <dt><i>-transparent</i>
+    <dd>(same as <i>-alpha</i>) Force output of transparency information (SCHEME 0).
+    	This only works if the output format supports an alpha channel (AVS, TIFF, 
+	but <i>not</i> JPEG).
 </dl>
 
 <h4><a name="description">DESCRIPTION</a></h4>
@@ -333,7 +338,7 @@ F 	  no shadows cast
 <tr>
   <td width=25%><a href="#obj1">triangle</a></td>
   <td width=25%><a href="#obj17">vertex colors</a></td>
-  <td width=25%>&nbsp;</td>
+  <td width=25%><a href="#obj18">vertex transparency</a></td>
   <td width=25%>&nbsp;</td>
 </tr>
 </table>
@@ -420,6 +425,7 @@ F 	  no shadows cast
 	<dl>
 	<dd>OPT(1) = 0 render self-occluding portions of a transparent material separately
 	<dd>OPT(1) = 1 render only the ``top'' surface of transparent material
+	<dd>OPT(1) = 2 render rear surface of transparent spheres and cylinders
 	</dl>
         The last field is non-zero to signal that additional modifier
 	records will follow immediately. Each modifier record must constitute a
@@ -598,6 +604,22 @@ limiting radius are not rendered.
      matrix is not applied. This isolation from TMAT applies to subsequent
      objects until an object of type 9 is encountered.
      <p>
+     The coordinate system used following object type 19 is similar except that
+     the horizontal and vertical scales are treated separately, so the the point
+     [-.5,+.5] is always at the top left corner. In both figures below the blue
+     cross is drawn at coordinates [+0.5,+0.3].
+
+     <table border=0>
+     <tr>
+     <td><img src="r3d_obj15.gif" hspace=5></td>
+     <td><img src="r3d_obj19.gif" hspace=5></td>
+     </tr>
+     <tr>
+     <td><b>Coordinate system defined by object 15</b></td>
+     <td><b>Coordinate system defined by object 19</b></td>
+     </tr>
+     </table>
+     <p>
 
 <a name="obj16"></a>
 <dt> Object type 16
@@ -635,14 +657,37 @@ limiting radius are not rendered.
 	<DT>zback</DT>
 	<DD>Z coord of rear clipping plane for all objects; in original units
 	    of original coordinate system, but relative to the center of the
-	    transformed coordinate system. </DD>
+	    transformed coordinate system. 
+	    That means if you are working in PDB coordinates, then everything
+	    more than <i>zback</i> Angstroms behind the center is clipped.
+	    </DD>
 	</DL>
 <pre>FRONTCLIP  zfront</pre>
 	<DL>
 	<DT>zfront</DT>
 	<DD>Z coord of front clipping plane for all objects; in original units
 	    of original coordinate system, but relative to the center of the
-	    transformed coordinate system. </DD>
+	    transformed coordinate system. 
+	    That means if you are working in PDB coordinates, then everything
+	    more than <i>zfront</i> Angstroms in front of the center is clipped.
+	    </DD>
+	</DL>
+<pre>ROTATION	Matrix</pre>
+	<DL>
+	<DT>Matrix</DT>
+	<DD>3x3 rotation matrix applied by post-multiplication after the coordinate
+	    transformation in TMAT. This is the transpose of the equivalent rotation
+	    if it were specified in TMAT. It applies to all following coordinates
+	    in the input stream.
+	    </DD>
+	</DL>
+<pre>TRANSLATION	X Y Z</pre>
+	<DL>
+	<DT>X Y Z</DT>
+	<DD>3 element translation applied after the coordinate transformation 
+	    in TMAT.   It applies to all following coordinates
+	    in the input stream.
+	    </DD>
 	</DL>
     <p>
 
@@ -663,6 +708,26 @@ limiting radius are not rendered.
      <p>
      As of version 2.4j this mechanism may also be used to interpolate colors
      along the length of a cylinder. In this case the third RGB triple is ignored.
+     <p>
+
+<a name="obj18"></a>
+<dt> Object type 18	
+<dt><font color=#BB2222>explicit transparency at vertices of preceding object </font>
+<dd> Trans1 Trans2 Trans3<br>
+     Normally an object is transparent only if it belongs to a trasparent material.
+     Using this additional object, however, you can specify a separate degree of
+     transparency at each vertex of an object. The transparency at points in the 
+     interior of the object are then determined by interpolation. All three values
+     (Trans1 Trans2 Trans3) are required; Trans3 is ignored for a cylinder, Trans2
+     and Trans3 are both ignored for a sphere.
+     <p>
+
+<a name="obj19"></a>
+<dt> Object type 19
+<dt><font color=#BB2222>begin isolation from TMAT transformation</font>
+<dd> Similar to <a href="#obj15">Object type 15</a>, except that the coordinate
+     scale along both x and y always runs from -0.5 to +0.5, regardless of the
+     aspect ratio of the rendered image.
      <p>
 
 <dt> Object type 0	

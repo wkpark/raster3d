@@ -64,20 +64,23 @@ tar:
 	/usr/bin/compress  ../Raster3D_$(VERSION).tar
 	(cd ..; gtar -czvf Raster3D_$(VERSION).tar.gz raster3d)
 
-normal3d: normal3d.o quadric.o
-	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+normal3d: normal3d.o quadric.o ungz.o
+	$(FC) $(FFLAGS) normal3d.o quadric.o ungz.o -o normal3d
 
-rastep:	rastep.o quadric.o
-	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+rastep:	rastep.o quadric.o suv.o
+	$(FC) $(FFLAGS) rastep.o quadric.o suv.o -o rastep
 
 ribbon:	$(RIBOBJS)
 	$(FC) $(LDFLAGS) $(FFLAGS) -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
-	 $(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o quadric.o parse.o r3dtops.o
-	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o \
+ungz.o:	ungz.c
+	$(CC) $(CFLAGS) -DGUNZIP -c ungz.c
+
+render:	render.f local.o quadric.o parse.o r3dtops.o ungz.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o ungz.o \
 	$(LIBS) -o render $(LDFLAGS)
 
 # HPs don't have "random" -- use drand48 instead

@@ -66,15 +66,15 @@ install: $(PROGS)
 tar:
 	(cd ..; tar -zcvvf raster3d.tgz raster3d)
 
-normal3d: normal3d.f.bak normal3d.f quadric.o
-	$(FC) $(FFLAGS) normal3d.f quadric.o -o normal3d
+normal3d: normal3d.f.bak normal3d.f quadric.o ungz.o
+	$(FC) $(FFLAGS) normal3d.f quadric.o ungz.o -o normal3d
 
 normal3d.f.bak:
 	mv normal3d.f normal3d.f.bak
-	grep -v CARRIAGECONTROL normal3d.f.bak > normal3d.f
+	egrep -v '(CARRIAGECONTROL|DISPOSE)' normal3d.f.bak > normal3d.f
 
-rastep:	rastep.o quadric.o
-	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+rastep:	rastep.o quadric.o suv.o
+	$(FC) $(FFLAGS) rastep.o quadric.o suv.o -o rastep
 
 rastep.f.bak:
 	mv rastep.f rastep.f.bak
@@ -94,8 +94,11 @@ balls:
 local.o: local.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o quadric.o parse.o r3dtops.o
-	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o \
+ungz.o:	ungz.c
+	$(CC) $(CFLAGS) -DGUNZIP -c ungz.c
+
+render:	render.f local.o quadric.o parse.o r3dtops.o ungz.o
+	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o ungz.o \
 	$(LIBS) -o render
 	$(RM) local.o
 

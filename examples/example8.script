@@ -27,5 +27,5 @@ display stereo.tiff
 #
 # Clean up
 #
-rm stereo.tiff 
-rm example8.r3d balls.r3d ribbon.r3d temp.r3d
+rm -f stereo.tiff 
+rm -f example8.r3d balls.r3d ribbon.r3d temp.r3d

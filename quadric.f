@@ -209,7 +209,7 @@ c	    pfac = 1./(1.-zq/eyepos)
 	zlim(2) = max( zlim(2), zc )
 *
 *	check for Z-clipping
-	if (zc .gt. FRONTCLIP) then
+	if (zc.gt.FRONTCLIP .or. zc.lt.BACKCLIP) then
 	    qinp = .FALSE.
 	    return
 	endif
@@ -684,16 +684,19 @@ c
 * On return A is destroyed, D contains eigenvalues,and each column of  *
 * V is a normalized eigenvector                                        *
 * Adapted from Numerical Recipes in Fortran (1986)                     *
+* We only need it for 3x3 symmetric matrices, so it's overkill.        *
 ************************************************************************
 CCC
 CC
 C
 	subroutine jacobi( A, n, np, D, V )
-	PARAMETER (NMAX=100)
+	PARAMETER (NMAX=4)
 c	Machine dependent! (converge when off-diagonal sum is less than this)
 	PARAMETER (TINY = 1.e-37)
 	real A(np,np), D(n), V(np,np)
 	real B(NMAX), Z(NMAX)
+c
+	call assert(n.le.NMAX,'Matrix too big for eigenvector routine')
 c
 c	Initialize V to identity matrix, B and D to diagonal of A
 	do ip = 1,n
@@ -709,6 +712,7 @@ c	Initialize V to identity matrix, B and D to diagonal of A
 c
 c	50 sweeps is never expected to happen; Press et al (1986) claim
 c	6 to 10 are typical for moderate matrix sizes
+c	Empirical trials of rastep show 6 sweeps, 8-10 rotations
 	do i = 1,50
 	    sm = 0.0
 	    do ip = 1,n-1

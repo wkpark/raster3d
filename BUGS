@@ -26,10 +26,25 @@ AIX
 	Work-around : 
 		Patch file render_patch.aix modifies render to use
 		LUNs 5,4,3,2,1 for file indirection rather than 6,7,...
+	dispose='delete' not permitted in open statement
+	Work-around :
+		None; temp files accumulate until deleted
+
+linux (g77 compiler)
+====================
+	The g77 compiler does not support file open options 
+	CARRIAGECONTROL='LIST' or DISPOSE='DELETE'.
+	Work-around :
+		Makefile.redhat deletes these specifications from the source
+		files; unfortunately, this means that temporary files do not
+		automatically get deleted from the system temp directory.
+
+	Optimization bug in quadric.f can cause render to fail on certain
+	input.  g77 -w -malign-double quadric.f   seems to fix this.
 
 Windows
 =======
-	I am relying entirely on the instructions kindly provided by 
+	I am relying entirely on instructions kindly provided by 
 	Suhaib Siddiqi, and have not tested the installation procedure at all.
 	In particular I haven't done anything about adding the label-handling 
 	code to the Makefile.

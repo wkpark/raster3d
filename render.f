@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.5d (1 Jun 2000)
+*     Version 2.5f (27 Oct 2000)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -61,6 +61,9 @@
 * EAM Jan 2000	- 2.5b general release
 * EAM Feb 2000	- 2.5c (bug fixes to 2.5b)
 * EAM Mar 2000	- object types VTRANSP (18) and ISOLATE2 (19)
+* EAM Sep 2000	- 2.5e uncompress indirect files ending with .Z or .gz
+*		  discard BACKCLIP objects on input, implement BACKCLIP material
+* EAM Nov 2000	- 2.5f more bug-fixes to rotation of surface normals
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -573,6 +576,10 @@
       PARAMETER (MAXGLOWS = 10)
       INTEGER	GLOWLIST(MAXGLOWS), NGLOWS
 *
+* Support for decompression on the fly
+      EXTERNAL ungz
+      INTEGER  ungz
+*
 *     Output buffer
 *     EAM May 1990 invert index order for packing efficiency on IRIS
       INTEGER*2 OUTBUF(OUTSIZ,4)
@@ -620,7 +627,7 @@
       KDET(CYLIND) = 11
       KDET(PLANE)  = 7
       KDET(NORMS ) = 9
-      KDET(MATERIAL) = 16
+      KDET(MATERIAL) = 17
       KDET(GLOWLIGHT)= 10
       KDET(QUADRIC)  = 17
       KDET(VERTEXRGB)= 9
@@ -732,7 +739,7 @@
         NOY = NPY/2
         CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 2 requires NPX even')
         CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 2 requires NPY even')
-      ELSEIF (SCHEME.EQ.3) THEN
+      ELSEIF (SCHEME.EQ.3 .and. nscheme.ne.-4) THEN
 	nax = ((NPX * NTX) * 2 + 2) / 3.0
 	nay = ((NPY * NTY) * 2 + 2) / 3.0
 	call autotile( nax, nay )
@@ -740,7 +747,7 @@
 	NOY = NPY
 	NPX = NPX + (NPX+1)/2
 	NPY = NPY + (NPY+1)/2
-      ELSEIF (SCHEME.EQ.4) THEN
+      ELSE
 	IF (MOD(NPX,2).NE.0 .OR. MOD(NPY,2).NE.0) THEN
 	    nax = NPX * NTX
 	    nay = NPY * NTY
@@ -996,10 +1003,12 @@ c	or should we keep going as long as the file continues?
 c	The following 4 lines implement the former, so that the initial
 c	@file command essentially means 'use his header records for me too'.
 c
-      IF (INPUT.NE.INPUT0) THEN
-	CLOSE(INPUT)
-	INPUT = INPUT0
-      ENDIF
+c     IF (INPUT.NE.INPUT0) THEN
+c	CLOSE(INPUT)
+c	INPUT = INPUT0
+c     ENDIF
+c     As of V2.5e, however, we keep reading.
+c     >>> This is a change! <<<
 c
 c     End of header processing
 *
@@ -1078,7 +1087,7 @@ c     Read in next object
       ENDIF
 C
 C     READ (INPUT,*,END=50) INTYPE
-      READ (INPUT,'(A)',END=50,ERR=46) LINE
+      READ (INPUT,'(A)',END=50,ERR=47) LINE
 c     Nov 1997 - allow # comments
       IF (LINE(1:1) .EQ. '#') THEN
       	GOTO 7
@@ -1090,6 +1099,7 @@ c     May 1996 - allow file indirection
 	  IF (LINE(I:I).NE.' ') J = I
 	  IF (LINE(I:I).EQ.'#') K = I-1
 	  IF (LINE(I:I).EQ.'!') K = I-1
+	  IF (LINE(I:I).EQ.CHAR(0)) K = I-1
 	  IF (LINE(I:I).EQ.'	') LINE(I:I) = ' '
 	ENDDO
 	IF (J.EQ.1) GOTO 7
@@ -1098,8 +1108,24 @@ c     May 1996 - allow file indirection
 	ENDDO
 	K = L
 	IF (LINE(K:K).eq.'Z' .or. LINE(K-1:K).eq.'gz') THEN
-	    WRITE (NOISE,'(A)') ' >> sorry, no decompression '
-	    GOTO 74    
+c	    ungz will uncompress into a temporary file, which ought to 
+c	    be deleted later.  Unfortunately, that's hard to do in g77 
+c	    since it doesn't support dispose='DELETE'.
+	    line(k+1:k+1) = char(0)
+	    if (0 .gt. ungz( line(j:k+1), fullname )) goto 74
+	    j = 1
+	    k = 80
+	    do i=80,2,-1
+	      if (fullname(i:i).eq.' ')     k = i-1
+	      if (fullname(i:i).eq.char(0)) k = i-1
+	    enddo
+	    if (verbose) 
+     &		write(noise,*) 'Creating temporary file: ',fullname(j:k)
+	    open (unit=input+1,err=74,status='OLD',
+     &		  DISPOSE='DELETE',
+     &		  file=fullname(j:k))
+	    fullname = line(2:80)
+	    goto 72
 	ENDIF
    70	CONTINUE
 	OPEN (UNIT=INPUT+1,ERR=71,STATUS='OLD',
@@ -1169,8 +1195,11 @@ c     May 1996 - allow file indirection
 c     Global Properties
       ELSEIF (INTYPE .EQ. GPROP) THEN
 	READ (INPUT,'(A)',END=50) LINE
-	IF (LINE(1:3).EQ.'FOG') THEN
-	  READ (LINE(5:74),*,ERR=774,END=774) 
+	DO I = 80, 1, -1
+	  IF (LINE(I:I).NE.' '.AND.LINE(I:I).NE.'	') L = I
+	ENDDO
+	IF (LINE(L:L+2).EQ.'FOG') THEN
+	  READ (LINE(L+4:74),*,ERR=774,END=774) 
      &          FOGTYPE, FOGFRONT, FOGBACK, FOGDEN
   774	  CONTINUE
      	  FOGRGB(1) = BKGND(1)
@@ -1179,13 +1208,13 @@ c     Global Properties
 	  CALL CHKRGB(FOGRGB(1),FOGRGB(2),FOGRGB(3),'invalid fog color')
 	  IF (FOGTYPE.NE.1)  FOGTYPE = 0
 	  IF (FOGDEN.LE.0.0) FOGDEN = 0.5
-	ELSE IF (LINE(1:9).EQ.'FRONTCLIP') THEN
-	  READ (LINE(11:72),*) FRONTCLIP
+	ELSE IF (LINE(L:L+8).EQ.'FRONTCLIP') THEN
+	  READ (LINE(L+10:72),*) FRONTCLIP
 	  FRONTCLIP = FRONTCLIP * SCALE / TMAT(4,4)
-	ELSE IF (LINE(1:8).EQ.'BACKCLIP') THEN
-	  READ (LINE(10:72),*) BACKCLIP
+	ELSE IF (LINE(L:L+7).EQ.'BACKCLIP') THEN
+	  READ (LINE(L+9:72),*) BACKCLIP
 	  BACKCLIP = BACKCLIP * SCALE / TMAT(4,4)
-	ELSE IF (LINE(1:8).EQ.'ROTATION') THEN
+	ELSE IF (LINE(L:L+7).EQ.'ROTATION') THEN
 	  READ (INPUT,*,ERR=75) ((RAFTER(I,J),J=1,3),I=1,3)
 	  WRITE (NOISE,775) ((RAFTER(I,J),J=1,3),I=1,3)
   775	  FORMAT('Post-rotation matrix:  ',3(/,3F10.4))
@@ -1197,12 +1226,12 @@ CDEBUG    Should check determinant and type error if not 1.0
 	    RAFTER(3,2) = -RAFTER(3,2)
 	  ENDIF
 	  CALL QSETUP
-	ELSE IF (LINE(1:11).EQ.'TRANSLATION') THEN
+	ELSE IF (LINE(L:L+10).EQ.'TRANSLATION') THEN
 	  READ (INPUT,*,ERR=75) (TAFTER(I),I=1,3)
 	  WRITE (NOISE,776) (TAFTER(I),I=1,3)
   776	  FORMAT('Post-translation:      ',1(/,3F10.4))
 	  IF (INVERT) TAFTER(2) = -TAFTER(2)
-	ELSE IF (LINE(1:5).EQ.'DUMMY') THEN
+	ELSE IF (LINE(L:L+4).EQ.'DUMMY') THEN
 	ELSE
 	  GOTO 75
 	ENDIF
@@ -1216,7 +1245,7 @@ CDEBUG    Should check determinant and type error if not 1.0
       ENDIF
 *
 COLD  CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
-      IF (INTYPE.LT.1 .OR. INTYPE.GT.MXTYPE) GOTO 46
+      IF (INTYPE.LT.1 .OR. INTYPE.GT.MXTYPE) GOTO 47
       CALL ASSERT (INTYPE.NE.PEARLS,'sorry, no pearls yet')
 c
 c     Read in object details, now we know what kind it is.
@@ -1336,13 +1365,25 @@ C     20-Feb-1997 Save both object type and material type
 *	save transformed Z limits
 	ZLIM(1) = MIN( ZLIM(1), Z1C,Z2C,Z3C )
 	ZLIM(2) = MAX( ZLIM(2), Z1C,Z2C,Z3C )
+*
 *	check for Z-clipping
-	IF (MIN(Z1C,Z2C,Z3C) .GT. FRONTCLIP) THEN
-	    JUSTCLIPPED = .TRUE.
-	    GOTO 45
-	ELSE
-	    JUSTCLIPPED = .FALSE.
+	JUSTCLIPPED = .FALSE.
+	IF (INTYPE.NE.PLANE) THEN
+	  IF ((MIN(Z1C,Z2C,Z3C) .GT. FRONTCLIP)
+     &    .OR.(MAX(Z1C,Z2C,Z3C) .LT. BACKCLIP)) THEN
+	      JUSTCLIPPED = .TRUE.
+	      GOTO 45
+	  ENDIF
+	  IF (CLIPPING) THEN
+	    MIND = LIST(MLIST(NPROPM))
+	    IF ((MIN(Z1C,Z2C,Z3C) .GT. DETAIL(MIND+16))
+     &      .OR.(MAX(Z1C,Z2C,Z3C) .LT. DETAIL(MIND+17))) THEN
+	      JUSTCLIPPED = .TRUE.
+	      GOTO 45
+	    ENDIF
+	  ENDIF
 	ENDIF
+*
 *       solve for coefficients of plane eqn z=Ax+By+C
         CALL PLANER(X1C,Y1C,Z1C,
      &             X2C,Y2C,Z2C,
@@ -1529,7 +1570,7 @@ C     20-Feb-1997 Save both object type and material type
 	ZLIM(1) = MIN( ZLIM(1), ZC )
 	ZLIM(2) = MAX( ZLIM(2), ZC )
 *	check for Z-clipping
-	IF (ZC .GT. FRONTCLIP) THEN
+	IF (ZC .GT. FRONTCLIP .OR. ZC .LT. BACKCLIP) THEN
 	    JUSTCLIPPED = .TRUE.
 	    GOTO 45
 	ELSE
@@ -1703,7 +1744,8 @@ c	with specs for the current object; we just need to set flags.
 	ZLIM(1) = MIN( ZLIM(1), Z1C,Z2C )
 	ZLIM(2) = MAX( ZLIM(2), Z1C,Z2C )
 *	check for Z-clipping
-	IF (MIN(Z1C,Z2C) .GT. FRONTCLIP) THEN
+	IF ((MIN(Z1C,Z2C) .GT. FRONTCLIP)
+     &  .OR.(MAX(Z1C,Z2C) .LT. BACKCLIP)) THEN
 	    JUSTCLIPPED = .TRUE.
 	    GOTO 45
 	ELSE
@@ -1805,30 +1847,39 @@ c	with specs for the current object; we just need to set flags.
 *
       ELSEIF (INTYPE.EQ.NORMS) THEN
 *	vertex normals as given (these belong to previous triangle)
-	IF (JUSTCLIPPED) GOTO 7
+	IF (JUSTCLIPPED) GOTO 46
 	IPREV = N - 1
 	IF ((TYPE(IPREV).EQ.VERTEXRGB).OR.(TYPE(IPREV).EQ.VERTRANSP))
      &      IPREV = IPREV - 1
 	IF ((TYPE(IPREV).EQ.VERTEXRGB).OR.(TYPE(IPREV).EQ.VERTRANSP))
      &      IPREV = IPREV - 1
 	CALL ASSERT (TYPE(IPREV).EQ.TRIANG,'orphan normals')
-        X1A = BUF(1)
-        Y1A = BUF(2)
-        Z1A = BUF(3)
-        X2A = BUF(4)
-        Y2A = BUF(5)
-        Z2A = BUF(6)
-        X3A = BUF(7)
-        Y3A = BUF(8)
-        Z3A = BUF(9)
 *	Isolated objects not transformed by TMAT, but still subject to inversion
 	IF (ISOLATION.GT.0) THEN
+          X1C = BUF(1)
+          Y1C = BUF(2)
+          Z1C = BUF(3)
+          X2C = BUF(4)
+          Y2C = BUF(5)
+          Z2C = BUF(6)
+          X3C = BUF(7)
+          Y3C = BUF(8)
+          Z3C = BUF(9)
 	  IF (INVERT) THEN
-	    Y1B = -Y1B
-	    Y2B = -Y2B
-	    Y3B = -Y3B
+	    Y1C = -Y1C
+	    Y2C = -Y2C
+	    Y3C = -Y3C
 	  ENDIF
 	ELSE
+          X1A = BUF(1)
+          Y1A = BUF(2)
+          Z1A = BUF(3)
+          X2A = BUF(4)
+          Y2A = BUF(5)
+          Z2A = BUF(6)
+          X3A = BUF(7)
+          Y3A = BUF(8)
+          Z3A = BUF(9)
 *	Apply rotation matrix, but not translation components
 	  X1B = X1A*TMAT(1,1) + Y1A*TMAT(2,1) + Z1A*TMAT(3,1)
 	  Y1B = X1A*TMAT(1,2) + Y1A*TMAT(2,2) + Z1A*TMAT(3,2)
@@ -1839,6 +1890,16 @@ c	with specs for the current object; we just need to set flags.
 	  X3B = X3A*TMAT(1,1) + Y3A*TMAT(2,1) + Z3A*TMAT(3,1)
 	  Y3B = X3A*TMAT(1,2) + Y3A*TMAT(2,2) + Z3A*TMAT(3,2)
 	  Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
+*	Also apply post-rotation, if any
+	  X1C = RAFTER(1,1)*X1B + RAFTER(1,2)*Y1B + RAFTER(1,3)*Z1B
+	  Y1C = RAFTER(2,1)*X1B + RAFTER(2,2)*Y1B + RAFTER(2,3)*Z1B
+	  Z1C = RAFTER(3,1)*X1B + RAFTER(3,2)*Y1B + RAFTER(3,3)*Z1B
+	  X2C = RAFTER(1,1)*X2B + RAFTER(1,2)*Y2B + RAFTER(1,3)*Z2B
+	  Y2C = RAFTER(2,1)*X2B + RAFTER(2,2)*Y2B + RAFTER(2,3)*Z2B
+	  Z2C = RAFTER(3,1)*X2B + RAFTER(3,2)*Y2B + RAFTER(3,3)*Z2B
+	  X3C = RAFTER(1,1)*X3B + RAFTER(1,2)*Y3B + RAFTER(1,3)*Z3B
+	  Y3C = RAFTER(2,1)*X3B + RAFTER(2,2)*Y3B + RAFTER(2,3)*Z3B
+	  Z3C = RAFTER(3,1)*X3B + RAFTER(3,2)*Y3B + RAFTER(3,3)*Z3B
 	ENDIF
 C
 C	If all 3 Z components are negative, it's facing away from us.
@@ -1849,9 +1910,9 @@ C			   distinction between solid and transparent materials
 C	11-May-1997 - this code is now redundant, as BACKFACE materials are
 C	treated as a general case.  Leave it in for the moment, though.
 C
-	IF (Z1B.GE.0 .AND. Z2B.GE.0 .AND. Z3B.GE.0) GOTO 718
+	IF (Z1C.GE.0 .AND. Z2C.GE.0 .AND. Z3C.GE.0) GOTO 718
 717	CONTINUE
-	IF (Z1B.LE.0 .AND. Z2B.LE.0 .AND. Z3B.LE.0) THEN
+	IF (Z1C.LE.0 .AND. Z2C.LE.0 .AND. Z3C.LE.0) THEN
 	    IF (INMODE.EQ.4) THEN
 		NHIDDEN = NHIDDEN + 1
 		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
@@ -1869,33 +1930,33 @@ C	normals also.  The value of EDGESLOP is purely empirical; setting it
 C	either too low or too high makes some edges get coloured wrongly.  
 C	Setting the HIDDEN flag for this record (NB: for the NORMALS, not for
 C	the triangle itself) causes the triangle to have flat shading.
-	IF (Z1B+Z2B+Z3B .LT. 0) THEN
-	    IF (Z1B .GT. EDGESLOP) FLAG(N) = HIDDEN
-	    IF (Z2B .GT. EDGESLOP) FLAG(N) = HIDDEN
-	    IF (Z3B .GT. EDGESLOP) FLAG(N) = HIDDEN
-	    Z1B = MIN(Z1B,0.)
-	    Z2B = MIN(Z2B,0.)
-	    Z3B = MIN(Z3B,0.)
+	IF (Z1C+Z2C+Z3C .LT. 0) THEN
+	    IF (Z1C .GT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z2C .GT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z3C .GT. EDGESLOP) FLAG(N) = HIDDEN
+	    Z1C = MIN(Z1C,0.)
+	    Z2C = MIN(Z2C,0.)
+	    Z3C = MIN(Z3C,0.)
 	    GOTO 717
 	ELSE
-	    IF (Z1B .LT. -EDGESLOP) FLAG(N) = HIDDEN
-	    IF (Z2B .LT. -EDGESLOP) FLAG(N) = HIDDEN
-	    IF (Z3B .LT. -EDGESLOP) FLAG(N) = HIDDEN
-	    Z1B = MAX(Z1B,0.)
-	    Z2B = MAX(Z2B,0.)
-	    Z3B = MAX(Z3B,0.)
+	    IF (Z1C .LT. -EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z2C .LT. -EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z3C .LT. -EDGESLOP) FLAG(N) = HIDDEN
+	    Z1C = MAX(Z1C,0.)
+	    Z2C = MAX(Z2C,0.)
+	    Z3C = MAX(Z3C,0.)
 	ENDIF
 C
 718	CONTINUE
-	DETAIL(NDET+1) = X1B
-	DETAIL(NDET+2) = Y1B
-	DETAIL(NDET+3) = Z1B
-	DETAIL(NDET+4) = X2B
-	DETAIL(NDET+5) = Y2B
-	DETAIL(NDET+6) = Z2B
-	DETAIL(NDET+7) = X3B
-	DETAIL(NDET+8) = Y3B
-	DETAIL(NDET+9) = Z3B
+	DETAIL(NDET+1) = X1C
+	DETAIL(NDET+2) = Y1C
+	DETAIL(NDET+3) = Z1C
+	DETAIL(NDET+4) = X2C
+	DETAIL(NDET+5) = Y2C
+	DETAIL(NDET+6) = Z2C
+	DETAIL(NDET+7) = X3C
+	DETAIL(NDET+8) = Y3C
+	DETAIL(NDET+9) = Z3C
 	NDET = NDET + KDET(INTYPE)
 	IF (SHADOW) THEN
 	  MDET = MDET + SDET(INTYPE)
@@ -1906,7 +1967,7 @@ C
 *	Also overrides MATERIAL RGB, which is arguably a bug.
 *
       ELSEIF (INTYPE .EQ. VERTEXRGB) THEN
-	IF (JUSTCLIPPED) GOTO 7
+	IF (JUSTCLIPPED) GOTO 46
 	CALL CHKRGB(BUF(1),BUF(2),BUF(3),'invalid vertex color')
 	CALL CHKRGB(BUF(4),BUF(5),BUF(6),'invalid vertex color')
 	CALL CHKRGB(BUF(7),BUF(8),BUF(9),'invalid vertex color')
@@ -1945,7 +2006,7 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 *	triangle or cylinder. Overrides any MATERIAL properties.
 *
       ELSEIF (INTYPE .EQ. VERTRANSP) THEN
-	IF (JUSTCLIPPED) GOTO 7
+	IF (JUSTCLIPPED) GOTO 46
 	IPREV = N - 1
 	IF (TYPE(IPREV).EQ.NORMS .OR. TYPE(IPREV).EQ.VERTEXRGB)
      &      IPREV = IPREV - 1
@@ -1996,16 +2057,22 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 *	A few remaining fields are reserved for future expansion
 	DETAIL(NDET+8) = BUF(8)
 	DETAIL(NDET+9) = BUF(9)
+*	Initialize clipping planes, only used if CLIPPING is set below
+	DETAIL(NDET+16) = FRONTCLIP
+	DETAIL(NDET+17) = BACKCLIP
 *	Additional properties may continue on extra lines
 	IF (BUF(10).GT.0) THEN
 	  DO I = 1,INT(BUF(10))
 	  READ (INPUT,'(A)',END=50) LINE
-	  IF (LINE(1:5).EQ.'SOLID') THEN
+	  DO J = 80, 1, -1
+	    IF (LINE(J:J).NE.' '.AND.LINE(J:J).NE.'	') L = J
+	  ENDDO
+	  IF (LINE(L:L+4).EQ.'SOLID') THEN
 	    MATCOL = .TRUE.
-	    READ (LINE(7:72),*,END=720) RGBMAT(1),RGBMAT(2),RGBMAT(3)
-	  ELSE IF (LINE(1:8).EQ.'BACKFACE') THEN
+	    READ (LINE(L+6:72),*,END=720) RGBMAT(1),RGBMAT(2),RGBMAT(3)
+	  ELSE IF (LINE(L:L+7).EQ.'BACKFACE') THEN
 	    FLAG(N) = OR(FLAG(N),INSIDE)
-	    READ (LINE(10:72),*,END=720) RED, GRN, BLU, PHONGM, SPECM
+	    READ (LINE(L+9:72),*,END=720) RED, GRN, BLU, PHONGM, SPECM
 	    MPHONG = PHONGM
 	    IF (PHONGM.LT.0) MPHONG = IPHONG
 	    IF (SPECM.LT.0.OR.SPECM.GT.1.) SPECM  = SPECLR
@@ -2014,13 +2081,19 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	    DETAIL(NDET+13) = BLU
 	    DETAIL(NDET+14) = MPHONG
 	    DETAIL(NDET+15) = SPECM
-	  ELSE IF (LINE(1:9).EQ.'FRONTCLIP') THEN
+	  ELSE IF (LINE(L:L+8).EQ.'FRONTCLIP') THEN
 	    CLIPPING = .TRUE.
 	    ZCLIP = FRONTCLIP
-	    READ (LINE(11:72),*,END=720) ZCLIP
+	    READ (LINE(L+10:72),*,END=720) ZCLIP
 	    ZCLIP = ZCLIP * SCALE / TMAT(4,4)
 	    DETAIL(NDET+16) = ZCLIP
-	  ELSE IF (LINE(1:7).EQ.'BUMPMAP') THEN
+	  ELSE IF (LINE(L:L+7).EQ.'BACKCLIP') THEN
+	    CLIPPING = .TRUE.
+	    ZCLIP = BACKCLIP
+	    READ (LINE(L+9:72),*,END=720) ZCLIP
+	    ZCLIP = ZCLIP * SCALE / TMAT(4,4)
+	    DETAIL(NDET+17) = ZCLIP
+	  ELSE IF (LINE(L:L+6).EQ.'BUMPMAP') THEN
 	    WRITE(NOISE,*) 'Sorry, no bumpmaps (dont you wish!)'
 	  ELSE
 	    GOTO 720
@@ -2128,13 +2201,14 @@ c     here to discard object due to clipping planes
 c
 45    CONTINUE
       NCLIP = NCLIP + 1
+46    FLAG(N) = 0
       N = N - 1
       GO TO 7
 
 c
 c     26-Aug-1999 attempt error recovery and reporting 
 c		  if input line is not recognized
-46    continue
+47    continue
       write (noise,'(A,A)') 'Unrecognized line: ',LINE
       goto 7
 
@@ -2164,23 +2238,42 @@ c		  if input line is not recognized
       WRITE (NOISE,*) XA, YA, ZA
 *
 *     Now we can set depth-cueing 
-      WRITE (NOISE,*)    'Limits of transformed Z:', ZLIM(1),ZLIM(2)
-      IF (FRONTCLIP.NE.HUGE) 
-     &    WRITE(NOISE,*) '      Z-clipping limits:', BACKCLIP,FRONTCLIP
-      WRITE (NOISE,*)    'Scale:                  ', SCALE
-      IF (FOGTYPE .GE. 0) THEN
-      	FOGLIM(1) = ZLIM(1)
-	FOGLIM(2) = ZLIM(2)
-	IF (FOGBACK .NE.0) FOGLIM(1) = FOGBACK  * BACKCLIP
-	IF (FOGFRONT.NE.0) FOGLIM(2) = FOGFRONT * SCALE
-	IF (FOGTYPE.EQ.1) THEN
-	   WRITE(NOISE,*) 'Using exponential fog model'
-	ELSE
-	   WRITE(NOISE,*) 'Using linear fog model'
-	ENDIF
-	WRITE (NOISE,*) 'Fog limits: ',FOGLIM(1),FOGLIM(2)
-	WRITE (NOISE,*) 'Fog density:',FOGDEN
+      WRITE (LINE,777)    'Z limits (unscaled) before clipping:',
+     &		ZLIM(1)*TMAT(4,4)/SCALE,ZLIM(2)*TMAT(4,4)/SCALE
+      WRITE (NOISE,*) LINE(2:57)
+      WRITE (LINE,777)    'Z-clipping limits:                  ', 
+     &		BACKCLIP*TMAT(4,4)/SCALE
+      IF (FRONTCLIP.EQ.HUGE) THEN
+      		WRITE (LINE(48:57),'(A10)') '      none'
+      ELSE
+      		WRITE (LINE(48:57),'(F10.2)') FRONTCLIP*TMAT(4,4)/SCALE
       ENDIF
+      WRITE (NOISE,*) LINE(2:57)
+      IF (VERBOSE) WRITE (NOISE,*) 'Scale: ', SCALE
+      IF (FOGTYPE .GE. 0) THEN
+        IF (FOGBACK .EQ. 0) THEN
+	    FOGLIM(1) = ZLIM(1)
+	ELSE
+	    FOGLIM(1) = FOGBACK * BACKCLIP
+	ENDIF
+	IF (FOGFRONT .EQ. 0) THEN
+	    FOGLIM(2) = ZLIM(2)
+	ELSE IF (FRONTCLIP .LT. HUGE) THEN
+	    FOGLIM(2) = FOGFRONT * FRONTCLIP
+	ELSE
+	    FOGLIM(2) = FOGFRONT * SCALE
+	ENDIF
+	IF (FOGTYPE.EQ.1) THEN
+	   WRITE(LINE,777) 'Fog (exponential) limits, density:'
+	ELSE
+	   WRITE(LINE,777) 'Fog (linear) limits, density:     '
+	ENDIF
+	WRITE (LINE(38:67),778) 
+     &	   FOGLIM(1)*TMAT(4,4)/SCALE,FOGLIM(2)*TMAT(4,4)/SCALE,FOGDEN
+	WRITE (NOISE,*) LINE(2:67)
+      ENDIF
+  777 FORMAT(1X,A,2F10.2)
+  778 FORMAT(2F10.2,F10.2)
 *
 *     Check list for special objects 
 *     Triangle types first (vanilla/ribbon/surface)
@@ -2655,6 +2748,7 @@ C         DO 240 IK = KSTART(ITILE,JTILE), KSTOP(ITILE,JTILE)
 	      IF (AND(FLAG(IND),CLIPPED).NE.0) THEN
 		MIND = LIST(MLIST(FLAG(IND)/65536))
 		IF ( ZP.GT.DETAIL(MIND+16)) GOTO 240
+		IF ( ZP.LT.DETAIL(MIND+17)) GOTO 240
 	      ENDIF
 *	      Use Phong shading for surface and ribbon triangles.
 	      IF (AND(FLAG(IND),SURFACE+VCOLS+VTRANS).NE.0) THEN
@@ -2743,6 +2837,7 @@ C	      Triggered by CLROPT=2
 		  IF (ZP.GT.DETAIL(MIND+16)) GOTO 240
 		  DZ = -DZ
 		ENDIF
+		IF (ZP.LT.DETAIL(MIND+17)) GOTO 240
 	      ENDIF
 *             update values for object having highest z here yet
               NORMAL(1) = DX
@@ -2794,6 +2889,7 @@ C	      Triggered by CLROPT=2
 		  IF (ZP.LE.ZHIGH) GOTO 240
 		  IF (ZP.GT.DETAIL(MIND+16)) GOTO 240
 		ENDIF
+		IF (ZP.LT.DETAIL(MIND+17)) GOTO 240
 	      ENDIF
               NORMAL(1) = XP - XA
               NORMAL(2) = YP - YA
@@ -2865,6 +2961,10 @@ C	      Check against limiting sphere in 3D
 		    IF (ZP.LE.ZHIGH) GO TO 240
 		    DZ2 = (ZP-Z)**2
  		    IF (DX2+DY2+DZ2 .GT. R2) GO TO 240
+		    IF (AND(FLAG(IND),CLIPPED).NE.0) THEN
+			IF (ZP.GT.DETAIL(MIND+16)) GO TO 240
+			IF (ZP.LT.DETAIL(MIND+17)) GO TO 240
+		    ENDIF
 		ENDIF
 		NORMAL(1) = QNORM(1)
 		NORMAL(2) = QNORM(2)
@@ -4002,6 +4102,8 @@ C
 	    NORM2D(1) = NORMAL(1)
 	    NORM2D(2) = NORMAL(2)
 	    NORM2D(3) = NORMAL(3)
+C	Only nest transparency 2 deep; ignore any deeper transparent objects.
+C	(Could have option to render them as opaque, rather than ignoring them).
 	ELSE IF (AND(FLAG(IND),TRANSP).EQ.0) THEN
 	    Z3RD   = ZP
 	    IND3RD = IND

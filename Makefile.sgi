@@ -13,7 +13,7 @@ FFLAGS	= -g
 # Render really benefits from optimization, so try to get this right.
 # These are the optimizations recommended on my test machine;
 # Yours may vary
-FOPTS	= -O -Olimit 3500
+FOPTS	= -O -Olimit 3600
 
 #
 # TIFF support (enabled by default)
@@ -38,11 +38,6 @@ FOPTS	= -O -Olimit 3500
  DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT \
 		-DIMAGEPIPE -DLIBIMAGE_SUPPORT
 INCLUDES =	-I/usr/local/include/
-
-#LIBS    =
-#DEFINES =
-#INCLUDES=
-
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
 PROGS   =	balls normal3d rastep rods ribbon render avs2ps rings3d
@@ -73,11 +68,11 @@ tar:
 	/usr/bin/compress  ../Raster3D_$(VERSION).tar
 	(cd ..; gtar -czvf Raster3D_$(VERSION).tar.gz raster3d)
 
-normal3d: normal3d.o quadric.o
-	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+normal3d: normal3d.o quadric.o ungz.o
+	$(FC) $(FFLAGS) normal3d.o quadric.o ungz.o -o normal3d
 
-rastep:	rastep.o quadric.o
-	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+rastep:	rastep.o quadric.o suv.o
+	$(FC) $(FFLAGS) rastep.o quadric.o suv.o -o rastep
 
 ribbon:	$(RIBOBJS)
 	$(FC) -O $(RIBOBJS) -o ribbon
@@ -85,11 +80,14 @@ ribbon:	$(RIBOBJS)
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
+ungz.o: ungz.c
+	cc $(CFLAGS) -DGUNZIP -c ungz.c
+
 render.o: render.f
 	$(FC) $(FOPTS) -c render.f
 
-render:	render.o local.o quadric.o parse.o r3dtops.o
-	$(FC) $(FFLAGS) render.o quadric.o local.o parse.o r3dtops.o \
+render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o
+	$(FC) $(FFLAGS) render.o quadric.o local.o parse.o r3dtops.o ungz.o \
 	$(LIBS) -o render $(LDFLAGS)
 
 avs2ps:	avs2ps.c

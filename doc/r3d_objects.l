@@ -69,6 +69,7 @@ same material, but occlude each other (for instance the front
 and back surfaces of a transparent molecular surface). 
  OPT1 = 0 will render all transparent surfaces
  OPT1 = 1 will render only the topmost surface
+ OPT1 = 2 will render back surface of transparent spheres and cylinders
 .TP 5
 .B OPT2
 Not used
@@ -171,11 +172,24 @@ subsequent objects until an object of type 9 is encountered.
 .SH Object type 16 - Global property
 Object type 16 is always followed by a single record that affects
 the rendering of the entire scene. Currently the options are
-FOG, FRONTCLIP, and BACKCLIP.
+FOG, FRONTCLIP, and BACKCLIP.  There are also options ROTATION and
+TRANSLATION that affect only objects following their appearance in
+the input stream.
 
 .SH Object type 17 - Vertex colours
 Explicit vertex colours for preceding triangle or cylinder object.
     R1 G1 B1   R2 G2 B2   R3 G3 B3
+
+.SH Object type 18 - Vertex transparency
+Explicit transparency at vertices of preceding object.
+All three values are required, though only the first two are used
+for cylinders, and only the first one for spheres.
+    Trans1 Trans2 Trans3
+
+.SH Object type 19 - TMAT Isolation
+Similar to object type 15, except the the x and y scales are the
+same only in the case of a square image.  Both the x and y axes run 
+from -0.5 to +0.5 regardless of the aspect ratio of the rendered image.
 
 .SH SEE ALSO
  PostScript and HTML documentation

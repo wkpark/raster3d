@@ -1,14 +1,22 @@
 
-most recent change:	   1-Jun-2000
+most recent change:	  15-Nov-2000
 
-The file Raster3D_2.5d.tar.Z contains the full source distribution for
-version 2.5d of RASTER3D.
+The file Raster3D_2.5f.tar.Z contains the full source distribution for
+version 2.5f of RASTER3D.
 
-Version 2.5d contains minor changes to the auto-tiling algorithm,
-to the PostScript label processing, and several new object types.
-These changes are excercised by example 7.
-It also contains two sample filters for converting molecular surfaces
-produces by Michael Sanner's program msms into Raster3D input files.
+- Version 2.5f contains no major changes or additions
+  See CHANGELOG for complete list
+
+- 2.5f adds an explicit BACKCLIP command that affects all objects in the 
+  figure. Further tweaking of the Z-clip code in general.
+
+- 2.5e added support for uncompressing input files to render and normal3d. 
+  Unfortunately this is not correctly handled by g77; 
+  executables produced by the g77 compiler leave temporary files cluttering 
+  up the system temp directory. The same is true for the AIX xlf compiler.
+
+- New Makefile.pgf77 for use with the Portland Group fortran compiler under
+  linux (recommended!).
 
 This is a unified distribution which has been tested on the following 
 machines:
@@ -17,7 +25,7 @@ machines:
 	SGI / Irix 6.2 6.5
 	IBM RS6000 / AIX
 	SUNOS (g77/gcc)
-	Intel Pentium / linux (Redhat 6.1)
+	Intel Pentium / linux (Redhat 6.1, Mandrake 7.1)  (g77/pgf77)
 
 Previous versions have been tested under Irix 5.3 and other
 flavors of linux.  If you run into installation problems, please let

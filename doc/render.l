@@ -114,6 +114,13 @@ Only if compiled with -DTIFF_SUPPORT.
 The -tiff flag will cause render to output a TIFF image to the specified
 file instead of writing to stdout.
 
+.TP 5
+.B "-transparent"
+
+(same as -alpha).
+Force output of transparency information (SCHEME 0). This only works
+if the output image format supports an alpha channel (AVS, TIFF, but
+not JPEG). Note that this turns off anti-aliasing.
 
 .SH HEADER RECORDS
 .TP 5 

@@ -1,13 +1,9 @@
 #
-# Raster3D makefile for Redhat distribution of linux
-# EAM - tested under Redhat 4.2 and Redhat 6.1
-#
-# Redhat 4.2 uses the perl script fort77 [locally called f77] 
-# as a Fortran compiler
-# Redhat 6.1 uses g77
-# On my machines both of these answer to "f77", but possibly 
-# you would have to change the definition of FC below to one 
-# or the other.
+# Raster3D makefile for Redhat linux with Portland Group Fortran compiler
+# This is prefered because 
+#    (a) it produces faster code
+#    (b) it supports file options like DISPOSE='DELETE' that g77 does not.
+# EAM - Redhat 6.2 / Mandrake 7.1
 #
 include VERSION
 
@@ -22,14 +18,14 @@ mandir = $(prefix)/man/manl
 # Compiler options
 #
 CC 	= gcc
-F2 	= f2c
-FC 	= f77
+FC 	= pgf77
 RM 	= /bin/rm -f
 INSTALL	= /usr/bin/install -o root -g root
 
 LDFLAGS  = 
 CFLAGS   = -g -m486 
-FFLAGS   = -O -w
+#FFLAGS  = -O -w
+FFLAGS   = -O
 
 #
 # TIFF support (enabled by default)
@@ -79,41 +75,29 @@ ribbon:	$(RIBOBJS)
 	$(FC) $(LDFLAGS) $(RIBOBJS) -o ribbon
 
 rods:
-	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods
+	$(FC) $(FFLAGS) rods.f $(LDFLAGS) -o rods
 
 balls:
-	$(FC) $(FFLAGS) balls.f $(CFLAGS) $(LDFLAGS) -o balls
+	$(FC) $(FFLAGS) balls.f $(LDFLAGS) -o balls
 
 local.o: local.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-ungz.o:	ungz.c
+ungz.o: ungz.c
 	$(CC) $(CFLAGS) -DGUNZIP -c ungz.c
 
 quadric.o: quadric.f
 
-render.f.bak:
-	mv render.f render.f.bak
-	egrep -v '(CARRIAGECONTROL|DISPOSE)' render.f.bak > render.f
-
-render:	render.f.bak local.o quadric.o parse.o r3dtops.o ungz.o
+render:	render.f local.o quadric.o parse.o r3dtops.o ungz.o
 	$(FC) $(FFLAGS) render.f local.o quadric.o parse.o r3dtops.o ungz.o \
 	$(LIBS) -o render
 
-normal3d: normal3d.f.bak normal3d.f quadric.o ungz.o
+normal3d: normal3d.f quadric.o ungz.o
 	$(FC) $(FFLAGS) normal3d.f quadric.o ungz.o -o normal3d
-
-normal3d.f.bak:
-	mv normal3d.f normal3d.f.bak
-	egrep -v '(CARRIAGECONTROL|DISPOSE)' normal3d.f.bak > normal3d.f
 
 avs2ps:	avs2ps.c
 	$(CC) $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm
 
 
-rastep: rastep.f.bak rastep.f quadric.o suv.o
+rastep: rastep.f quadric.o suv.o
 	$(FC) $(FFLAGS) rastep.f quadric.o suv.o -o rastep
-
-rastep.f.bak:
-	mv rastep.f rastep.f.bak
-	grep -v CARRIAGECONTROL rastep.f.bak > rastep.f

@@ -3,7 +3,7 @@
 *
 * Usage: 
 *    rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob xx] [-radius r] [-fancy[0-9]]
-*           [-tabulate histogram.file] [-by_atomtype]
+*           [-tabulate histogram.file] [-by_atomtype] [-suv_check]
 *
 *
 *	-h		suppresses header records in output
@@ -37,6 +37,7 @@
 *	-nohydrogens	don't plot hydrogens even if present
 *	-auto		auto-orientation
 *	-mini		small size plot (176x208) with auto-orientation
+*	-suv_check	use Suv to validate similarity of bonded ellipsoids
 *
 ********************************************************************************
 *
@@ -56,6 +57,9 @@
 *		  add auto-orientation (NB: scaling is wrong in this case!)
 * EAM Dec 99	- V2.5
 *		  clean up output formats a little
+* EAM Jun 2000	- additional error reporting
+* EAM Jul 2000	- apply Bcolor to bonds as well as atoms
+* EAM Sep 2000	- Suv similarity test
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -112,6 +116,11 @@ c
       real	adist(110)
       integer	hdist(100), comlun, dshells
 c
+c     Support for validation of similarity of bonded atoms
+      logical	suvflag
+      integer	suvlun, suvbad
+      real	anisov(6)
+c
 c     Default to CPK colors and VDW radii
       character*60 defcol(9)
       data defcol /
@@ -122,7 +131,7 @@ c     Default to CPK colors and VDW radii
      & 'COLOUR#######O################   0.750   0.050   0.050  1.50',
      & 'COLOUR#######S################   1.000   1.000   0.025  1.85',
      & 'COLOUR#######H################   1.000   1.000   1.000  1.20',
-     & 'COLOUR#######P################   0.400   1.000   0.400  1.80',
+     & 'COLOUR#######P################   0.050   0.750   0.050  1.80',
      & 'COLOUR########################   1.000   0.000   1.000  2.00'
      &            /
 c
@@ -152,6 +161,7 @@ c
 	tflag    = .false.
 	atflag   = .false.
 	comflag  = .false.
+	suvflag  = .false.
 	ellipses = .true.
 	hwhacky  = .false.
 	nohydro  = .false.
@@ -236,15 +246,24 @@ c
 	    endif
 	    if (flags(1:4) .eq. '-com') then
 		comflag = .true.
-		if (i.ge.narg) goto 799
-		call getarg(i+1,flags)
 		comlun = NOISE
+		if (i.ge.narg) goto 799
 		call getarg(i+1,flags)
 		if (flags(1:1) .ne. '-') then
 		    comlun = 2
 		    open(unit=comlun,file=flags,status='UNKNOWN'
      &		    , CARRIAGECONTROL='LIST'
      &              )
+		endif
+	    endif
+	    if (flags(1:4) .eq. '-suv') then
+		suvflag = .true.
+		suvlun = NOISE
+		suvlimit = 0.975
+		if (i.ge.narg) goto 799
+		call getarg(i+1,flags)
+		if (flags(1:1) .ne. '-') then
+		read (flags,*,err=701) suvlimit
 		endif
 	    endif
 	    if (flags(1:8) .eq. '-by_atom') then
@@ -264,12 +283,18 @@ c
 	i = i + 1
 	if (i.le.narg) goto 5
 	goto 799
-  701	write (noise,'(A)')
-     &	'syntax: rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob Plevel]'
+  701	continue
+	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
+     &                  VERSION
+  	write (noise,'(/,A)') 'syntax:'
+  	write (noise,'(A)')
+     &	'rastep	[-h] [-iso] [-Bcolor Bmin Bmax] [-prob Plevel]'
 	write (noise,'(A)')
-     &  ' [-fancy[0-3]] [-radius R]'
+     &  '	[-fancy[0-3]] [-radius R] [-auto]'
 	write (noise,'(A,A)')
-     &  ' [-tabulate [tabfile]] [-by_atomtype]'
+     &  '	[-nohydrogens] [-suv [suv_limit]]'
+	write (noise,'(A,A)')
+     &  '	[-tabulate [tabfile]] [-by_atomtype] [-com [comfile]]'
 	call exit(-1)
   799	continue
 
@@ -284,7 +309,7 @@ c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
      &                  VERSION
-	write (noise,*) 'E A Merritt -  25 Feb 2000'
+	write (noise,*) 'E A Merritt - 19 Sep 2000'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -617,8 +642,8 @@ c
 c Label output records
 c
       if (.not. tflag) then
-	WRITE(OUTPUT,'(A)') 
-     &	      '# Thermal ellipsoids from Rastep Version 2.5b'
+	WRITE(OUTPUT,'(A,A)') 
+     &	      '# Thermal ellipsoids from Rastep Version ',VERSION
 	WRITE(OUTPUT,'(A,F5.2)') '# Probability level',float(iprob)/50.
       end if
 c
@@ -661,6 +686,7 @@ c
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:27)
 		nonpos = nonpos + 1
+     		Biso(iatm) = 0.0
 		goto 138
 	    endif
 	    goto 132
@@ -1020,6 +1046,7 @@ c
 	enddo
   146	format(F10.3,F10.3,I10)
       endif
+      if (suvflag) goto 160
       call exit(0)
 
 c
@@ -1060,6 +1087,7 @@ c
 	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:26)
+     		Biso(iatm) = 0.0
 		red   = 1.0
 		green = 0.0
 		blue  = 1.0
@@ -1083,7 +1111,10 @@ c
   151	FORMAT(I2,/,7F8.3)
   152	FORMAT(10F12.4)
 	ENDIF
+      goto 154
   153 continue
+      if (fancy.eq.0) write(noise,*) '*** Format problem - ',
+     &				atom(iatm+1)(13:70)
       ENDIF
   154 continue
       IATM = IATM + 1
@@ -1098,7 +1129,13 @@ c closer to each other than 0.6 * sum of VDW radii.
 C If two atoms of different colors are bonded, make half-bond
 C cylinders with each color.
 C
-      if (radius.eq.0.0) goto 210
+      if (radius.eq.0.0 .and. .not.suvflag) goto 210
+      if (suvflag) then
+         write (suvlun,'(A,A,F5.3,A)') 
+     &      'Checking for neighboring atoms with dissimilar Uij ',
+     &	    '(Suv < ',suvlimit,')...'
+         suvbad = 0
+      endif
 c
       DO 202 IATM=1,NATM
 	IF (ATOM(IATM)(1:4).NE.'ATOM'.AND.ATOM(IATM)(1:4).NE.'HETA') 
@@ -1108,18 +1145,56 @@ c
 	IF (ATOM(JATM)(1:4).NE.'ATOM'.AND.ATOM(JATM)(1:4).NE.'HETA') 
      &      GOTO 201
      	IF (nohydro .AND. ATOM(JATM)(77:78).EQ.' H') GOTO 201
-	IF (ATOM(IATM)(17:17).ne.' '.and.ATOM(JATM)(17:17).ne.' '
-     &     .and. ATOM(IATM)(17:17).ne.ATOM(JATM)(17:17)) goto 201
 	DX = SPAM(1,IATM) - SPAM(1,JATM)
 	DY = SPAM(2,IATM) - SPAM(2,JATM)
 	DZ = SPAM(3,IATM) - SPAM(3,JATM)
-	DIST  = DX*DX + DY*DY + DZ*DZ
 	ICOL  = SPAM(5,IATM)
 	JCOL  = SPAM(5,JATM)
 	CLOSE = 0.6 * (VDW(ICOL) + VDW(JCOL))
-	CLOSE = CLOSE**2
-	IF (DIST .LE. CLOSE) THEN
-	  IF(RGB(1,ICOL) .EQ. RGB(1,JCOL) .AND.
+	DIST  = DX*DX + DY*DY + DZ*DZ
+	IF (DIST .GT. CLOSE**2) GOTO 201
+cdebug
+c	  Checking for bonded atoms with dissimilar Uij
+	  if (suvflag) then
+	    IF (Biso(IATM).eq.0.0 .or. Biso(JATM).eq.0.0) goto 201
+	    IF (ATOM(IATM+1)(1:6).NE.'ANISOU') goto 201
+	    IF (ATOM(JATM+1)(1:6).NE.'ANISOU') goto 201
+	    read (atom(iatm+1)(29:70),*,err=201,end=201) 
+     &           (anisou(i),i=1,6)
+	    read (atom(jatm+1)(29:70),*,err=201,end=201) 
+     &           (anisov(i),i=1,6)
+	    do i=1,6
+		anisou(i) = anisou(i) * 0.0001
+		anisov(i) = anisov(i) * 0.0001
+	    enddo
+	    similarity = Suv(anisou,anisov)
+	    if (similarity .lt. suvlimit) then
+		write (suvlun,161) 
+     &		    ATOM(IATM)(13:17),ATOM(IATM)(18:27),
+     &	            ATOM(JATM)(13:17),ATOM(JATM)(18:27),
+     &		    similarity
+     		suvbad = suvbad + 1
+  161	    format(1X,A5,1X,A10,8X,A5,1X,A10,4X,F10.4)
+	    endif
+	    if (tflag) goto 201
+	  endif
+
+c	  Don't draw bonds between alternate conformers of same residue
+	  IF (ATOM(IATM)(17:17).ne.' '.and.ATOM(JATM)(17:17).ne.' '
+     &        .and. ATOM(IATM)(17:17).ne.ATOM(JATM)(17:17)) goto 201
+c
+c	  Atoms coloured by B value
+	  if (bcflag) then
+	     write(output,211)
+     1		SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),radius,
+     2		SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),radius,
+     3		1.0, 1.0, 1.0
+	     call U2RGB( SPAM(4,IATM), Umin, Umax, RED1, GREEN1, BLUE1 )
+	     call U2RGB( SPAM(4,JATM), Umin, Umax, RED2, GREEN2, BLUE2 )
+	     write(output,212)
+     1		RED1,GREEN1,BLUE1, RED2,GREEN2,BLUE2, 0, 0, 0
+c	  Same color atoms
+	  elseif (RGB(1,ICOL) .EQ. RGB(1,JCOL) .AND.
      1       RGB(2,ICOL) .EQ. RGB(2,JCOL) .AND.
      2       RGB(3,ICOL) .EQ. RGB(3,JCOL)) THEN
 	    WRITE(OUTPUT,211)
@@ -1139,13 +1214,17 @@ c
      2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),radius,
      3         RGB(1,JCOL),RGB(2,JCOL),RGB(3,JCOL)
 	  ENDIF
-	ENDIF
   201 CONTINUE
   202 CONTINUE
   210 CONTINUE
 
 211   FORMAT(1H3,/,11f8.3)
+212   FORMAT(2H17,/,9f8.3)
 c
+	if (suvflag) then
+	    if (suvbad.eq.0) write (suvlun,*) '... None!'
+	    call exit(0)
+	endif
 c
 	write (noise,'(/)')
 	write (noise,156) 'X  min max center-of-mass:', XMIN, XMAX, xcom
@@ -1154,6 +1233,8 @@ c
 	write (noise,156) '     scale:', SCALE
   156	format(1x,a,2f8.2,f10.3)
       END
+
+
       LOGICAL FUNCTION MATCH (SUBJ, MASK)
       CHARACTER*24 SUBJ,MASK
       MATCH = .FALSE.

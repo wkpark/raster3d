@@ -1,7 +1,7 @@
 *******************************************************************************
 *               Support routines for PostScript labels                        *
 *******************************************************************************
-*     Version 2.5d
+*     Version 2.5e
 *
 * EAM Dec 1996	- Initial version (called labels3d, later changed)
 * EAM May 1999	- Updated to match V 2.4j as stand-alone program
@@ -9,6 +9,7 @@
 * EAM Feb 2000	- iso-8859-1 encodings for Å
 *		  TeX-like syntax for greek, superscript, subscript
 *		  sub- and super- scripts use 0.8 * current font size
+* EAM Sep 2000	- tweak RED values in work-around for ImageMagick bug
 *******************************************************************************
 *
 * These routines are called from render.f to handle object types 10, 11 and 12.
@@ -115,8 +116,8 @@
 *     For some reason ImageMagick messes up image composition if the
 *     background is pure white or pure black. 
 *     Work-around is to tweak the background.
-	if (bkgnd(1).eq.1.0) bkgnd(1) = 0.99
-	if (bkgnd(1).eq.0.0) bkgnd(1) = 0.01
+	if (bkgnd(1).eq.1.0) bkgnd(1) = 0.9900
+	if (bkgnd(1).eq.0.0) bkgnd(1) = 0.0001
 	RED = sqrt( bkgnd(1) )
 	GRN = sqrt( bkgnd(2) )
 	BLU = sqrt( bkgnd(3) )
@@ -340,8 +341,8 @@ c
 	ELSE
 	    WRITE (LB,801) RED,GRN,BLU,XA,YA,ZA
 	ENDIF
-801	FORMAT(3f6.3,' setrgbcolor',3f10.4,' XYZmove')
-802	FORMAT(3f6.3,' setrgbcolor',3f10.4,' XYZrmove')
+801	FORMAT(3f6.3,' setrgbcolor',3(1x,f10.4),' XYZmove')
+802	FORMAT(3f6.3,' setrgbcolor',3(1x,f10.4),' XYZrmove')
 c
 c	At this point I should loop over string looking for
 c	escape sequences, control characters, etc.

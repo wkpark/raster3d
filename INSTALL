@@ -39,10 +39,17 @@
 	   INCLUDES = -DLIBIMAGE_SUPPORT
 	   LIBS     = -limage
 
-   There is also an option (new in this version) to pipe output directly to
-   ImageMagick for conversion to many other image file types. This is enabled
-   by default under the control of the flag -DIMAGEPIPE.
+   There is also an option to pipe output directly to ImageMagick for conversion 
+   to many other image file types. This is enabled by default under the control 
+   of the flag -DIMAGEPIPE.
 
+   Starting in version 2.5e, indirect input files to render or normal3d can be
+   uncompressed on the fly.  Files ending in .gz or .Z are uncompressed into a
+   temporary file created using the tempnam() system call.  Unfortunately, not
+   all Fortran compilers allow autodeletion of this temporary file.  If yours
+   does not (g77, xlf) then you may want to consider disabling this feature if
+   space in your system scratch directory is limited.  To do this, remove the
+   definition -DGUNZIP from the Makefile command that compiles ungz.c
 
 4) Install the package:
 	make all
@@ -110,8 +117,6 @@ apparently ships without a real man page viewer.
 Digital Unix
 ============
 Everything is fine under DU 4.0D and above.  
-Under DU 4.0A/B the f90 compiler produced broken code for render.f 
-when the optimization level was set higher than -O1. f77 was OK.
 
 Irix
 ====
@@ -133,18 +138,29 @@ from the independent JPEG development group ftp://ftp.uu.net/graphics/jpeg/
 
 linux
 =====
-I run this package on a Pentium Pro under redhat linux, and I have 
-included a Makefile for that platform.  I have "f77" aliased to the
-fort77 script, which then feeds into f2c and gcc.  All straight from
-the redhat distribution except for the f77 alias.
-There are some gotchas, however:
-	- The pre-built linux binaries for ImageMagick 3.8.8 get confused
+I run this package under redhat linux 6.1, and I have included a 
+Makefile.redhat for that platform.
+There were some gotchas under earlier redhat versions, however:
+	- The pre-built linux binaries for ImageMagick 3.8.8 got confused
 	  by the byte order in AVS files.  To work around this problem I
 	  added a conditional compilation flag -DNETWORKBYTEORDER in
 	  the Makefile.
 In Redhat 6.1 "f77" is a symlink to the g77 compiler. The package works
 when compiled with g77, but runs slower than it does when compiled by a
-better compiler (e.g. Portland, ABsoft, DEC).
+better compiler (e.g. Portland, ABsoft, DEC).  I have included another
+Makefile.pgf77 that can be used with the Portland Group compiler.  It
+produces faster code, and correctly supports the auto-delete option for
+scratch files.
+
+Sun
+===
+Makefile.sun assumes you are using the g77 compiler.  As such it suffers
+from the same problem as under linux - no support for autodeletion of
+scratch files.  If you are worried about space in the system temp directories,
+you could remove -DGUNZIP from the makefile.
+On the sun machine I used for tests the -DTIFF_INVERT flag was required
+for proper image orientation.  I don't know how general this is, but I
+made it the default in Makefile.sun.
 
 HP
 ==

@@ -1,4 +1,20 @@
+15-Nov-2000	V2.5f release
+13-Nov-2000	Fixed similar error in RAFTER applied to surface normals
+27-Oct-2000	Fixed error in ISOLATION of surface normals
+12-Oct-2000	F10.5 -> F10.4 in normal3d.f output formats
+10-Oct-2000	if -size is specified, force scheme 3 into scheme 4 instead
+ 2-Oct-2000	Added Suv() code to rastep
+21-Sep-2000	fixed clipping error for quadrics, and another for objs 7, 17, 18
+		clean up interaction of Z-clipping and FOG
+20-Sep-2000	render now discards BACKCLIPped objects on input 
+		V2.5e release (internal only)
+ 9-Sep-2000	tweak r3dtops.f workaround for ImageMagick auto-matte bug
+ 5-Sep-2000	ungz.c uncompresses input files to render and normal3d;
+ 		deletion of temporary files requires OPEN(DISPOSE='DELETE',...)
+		which unfortunately isn't supported in g77 or xlf
+ 5-Aug-2000	rastep now applies Bcolor option to bonds as well as atoms
  1-Jun-2000	V2.5d release
+ 1-Jun-2000	Include msms -> Raster3D filters in distribution
 25-Mar-2000	Revise auto-tiling to avoid tiles smaller than 6 pixels
 		Additional checks for shadow tile out of bounds
 		If requesting tiling is not possible, try auto-tiling

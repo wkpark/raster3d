@@ -1,13 +1,12 @@
 #
-# Raster3D makefile for SunOS
-# based on one sent by Elya S. Kurktchi (elya@ljcrf.edu)
+# Raster3D makefile for SunOS (g77)
 #
 
 CC	= gcc
-FC	= f77
+FC	= g77
 LDFLAGS =
 CFLAGS  = -O
-FFLAGS  = -O 
+FFLAGS  = -O -w
 
 #
 #
@@ -27,7 +26,7 @@ FFLAGS  = -O
 #
 
 LIBS    = -L/usr/local/lib -ltiff -L/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.2 -lgcc
-DEFINES = -DTIFF_SUPPORT -DIMAGEPIPE
+DEFINES = -DTIFF_SUPPORT -DIMAGEPIPE -DTIFF_INVERT
 INCLUDES= -I/usr/local/include/ -I/usr/local/include/tiff
 
 RIBOBJS = ribbon.o ribbon1.o modsubs.o
@@ -54,11 +53,12 @@ tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
 	compress  ../raster3d.tar
 
-normal3d: normal3d.o quadric.o
-	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
+rastep: rastep.f.bak rastep.f quadric.o suv.o
+	$(FC) $(FFLAGS) rastep.f quadric.o suv.o -o rastep
 
-rastep:	rastep.o quadric.o
-	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
+rastep.f.bak:
+	mv rastep.f rastep.f.bak
+	grep -v CARRIAGECONTROL rastep.f.bak > rastep.f
 
 ribbon:	$(RIBOBJS)
 	$(FC) -O $(RIBOBJS) -o ribbon
@@ -66,9 +66,23 @@ ribbon:	$(RIBOBJS)
 local.o: local.c
 	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-render:	render.f local.o quadric.o parse.o r3dtops.o
-	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o \
-	$(LIBS) -o render $(LDFLAGS)
+ungz.o:	ungz.c
+	$(CC) $(CFLAGS) -DGUNZIP -c ungz.c
+
+render.f.bak:
+	mv render.f render.f.bak
+	egrep -v '(CARRIAGECONTROL|DISPOSE)' render.f.bak > render.f
+
+render:	render.f.bak local.o quadric.o parse.o r3dtops.o ungz.o
+	$(FC) $(FFLAGS) render.f local.o quadric.o parse.o r3dtops.o ungz.o \
+	$(LIBS) -o render
+
+normal3d: normal3d.f.bak normal3d.f quadric.o ungz.o
+	$(FC) $(FFLAGS) normal3d.f quadric.o ungz.o -o normal3d
+
+normal3d.f.bak:
+	mv normal3d.f normal3d.f.bak
+	egrep -v '(CARRIAGECONTROL|DISPOSE)' normal3d.f.bak > normal3d.f
 
 avs2ps:	avs2ps.c
 	$(CC) -O avs2ps.c -o avs2ps -lm

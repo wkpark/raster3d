@@ -1,0 +1,14 @@
+#
+# Post-rotation matrix (applied on top of TMAT)
+# NB:  Because this is post-multiplication, the matrix
+#      is the transpose of what it would be in TMAT
+# Post-translation (applied on top of TMAT)
+#
+16
+ROTATION
+ -0.503902  -0.262711   -0.822840
+ -0.857597   0.038566    0.512874
+ -0.103004   0.964103   -0.244734
+16
+TRANSLATION
+ 95.019661 -15.608208  -60.094696
