@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.0
+ * Raster3D V2.1
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -72,6 +72,8 @@ local_(option,buffer1,buffer2,buffer3)
   
   /*
    * First call (option=0) is to determine the output mode
+   * Mode is returned to the caller (render.f), but is only used there
+   * to check for image inversion (0 => invert y-axis of picture)
    */
   
   if (*option == 0) {
@@ -110,6 +112,11 @@ local_(option,buffer1,buffer2,buffer3)
       }
     else /* default avs mode */
       mode  = 0;
+#ifdef TIFF_INVERT
+    if (mode == 3)
+	return( 0 );
+    else
+#endif
     return( mode );
   }
   
@@ -143,14 +150,18 @@ local_(option,buffer1,buffer2,buffer3)
 	    ofile = "render.tif";
 	  tfile=TIFFOpen(ofile,"w");
 	  TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.0");
+	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.1");
 	  TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
 	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,3);
 	  TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
 	  TIFFSetField(tfile,TIFFTAG_IMAGEWIDTH,xsize);
 	  TIFFSetField(tfile,TIFFTAG_IMAGELENGTH,ysize);
 /*	  TIFFSetField(tfile,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB); */
+#ifdef	TIFF_INVERT
+	  TIFFSetField(tfile,TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
+#else
 	  TIFFSetField(tfile,TIFFTAG_ORIENTATION,ORIENTATION_BOTLEFT);
+#endif
 	  TIFFSetField(tfile,TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
 	  TIFFSetField(tfile,TIFFTAG_COMPRESSION,COMPRESSION_LZW);
 	  rows_per_strip=8192/TIFFScanlineSize(tfile);

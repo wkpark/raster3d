@@ -1,3 +1,4 @@
+ 3-Aug-95	V2.11 adds TIFF_INVERT workaround to local.c
 30-Jun-95	Version 2.1 release via ftp and www
 28-Apr-95	object types 7/8/9 folded back into regular distribution (V2.1)
 		Rename setup to balls; change references everywhere

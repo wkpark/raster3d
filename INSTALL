@@ -12,9 +12,11 @@ To install Raster3D
 	   implementations available on the net.  I have been using
 	   Sam Leffler's version 3.3beta, available via anonymous ftp
 	   from sgi.com.
-	2) Edit the INCLUDES and LIBS definitions in the Makefile,
-	   INCLUDES = -DTIFF_SUPPORT
+	2) Edit the DEFINES, INCLUDES and LIBS definitions in the Makefile,
+	   DEFINES = -DTIFF_SUPPORT
 	   LIBS     = -ltiff
+	3) You may also wish to add the option -DTIFF_INVERT to the
+	   DEFINES line (see notes below)
 
    On SGI machines you may want to build in support for direct output to
    image files compatible with the libimage utilities.  In this case you
@@ -22,8 +24,8 @@ To install Raster3D
 	1) Make sure that libimage.a is installed on your machine
 	   (the source is on one of the optional installation kits in the
 	   standard Irix distribution).
-	2) Edit the INCLUDES and LIBS definitions in the Makefile,
-	   INCLUDES = -DLIBIMAGE_SUPPORT
+	2) Edit the DEFINES and LIBS definitions in the Makefile,
+	   DEFINES = -DLIBIMAGE_SUPPORT
 	   LIBS     = -limage
 
 3) Install the package:
@@ -37,11 +39,20 @@ A sample installation on a DEC Alpha might go:
 	vi Makefile                    # to check options, etc
 	make install
 
-Notes -
+NOTES
+=====
 
-	Although a Makefile.aix is provided for the IBM RS6000, I don't have
-access to one to verify that things work properly.  I do know that the xlf 
-compiler doesn't like the "q" formats in ribbon1.f (though it doesn't
-seem to stop the program from working).  If anyone patches the source so
-that xlf is happy without breaking it for all other machines, please
-send me the diffs.  -EAM
+I am told that some applications used to print TIFF images
+(notable among them Adobe Photoshop) fail to correctly interpret the
+TIFF header tag which defines the image orientation.  As a work-around
+for this problem I have added support for a conditional compilation
+directive TIFF_INVERT.  If you find that your TIFF images end up
+inverted after printing (particularly if you know that you will be
+using PhotoShop), then you may wish to add modify the Makefile to
+read:
+	DEFINES = -DTIFF_SUPPORT -DTIFF_INVERT
+Note that applications which correctly read the TIFF header should 
+work in either case; this workaround is just to fool the stupid ones
+which think they already know the orientation without bothering to
+look.
+
