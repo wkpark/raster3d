@@ -38,7 +38,7 @@ header records containing a default set of scaling and processing
 options.
 The \fI-h\fP flag will suppress these header records so that the output
 file contains only triangle descriptors.
-This option is usefull for producing files which describe only part
+This option is useful for producing files which describe only part
 of a scene, and which are to be later combined with descriptor files
 produced by other programs.
 
@@ -53,7 +53,7 @@ command line option to bypass any interactive input.
      -d2	shade from blue at N-terminus to red at C-terminus
      -d3	one surface of ribbon is blue, other surface is grey
      -d4	shade front surface from blue to red, back surface is grey
-     -d5	color seperate chains using successive color cards from
+     -d5	color separate chains using successive color cards from
 		input stream. Note that pattern matching on the color
 		records is _not_ done; colors are simply taken sequentially
 		as new chains are encountered.

@@ -243,9 +243,9 @@ Parameters are read in the order
                 merritt@u.washington.edu
 
 .SH SEE ALSO
-rods(1), ribbon(1), setup(1), ImageMagick(1), MOLSCRIPT(1)
+avs2ps(1), rods(1), ribbon(1), setup(1), ImageMagick(1), MOLSCRIPT(1)
 .PP
 .SH AUTHORS
-	Originally written by David J. Bacon. 
-	Extensions, revisions, and modifications by Ethan A Merritt.
+Originally written by David J. Bacon. 
+Extensions, revisions, and modifications by Ethan A Merritt.
 

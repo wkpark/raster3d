@@ -15,13 +15,13 @@ FFLAGS  = -O -static -w1
 INCLUDES=	-I/usr/local/include/ -I/usr/local/include/tiff
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	setup rods ribbon render
+PROGS   =	setup rods ribbon render avs2ps
 
 all:	$(PROGS)
 
 clean:
 	rm -f *.o *.u
-	rm -f render ribbon setup rods
+	rm -f $(PROGS)
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
@@ -41,3 +41,5 @@ render:	render.f local.o
 	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
 	$(LIBS) -o render $(LDFLAGS)
 
+avs2ps:	avs2ps.c
+	cc -O avs2ps.c -o avs2ps -lm

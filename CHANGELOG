@@ -1,3 +1,6 @@
+16-Nov-94	update ftp site to release V2.01
+ 5-Aug-94	add filter utility avs2ps for producing B&W PostScript output
+ 4-Aug-94	include patch to Molscript V1.4 to support dotted lines
 21-Jul-94	bugfix to input code for PLANE objects,
 		add hints section to manual
 22-Apr-94	Version 2.0 release

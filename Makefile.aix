@@ -17,13 +17,13 @@ DEFINES = -Dlocal_=local
 INCLUDES= /usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS   =	setup rods ribbon render
+PROGS   =	setup rods ribbon render avs2ps
 
 all:	$(PROGS)
 
 clean:
 	rm -f *.o *.u
-	rm -f render ribbon rods setup
+	rm -f $(PROGS)
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
@@ -45,3 +45,5 @@ render.o: render.f
 render:	render.o local.o
 	xlf $(FFLAGS) render.o local.o  $(LIBS) -o render $(LDFLAGS)
 
+avs2ps:	avs2ps.c
+	cc -O avs2ps.c -o avs2ps -lm

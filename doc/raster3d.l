@@ -15,6 +15,12 @@ rendering from Brookhaven PDB files of atomic coordinates.
 \fIRaster3D\fP can also render images composed using version 1.4 of
 \fIMOLSCRIPT\fP [Per Kraulis (1991), J. Appl. Cryst. 24, 946-950].
 
+\fIRaster3D\fP is freely available. If you use the package to prepare
+figures for publication, please give proper credit to the authors:
+
+     Bacon & Anderson (1988) J. Molec. Graphics 6, 219-220.
+     Merritt & Murphy (1994) Acta Cryst. D50, 869-873.
+
 .SH DESCRIPTION
 .PP
 \fIRaster3D\fP uses a fast Z-buffer algorithm to produce
@@ -29,6 +35,9 @@ a private format which is backwards-compatible with earlier versions of
 \fIRaster3D\fP.  To actually view or manipulate the images produced,
 you must also have installed an image viewing package (e.g. John
 Cristy's ImageMagick or the SGI libimage utilities).
+A filter utility \fIavs2ps\fP is included in the package which can
+convert an AVS format output stream directly to a dithered monochrome
+PostScript image.
 
 \fIRaster3D\fP Version 2.0
 supports rendering of five object types: 
@@ -93,7 +102,7 @@ support has been built into the render program:
                 merritt@u.washington.edu
 
 .SH SEE ALSO
-rods(1), ribbon(1), setup(1), ImageMagick(1), MOLSCRIPT(1)
+rods(1), ribbon(1), setup(1), avs2ps(1), ImageMagick(1), MOLSCRIPT(1)
 .PP
 .SH AUTHORS
 	Originally written by David J. Bacon and Wayne F. Anderson.

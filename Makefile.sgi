@@ -2,12 +2,8 @@
 # Raster3D makefile for SGI
 #
 LDFLAGS =
-CFLAGS  = -g
-#
-# Optimization seems to break the Fortran I/O with the Irix compiler
-# If anyone figures out the cure for this I'd love to know - EAM
-#
-FFLAGS  = -g -static -w1 -Olimit 2000
+CFLAGS  =
+FFLAGS  = -static -w1 -O2 -Olimit 2000
 #
 # If you build Raster3D to use the Iris imagetools output format
 # (local.sgi), then add -DLIBIMAGE_SUPPORT to the DEFINES statement.
@@ -23,13 +19,13 @@ LIBS =	-limage
 INCLUDES=	-I/usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS =		setup rods ribbon render
+PROGS =		setup rods ribbon render avs2ps
 
 all:	$(PROGS)
 
 clean:
 	rm -f *.o *.u
-	rm -f render ribbon setup rods
+	rm -f $(PROGS)
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
@@ -48,3 +44,5 @@ render:	render.f local.o
 	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
 	$(LIBS) -o render $(LDFLAGS)
 
+avs2ps:	avs2ps.c
+	cc -O avs2ps.c -o avs2ps -lm

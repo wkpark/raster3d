@@ -1,11 +1,23 @@
-most recent change:	 22-Jul-1994
+most recent change:	 16-Nov-1994
 
-The file Raster3D_2.0.tar.Z version 2.0 of RASTER3D is a unified
-distribution which has been tested on the following machines:
+The file Raster3D_2.01.tar.Z contains version 2.01 of RASTER3D i
+It is a unified distribution which has been tested on the following 
+machines:
 
 	DECstation 5000 / Ultrix 4.3
-	Alpha / OSF 1.3
+	Alpha / OSF 3.0
 	SGI Indigo / Irix 4.0.5F
+	IBM RS6000 / AIX
+
+Changes since first official release of version 2.0:
+
+- new sections in documentation
+- fixed bug in input format and accounting of PLANE objects
+- added machine-independent utility filter avs2ps to produce dithered
+  black&white PostScript output (supercedes machine-dependent stuff in
+  viewtools)
+- added patch for Molscript V1.4 so that dotted lines can be passed
+  on to Raster3D
 
 Changes since the beta-test of version 2.0:
 
@@ -14,7 +26,6 @@ Changes since the beta-test of version 2.0:
 - a few syntax changes to make the IBM RS6000/AIX xlf compiler happier
   (note that "happier" != "happy"; the code is largely untested under AIX)
 - support direct output of TIFF image file (requires libtiff.a)
-- fixed bug in input format and accounting of PLANE objects
 
 
 Version 2.0 is very close to the previous DS5000 version (Mar 1993).
