@@ -108,7 +108,7 @@ c
       WRITE(OUTPUT,'(A)') '80 64     tiles in x,y'
       WRITE(OUTPUT,'(A)') '12 12     pixels (x,y) per tile'
       WRITE(OUTPUT,'(A)') '3         3x3 into 2x2 pixels'
-      WRITE(OUTPUT,'(A)') '0 0.1 0   green background'
+      WRITE(OUTPUT,'(A)') '0 0 0     black background'
       WRITE(OUTPUT,'(A)') 'F         no, ribbons cast funny shadows'
       WRITE(OUTPUT,'(A)') '25        Phong power'
       WRITE(OUTPUT,'(A)') '0.15      secondary light contribution'
@@ -169,11 +169,11 @@ C
             READ(CARD,82) coords
    82	    format(30x,3f8.3)
 		x = coords(1)*matrix(1,1) + coords(2)*matrix(2,1) 
-	1	  + coords(3)*matrix(3,1)
+     1  	  + coords(3)*matrix(3,1)
 		y = coords(1)*matrix(1,2) + coords(2)*matrix(2,2) 
-	1	  + coords(3)*matrix(3,2)
+     1  	  + coords(3)*matrix(3,2)
 		z = coords(1)*matrix(1,3) + coords(2)*matrix(2,3)
-	1	  + coords(3)*matrix(3,3)
+     1  	  + coords(3)*matrix(3,3)
             RAD = RADIUS(ICOL)
             SPAM(1,IATM) = X
             SPAM(2,IATM) = Y
@@ -232,7 +232,7 @@ C
 	write (noise,156) 'Y  min max:', YMIN, YMAX
 	write (noise,156) 'Z  min max:', ZMIN, ZMAX
 	write (noise,156) '     scale:', SCALE
-  156	format(x,a,3f8.2)
+  156	format(1x,a,3f8.2)
 c
 c      DO 150 IATM=1,NATM
 c        WRITE(OUTPUT,'(7F8.3)') (SPAM(I,IATM),I=1,7)
@@ -263,24 +263,24 @@ c	because smoothed curve doesn't go through guide points.
   158	format(q,i5)
 	write (noise,160)
   160	format(' Coloring schemes available:',
-  	1    /,'   0 or 1: solid color (RGB values from color1 below)',
-	2    /,'        2: shade from color1 at 1st res to color2 at last res',
-	3    /,'        3: front of ribbon is color1, back of ribbon is color2',
-	4    /,'        4: shade front as in scheme 2, back is color 3',
-	5    /,'        5: new color for each chain (requires COLOUR cards)')
+     1	/,' 0 or 1: solid color (RGB values from color1 below)',
+     2	/,'      2: shade from color1 at 1st res to color2 at last res',
+     3	/,'      3: front of ribbon is color1, back of ribbon is color2',
+     4	/,'      4: shade front as in scheme 2, back is color 3',
+     5	/,'      5: new color for each chain (requires COLOUR cards)')
 	write (noise,3) 'Coloring scheme: '
 	read  (5,158) nq,ischeme
 	if (nq.eq.0 .or. ischeme.le.0 .or. ischeme.gt.5) ischeme = 1
-	if (ischeme .eq. 1)
-	1    write (noise,3) 'COLOR1 (RGB values, 3f8.0): '
-	if (ischeme .eq. 2)
-	1    write (noise,3) 'COLOR1, COLOR2 (RGB values, 6f8.0): '
-	if (ischeme .eq. 3)
-	1    write (noise,3) 'COLOR1, COLOR2 (RGB values, 6f8.0): '
-	if (ischeme .eq. 4)
-	1    write (noise,3) 'COLOR1, COLOR2, COLOR3 (RGB values, 9f8.0): '
+	if (ischeme .eq. 1) write (noise,3)
+     1      'COLOR1 (RGB values, 3f8.0): '
+	if (ischeme .eq. 2) write (noise,3)
+     1      'COLOR1, COLOR2 (RGB values, 6f8.0): '
+	if (ischeme .eq. 3) write (noise,3)
+     1      'COLOR1, COLOR2 (RGB values, 6f8.0): '
+	if (ischeme .eq. 4) write (noise,3) 
+     1      'COLOR1, COLOR2, COLOR3 (RGB values, 9f8.0): '
 	if (ischeme .ne. 5)
-	1    read  (5,157) nq,color1,color2,color3
+     1      read  (5,157) nq,color1,color2,color3
 	if (nq .eq. 0) then
 	     call vload( color1, 0.0, 0.0, 0.4 )
 	     call vload( color2, 0.5, 0.0, 0.0 )
@@ -322,15 +322,15 @@ c
 	open (unit=3, file='setup.matrix', status='OLD', err=100)
 		write (noise,3) ' View Matrix from file ',matrix_file
 		read (3,*) ((matrix(i,j),i=1,3),j=1,3)
-		write (noise,'(x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
+		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		close (3)
 
 		det = matrix(1,1) * matrix(2,2) * matrix(3,3)
-	1	    + matrix(1,2) * matrix(2,3) * matrix(3,1)
-	2	    + matrix(2,1) * matrix(3,2) * matrix(1,3)
-	3	    - matrix(1,3) * matrix(2,2) * matrix(3,1)
-	4	    - matrix(1,2) * matrix(2,1) * matrix(3,3)
-	5	    - matrix(1,1) * matrix(2,3) * matrix(3,2)
+     1  	    + matrix(1,2) * matrix(2,3) * matrix(3,1)
+     2  	    + matrix(2,1) * matrix(3,2) * matrix(1,3)
+     3  	    - matrix(1,3) * matrix(2,2) * matrix(3,1)
+     4  	    - matrix(1,2) * matrix(2,1) * matrix(3,3)
+     5  	    - matrix(1,1) * matrix(2,3) * matrix(3,2)
 		write (noise,'(''       determinant ='',f8.3)') det
 
 		phiX = atan2( -matrix(3,2), matrix(3,3) )
@@ -362,7 +362,7 @@ c
 		matrix(3,2) = -sx*cy
 		matrix(3,3) = cx*cy
 		write (noise,3) ' View Matrix from angles',' '
-		write (noise,'(x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
+		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		return
   200	continue
 
@@ -380,6 +380,7 @@ C
 	real	guide(4,MAXRES,NRIB)    ! 4 dim because E&S wanted it that way
 	integer	nchord			! how many interpolations per guide pt
 	parameter (MAXCOL = 5000)
+	integer	OUTPUT
 	parameter (OUTPUT = 6)
 C                               
 C	splining from Larry Andrews 7-Nov-1988
@@ -422,7 +423,7 @@ c
 	do i = 1, nchord
 	    iout = iout + 1
 	    call bspline( guide(1,ipt-1,irib), guide(1,ipt,irib),
-	1   		  guide(1,ipt+1,irib), t, smooth(1,iout,irib) )
+     1     		  guide(1,ipt+1,irib), t, smooth(1,iout,irib) )
 	    t = t + tinc
 	end do
   900	continue
@@ -473,20 +474,20 @@ c
 		end if
 c
 		call colorit( color, fraction,
-	1		smooth(1,ires,1), smooth(1,jres,2), smooth(1,inext,1))
+     1  		smooth(1,ires,1), smooth(1,jres,2), smooth(1,inext,1))
 c
 		write (output,iformat) (smooth(i,ires,  1),i=1,3),
-	1		          (smooth(i,jres,  2),i=1,3),
-	2		          (smooth(i,inext,1),i=1,3),
-	3		          color
+     1  		          (smooth(i,jres,  2),i=1,3),
+     2  		          (smooth(i,inext,1),i=1,3),
+     3  		          color
 c
 		if (jres .eq. kres) goto 2100
 		call colorit( color, fraction,
-	1		smooth(1,kres,2), smooth(1,inext,1), smooth(1,jres,2))
+     1  		smooth(1,kres,2), smooth(1,inext,1), smooth(1,jres,2))
 		write (output,iformat) (smooth(i,jres,  2),i=1,3),
-	1		          (smooth(i,inext,1),i=1,3),
-	2		          (smooth(i,kres,  2),i=1,3),
-	3		          color
+     1  		          (smooth(i,inext,1),i=1,3),
+     2  		          (smooth(i,kres,  2),i=1,3),
+     3  		          color
 		jres = kres
 		if (kres .lt. iout) kres = kres + 1
  2100	continue

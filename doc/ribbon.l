@@ -11,8 +11,8 @@ ribbon - preprocessor for ribbon models in Raster3D molecular graphics package
    "ribbon" [\fI-h\fP] \fI-d[012345]\fP -     (to take PDB records from stdin)
 
 .PP
-\fIRibbon\fP reads a Brookhaven 
-PDB coordinate file and produces a file containing Raster3D descriptor
+\fIRibbon\fP reads a Brookhaven PDB coordinate file and 
+produces a file on stdout containing Raster3D descriptor
 records for a ribbon representation constructed from a triangular mesh.
 The file produced by \fIribbon\fP
 may be fed directly to \fIrender\fP or it may be combined with descriptor
@@ -83,7 +83,7 @@ is better to use a different program, e.g. MOLSCRIPT, rather than \fIribbon\fP.
 .SH ENVIRONMENT
 .PP
 The files setup.matrix and setup.angles, if they exist, affect the
-header records produced by \fIsetup\fP.
+header records produced by \fIribbon\fP.
 
 .SH SOURCE
 .TP 5

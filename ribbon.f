@@ -146,6 +146,7 @@ C           IERR  =0 if succesfull, else = 1
 C
       DIMENSION XCA(3),XO(3)
 C
+	integer		PDBFILE
 	parameter	(PDBFILE = 1)
 	character*1	a1, rescode(2)
 	character*3	resname(2)
@@ -154,10 +155,10 @@ C
 C
 	ierr=0
 
-	read (pdbfile,2,end=100) reclabel, nat, atname, a1, resname(1), a1, 
-	1		 resno(1), rescode(1), xca(1), xca(2), xca(3)
-	read (pdbfile,2,end=100) reclabel, nat, atname, a1, resname(2), a1,
-	1		 resno(2), rescode(2), xo(1), xo(2), xo(3)
+	read (pdbfile,2,end=100) reclabel, nat, atname, a1, resname(1),
+     1			 a1, resno(1), rescode(1), xca(1), xca(2), xca(3)
+	read (pdbfile,2,end=100) reclabel, nat, atname, a1, resname(2),
+     1			 a1, resno(2), rescode(2), xo(1), xo(2), xo(3)
     2	format(a4,2x,i5,1x,a4,a1,a3,1x,a1,i4,a1,3x,5f8.3,2f6.2,1x,i3)
 
 	if (resname(1) .ne. resname(2)) ierr = 1

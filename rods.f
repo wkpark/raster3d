@@ -1,7 +1,7 @@
       PROGRAM RODS
 *
 *       Program to set up input for RENDER with CYLINDERs drawn between
-*	each pair of atoms within 1.6 A of each other.
+*	each pair of atoms lying closer than 0.6 * (sum of VanderWaals radii). 
 *	This program is the same as SETUP, except for what is generated.
 *	Input matrix or angles are taken from setup.matrix or setup.angles
 *	(NB: same files as setup)
@@ -115,11 +115,11 @@ c           READ(CARD,'(30X,3F8.3)') X,Y,Z
 c EAM Oct88
             READ(CARD,'(30X,3F8.3)') coords
 		x = coords(1)*matrix(1,1) + coords(2)*matrix(2,1) 
-	1	  + coords(3)*matrix(3,1)
+     1  	  + coords(3)*matrix(3,1)
 		y = coords(1)*matrix(1,2) + coords(2)*matrix(2,2) 
-	1	  + coords(3)*matrix(3,2)
+     1  	  + coords(3)*matrix(3,2)
 		z = coords(1)*matrix(1,3) + coords(2)*matrix(2,3)
-	1	  + coords(3)*matrix(3,3)
+     1  	  + coords(3)*matrix(3,3)
 c EAM Oct88
             RAD = RADIUS(ICOL)
             SPAM(1,IATM) = X
@@ -197,8 +197,8 @@ C
       DO 135 IATM=1,NATM
 	RAD = SPAM(4,IATM) * SHRINK
 	WRITE(OUTPUT,130)
-	2       SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),RAD,
-	3       SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
+     2         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),RAD,
+     3         SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
 130	FORMAT(1H2,/,7f8.3)
 135   CONTINUE
       ENDIF
@@ -213,23 +213,23 @@ C
 	CLOSE = CLOSE**2
 	IF (DIST .LE. CLOSE) THEN
 	  IF(SPAM(5,IATM) .EQ. SPAM(5,JATM) .AND.
-	1    SPAM(6,IATM) .EQ. SPAM(6,JATM) .AND.
-	2    SPAM(7,IATM) .EQ. SPAM(7,JATM)) THEN
+     1      SPAM(6,IATM) .EQ. SPAM(6,JATM) .AND.
+     2      SPAM(7,IATM) .EQ. SPAM(7,JATM)) THEN
 	    WRITE(OUTPUT,140)
-	1       SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
-	2       SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
-	3       SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
+     1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
+     2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
+     3         SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
 	  ELSE
 	    DO 136 K=1,3
 136	    CEN(K) = (SPAM(K,IATM)+SPAM(K,JATM))/2
 	    WRITE(OUTPUT,140)
-	1       SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
-	2       CEN(1),CEN(2),CEN(3),CYLRAD,
-	3       SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
+     1         SPAM(1,IATM),SPAM(2,IATM),SPAM(3,IATM),CYLRAD,
+     2         CEN(1),CEN(2),CEN(3),CYLRAD,
+     3         SPAM(5,IATM),SPAM(6,IATM),SPAM(7,IATM) 
 	    WRITE(OUTPUT,140)
-	1       CEN(1),CEN(2),CEN(3),CYLRAD,
-	2       SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
-	3       SPAM(5,JATM),SPAM(6,JATM),SPAM(7,JATM) 
+     1         CEN(1),CEN(2),CEN(3),CYLRAD,
+     2         SPAM(1,JATM),SPAM(2,JATM),SPAM(3,JATM),CYLRAD,
+     3         SPAM(5,JATM),SPAM(6,JATM),SPAM(7,JATM) 
 	  ENDIF
 	ENDIF
 
@@ -244,7 +244,7 @@ C
 	write (noise,156) 'Y  min max:', YMIN, YMAX
 	write (noise,156) 'Z  min max:', ZMIN, ZMAX
 	write (noise,156) '     scale:', SCALE
-  156	format(x,a,3f8.2)
+  156	format(1x,a,3f8.2)
       END
       LOGICAL FUNCTION MATCH (SUBJ, MASK)
       CHARACTER*24 SUBJ,MASK
@@ -268,15 +268,15 @@ c
 
 	open (unit=3, file='setup.matrix', status='OLD', err=100)
 		read (3,*) ((matrix(i,j),i=1,3),j=1,3)
-		write (noise,'(x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
+		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		close (3)
 
 		det = matrix(1,1) * matrix(2,2) * matrix(3,3)
-	1	    + matrix(1,2) * matrix(2,3) * matrix(3,1)
-	2	    + matrix(2,1) * matrix(3,2) * matrix(1,3)
-	3	    - matrix(1,3) * matrix(2,2) * matrix(3,1)
-	4	    - matrix(1,2) * matrix(2,1) * matrix(3,3)
-	5	    - matrix(1,1) * matrix(2,3) * matrix(3,2)
+     1  	    + matrix(1,2) * matrix(2,3) * matrix(3,1)
+     2  	    + matrix(2,1) * matrix(3,2) * matrix(1,3)
+     3  	    - matrix(1,3) * matrix(2,2) * matrix(3,1)
+     4  	    - matrix(1,2) * matrix(2,1) * matrix(3,3)
+     5  	    - matrix(1,1) * matrix(2,3) * matrix(3,2)
 		write (noise,'(''       determinant ='',f8.3)') det
 
 		phiX = atan2( -matrix(3,2), matrix(3,3) )
@@ -307,7 +307,7 @@ c
 		matrix(3,2) = -sx*cy
 		matrix(3,3) = cx*cy
 		write (noise,3) ' View Matrix from angles',' '
-		write (noise,'(x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
+		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		return
   200	continue
 

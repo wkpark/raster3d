@@ -1,10 +1,18 @@
+#
 # Raster3D makefile for Ultrix
 #
 LDFLAGS =
-CFLAGS  = -g
+CFLAGS  = -O
 FFLAGS  = -O -static -w1
-LIBS    =	
-DEFINES =
+#
+# If you choose to build Raster3D with support for direct output of
+# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
+# You will also need to add -ltiff to the LIBS definition.
+#LIBS    =	-ltiff
+#DEFINES =	-DTIFF_SUPPORT
+ LIBS    =
+ DEFINES =
+INCLUDES =	-I/usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
 PROGS   =	setup rods ribbon render
@@ -13,10 +21,11 @@ all:	$(PROGS)
 
 clean:
 	rm -f *.o *.u
+	rm -f render ribbon setup rods
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
-	mv docs/*.l /usr/local/man/manl
+	cp doc/*.l /usr/local/man/manl
 
 tar:
 	(cd ..; tar -cvvf raster3d.tar raster3d)
@@ -25,6 +34,10 @@ tar:
 ribbon:	$(RIBOBJS)
 	f77 -O $(RIBOBJS) -o ribbon
 
-render:	render.f local.c
-	f77 $(FFLAGS) -Olimit 2000 render.f local.c  $(LIBS) -o render $(LDFLAGS)
+local.o: local.c
+	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+
+render:	render.f local.o
+	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
+	$(LIBS) -o render $(LDFLAGS)
 

@@ -1,0 +1,11 @@
+# E A Merritt April 1994
+# Illustration of combined Molscript/Raster3D application
+#
+# This should produce the same image as in example3
+# Assumes that Molscript is installed somewhere, and that 
+# you have built TIFF support into Raster3D
+#
+# Note that Molscript uses the file header.r3d (if it exists)
+# to determine the viewpoint, scale, size, etc.
+# 
+molscript -r < example3.mol | render -tiff example4.tiff

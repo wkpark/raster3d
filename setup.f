@@ -120,11 +120,11 @@ c           READ(CARD,'(30X,3F8.3)') X,Y,Z
 c EAM Oct88
             READ(CARD,'(30X,3F8.3)') coords
 		x = coords(1)*matrix(1,1) + coords(2)*matrix(2,1) 
-	1	  + coords(3)*matrix(3,1)
+     1  	  + coords(3)*matrix(3,1)
 		y = coords(1)*matrix(1,2) + coords(2)*matrix(2,2) 
-	1	  + coords(3)*matrix(3,2)
+     1  	  + coords(3)*matrix(3,2)
 		z = coords(1)*matrix(1,3) + coords(2)*matrix(2,3)
-	1	  + coords(3)*matrix(3,3)
+     1  	  + coords(3)*matrix(3,3)
 c EAM Oct88
             RAD = RADIUS(ICOL)
             SPAM(1,IATM) = X
@@ -193,7 +193,7 @@ c
 	write (noise,156) 'Y  min max:', YMIN, YMAX
 	write (noise,156) 'Z  min max:', ZMIN, ZMAX
 	write (noise,156) '     scale:', SCALE
-  156	format(x,a,3f8.2)
+  156	format(1x,a,3f8.2)
       END
       LOGICAL FUNCTION MATCH (SUBJ, MASK)
       CHARACTER*24 SUBJ,MASK
@@ -215,17 +215,21 @@ c
 	parameter (noise = 0)
 	parameter (R2D = 180./3.1415927)
 
+	postrn(1) = 0.
+	postrn(2) = 0.
+	postrn(3) = 0.
+
 	open (unit=3, file='setup.matrix', status='OLD', err=100)
 		read (3,*) ((matrix(i,j),i=1,3),j=1,3)
-		write (noise,'(x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
+		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		close (3)
 
 		det = matrix(1,1) * matrix(2,2) * matrix(3,3)
-	1	    + matrix(1,2) * matrix(2,3) * matrix(3,1)
-	2	    + matrix(2,1) * matrix(3,2) * matrix(1,3)
-	3	    - matrix(1,3) * matrix(2,2) * matrix(3,1)
-	4	    - matrix(1,2) * matrix(2,1) * matrix(3,3)
-	5	    - matrix(1,1) * matrix(2,3) * matrix(3,2)
+     1  	    + matrix(1,2) * matrix(2,3) * matrix(3,1)
+     2  	    + matrix(2,1) * matrix(3,2) * matrix(1,3)
+     3  	    - matrix(1,3) * matrix(2,2) * matrix(3,1)
+     4  	    - matrix(1,2) * matrix(2,1) * matrix(3,3)
+     5  	    - matrix(1,1) * matrix(2,3) * matrix(3,2)
 		write (noise,'(''       determinant ='',f8.3)') det
 
 		phiX = atan2( -matrix(3,2), matrix(3,3) )
@@ -259,7 +263,7 @@ c
 		matrix(3,2) = -sx*cy
 		matrix(3,3) = cx*cy
 		write (noise,3) ' View Matrix from angles',' '
-		write (noise,'(x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
+		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		return
   200	continue
 

@@ -1,13 +1,23 @@
-most recent change:	23-Nov-1993
+most recent change:	 22-Jul-1994
 
-The file Raster3D_2.0_beta.tar.Z contains a beta-test version of RASTER3D
-in a unified distribution which has been partially tested on the following
-machines:
+The file Raster3D_2.0.tar.Z version 2.0 of RASTER3D is a unified
+distribution which has been tested on the following machines:
+
 	DECstation 5000 / Ultrix 4.3
 	Alpha / OSF 1.3
 	SGI Indigo / Irix 4.0.5F
 
-Version 2.0 [is/will be] very close to the previous DS5000 version (Mar 1993).
+Changes since the beta-test of version 2.0:
+
+- fixed input format bug for PLANE objects
+- cross-tested with Molscript V1.4
+- a few syntax changes to make the IBM RS6000/AIX xlf compiler happier
+  (note that "happier" != "happy"; the code is largely untested under AIX)
+- support direct output of TIFF image file (requires libtiff.a)
+- fixed bug in input format and accounting of PLANE objects
+
+
+Version 2.0 is very close to the previous DS5000 version (Mar 1993).
 Differences include:
 
 - handle possible divide-by-zero errors if duplicate or 0 size cylinders
@@ -28,7 +38,7 @@ Compared to the previous SGI distribution kit, this one has:
   plane of view to pseudo-horizon at back clipping limit. Color saturation
   falls off with depth.
 
-The render program may be run with any one of three output modes
+The render program may be run with any one of four output modes
 currently supported in the file local.c:
 1) AVS-compatible output to stdout, intended for piping to ImageMagick
    or other image file format conversion program. (default behaviour).
@@ -36,17 +46,13 @@ currently supported in the file local.c:
    -sgi flag (e.g. render -sgi outfile.rgb). Support of this option
    is conditionally compiled into local.c, and is only relevant when
    Raster3D is to be installed on an SGI machine.
-3) The -original option to render is intended to produce output on stdout 
+3) TIFF output file specified in command line using the -tiff flag.
+   The option requires that the TIFF support library libtiff.a be
+   separately obtained and installed before building Raster3D.
+4) The -original option to render is intended to produce output on stdout 
    which is compatible with the original (UA/UBC) Raster3D versions, so that
    image post-processing programs (e.g. idither/hdith/dith2lp) may
    still be used.
-
-WARNING: None of the 3 output formats is guaranteed (or even likely)
-to be directly transportable across different machines and operating
-systems due to differing byte orders, word lengths, etc.  
-For transportable output, pipe from render directly into a format
-conversion utility which supports a machine-independent file format
-(e.g. MIFF, TIFF).
 
 Unless you specifically need libimage compatibility, I suggest
 that you simply use the default AVS-compatible output, and use John Cristy's
@@ -75,10 +81,18 @@ atoms:
 	grep FE protein.pdb | cat colors.pdb - | setup -h > irons.r3d
 	cat ribbon.r3d irons.r3d | render | convert avs:- miff:rib+Fe.miff.Z
 
-Finally, to render a figure and save the resulting image as a TIFF file:
+Finally, to render a figure and save the resulting image as a TIFF file
+using ImageMagick:
 
 	render < mypicture.r3d | convert avs:- tiff:mypicture.tiff
 
+If you want to use a viewer which doesn't recognize AVS format image files,
+then you may want to build the TIFF support into Raster3D. For example, to
+create and view a TIFF file using the xv viewer:
 
-					Ethan A Merritt
-					merritt@u.washington.edu
+	render -tiff mypicture.tiff < mypicture.r3d; xv mypicture.tiff
+
+
+
+				Ethan A Merritt
+				merritt@u.washington.edu

@@ -12,8 +12,8 @@ and a number of ancillary programs
 (\fIsetup\fP, \fIrods\fP, \fIribbon\fP)
 which produce input files for
 rendering from Brookhaven PDB files of atomic coordinates.
-\fIRaster3D\fP can also render images composed using version 1.4(?) of
-\fIMOLSCRIPT\fP [ref: Kraulis, 1991].
+\fIRaster3D\fP can also render images composed using version 1.4 of
+\fIMOLSCRIPT\fP [Per Kraulis (1991), J. Appl. Cryst. 24, 946-950].
 
 .SH DESCRIPTION
 .PP
@@ -24,13 +24,13 @@ Output is in the form of a pixel image
 with 24 bits of color information per pixel.
 
 \fIRaster3D\fP does not depend on graphics hardware for operation.
-Three image output formats are supported: AVS, SGI libimage, and
+Four image output formats are supported: AVS, TIFF, SGI libimage, and
 a private format which is backwards-compatible with earlier versions of 
 \fIRaster3D\fP.  To actually view or manipulate the images produced,
 you must also have installed an image viewing package (e.g. John
 Cristy's ImageMagick or the SGI libimage utilities).
 
-\fIRaster3D\fP Version 2.0 (beta-test December 1993)
+\fIRaster3D\fP Version 2.0
 supports rendering of five object types: 
 spheres, triangles, planes, smooth-ended cylinders, and round-ended
 cylinders.  
@@ -73,9 +73,14 @@ Integrated use of MOLSCRIPT/Raster3D/ImageMagick allows one to
 describe, render, and view 3D representations of existing MOLSCRIPT
 figures:
 
-     echo "raster3d" | cat - molscript.inp > temp.tmp
-     cat temp.tmp | molscript | render | display avs:-
- 
+     molscript -r infile.dat | render | display avs:-
+
+A similar example using xv as an image viewer, and assuming that TIFF
+support has been built into the render program:
+
+     molscript -r infile.dat | render -tiff image.tif
+     xv image.tif
+
 .SH SOURCE
 .TP 5
 	anonymous ftp site:	

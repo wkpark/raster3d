@@ -1,0 +1,47 @@
+To install Raster3D 
+===================
+
+1) copy the appropriate Makefile.xxx for your machine to Makefile
+
+2) inspect the Makefile to make sure that it is appropriate for your site,
+   and possibly edit the file to include TIFF or LIBIMAGE support.
+
+   In order to build Raster3D so that it supports the direct output of
+   TIFF image files you must
+	1) Obtain and install the TIFF library. There are a number of
+	   implementations available on the net.  I have been using
+	   Sam Leffler's version 3.3beta, available via anonymous ftp
+	   from sgi.com.
+	2) Edit the INCLUDES and LIBS definitions in the Makefile,
+	   INCLUDES = -DTIFF_SUPPORT
+	   LIBS     = -ltiff
+
+   On SGI machines you may want to build in support for direct output to
+   image files compatible with the libimage utilities.  In this case you
+   must
+	1) Make sure that libimage.a is installed on your machine
+	   (the source is on one of the optional installation kits in the
+	   standard Irix distribution).
+	2) Edit the INCLUDES and LIBS definitions in the Makefile,
+	   INCLUDES = -DLIBIMAGE_SUPPORT
+	   LIBS     = -limage
+
+3) Install the package:
+	make install
+
+4) Go to the examples subdirectory and try running the example scripts
+   to verify installation.
+
+A sample installation on a DEC Alpha might go:
+	cp Makefile.osf Makefile
+	vi Makefile                    # to check options, etc
+	make install
+
+Notes -
+
+	Although a Makefile.aix is provided for the IBM RS6000, I don't have
+access to one to verify that things work properly.  I do know that the xlf 
+compiler doesn't like the "q" formats in ribbon1.f (though it doesn't
+seem to stop the program from working).  If anyone patches the source so
+that xlf is happy without breaking it for all other machines, please
+send me the diffs.  -EAM

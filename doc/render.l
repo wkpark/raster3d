@@ -1,10 +1,10 @@
 .ad l
 .nh
-.TH RENDER 1 "23 November 1993" "Raster3D"
+.TH RENDER 1 "23 April 1994" "Raster3D"
 .SH NAME
-render - central program of Raster3D molecular graphics package
+render - image rendering program of Raster3D molecular graphics package
 .SH SYNOPSIS
-.B "render" [\fI-sgi filename\fP] [\fI-original\fP]
+.B "render" [\fI-tiff filename\fP] [\fI-sgi filename\fP] [\fI-original\fP]
 .PP
 \fIRender\fP reads an ascii file consisting of several header lines
 followed by individual object descriptors. 
@@ -49,6 +49,13 @@ image as a TIFF file.
      cat ribbon.r3d cofactor.r3d | render | convert avs:- picture.tiff
 .SH OPTIONS
 .TP 5
+.B "-tiff filename"
+
+Only if compiled with -DTIFF_SUPPORT.
+By default \fIrender\fP will produce an AVS-compatible image on stdout.
+The -tiff flag will cause it to output a TIFF image to the specified
+file instead.
+
 .B "-sgi filename"
 
 Only if compiled with -DLIBIMAGE_SUPPORT.
@@ -86,9 +93,11 @@ Anything you like, up to 80 characters.
 Number of "tiles" in each direction.  (The output
 display is considered to be divided up into an
 array of identical rectangular tiles.)
+Maximum = 192 (controlled by MAXNTX, MAXNTY in render.f)
 .TP 5 
 .B     NPX,NPY  
 Number of computing pixels per tile in each direction.
+Maximum = 36 (controlled by MAXNPX, MAXNPY in render.f)
 .TP 5 
 .B     SCHEME   
 Pixel averaging (anti-aliasing) scheme (1, 2, or 3), where
@@ -100,6 +109,8 @@ Pixel averaging (anti-aliasing) scheme (1, 2, or 3), where
 scheme 3 produces a (2/3)NTX*NPX by (2/3)NTY*NPY image)
 Increased anti-aliasing produces a scene in which objects
 have less jagged edges, at the cost of additional computation.
+Note that if you select scheme 3 then NPX and NPY must be
+multiples of 3.
 .TP 5 
 .B     BKGND    
 Background colour (red, green, and blue components,
@@ -129,27 +140,32 @@ colour of each object, whereas specular reflections
 are white.
 .TP 5 
 .B     EYEPOS   
-Eye position (e.g., 4), in units such that 1 is the
-narrower dimension of the output image.  This should be
-used to control perspective rather than TMAT (below).
+You can think of the image produced by Raster3D as corresponding 
+to a photograph taken by a camera placed a certain distance away
+from the objects making up the scene. This distance is controlled
+by the EYEPOS parameter.  EYEPOS = 4 describes a perspective corresponding
+to a viewing distance 4 times the narrow dimension of the described scene.
+A very large value of EYEPOS will yield a scene with essentially no
+parallax or perspective.
 .TP 5 
 .B     SOURCE   
-Main light source position (e.g., 1 1 1).  The point
-source is at infinity in the direction of this vector
-(see note on co-ordinate convention below) and is
-white.
+Primary light source position (e.g., 1 1 1).  
+This is a white light point
+source at infinite distance in the direction of this vector
+(see note on co-ordinate convention below).  
+The secondary light source is always haed-on. 
+Only the primary light source casts shadows.
 .TP 5 
 .B     TMAT     
 Homogeneous global transformation for input objects,
-given as a 4 by 4 matrix on 4 lines just as you would
+given as a 4x4 matrix on 4 lines just as you would
 write it if you intended it to be a postfix (suffix)
-operator.  The upper left 3 by 3 submatrix expresses
-a pure rotation, the lower left 1 by 3 submatrix
-gives a translation, the upper right 3 by 1 submatrix
+operator.  The upper left 3x3 submatrix expresses
+a pure rotation, the lower left 1x3 submatrix
+gives a translation, the upper right 3x1 submatrix
 should be zero (otherwise extra perspective is
 introduced), and the lower right scalar produces
-global scaling (reciprocally).  Radii, if any, are
-divided by this scalar.
+global scaling.
 Coordinate vectors [x y z] are extended with a 1
 to make them homogeneous, and then postmultiplied
 by the entire matrix; 
@@ -163,8 +179,8 @@ Object input mode (1, 2, or 3), where
 mode 1 means that all objects are triangles,
 mode 2 means that all objects are spheres,
 and mode 3 means that each object will be preceded
-by a record containing a single number indicating its type,
-where
+by a record containing a single number indicating its type.
+The Raster3D programs always use mode INMODE 3.
  type 1 = triangle
  type 2 = sphere
  type 3 = round-ended cylinder
@@ -230,6 +246,6 @@ Parameters are read in the order
 rods(1), ribbon(1), setup(1), ImageMagick(1), MOLSCRIPT(1)
 .PP
 .SH AUTHORS
-	Originally written by David J. Bacom and Wayne F. Anderson.
+	Originally written by David J. Bacon. 
 	Extensions, revisions, and modifications by Ethan A Merritt.
 

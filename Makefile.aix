@@ -1,18 +1,20 @@
 #
-# Raster3D makefile for Ultrix
+# Raster3D makefile for AIX
 #
-LDFLAGS =
-CFLAGS  = -O
-FFLAGS  = -O -static -w1
+LDFLAGS = -bloadmap:loadmap.lis
+CFLAGS  = -g
+FFLAGS  = -O -qtkq_size=20000 
+
 #
 # If you choose to build Raster3D with support for direct output of
 # TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
 # You will also need to add -ltiff to the LIBS definition.
- LIBS    =	-ltiff
- DEFINES =	-DTIFF_SUPPORT
-#LIBS    =
-#DEFINES =
-INCLUDES=	-I/usr/local/include/ -I/usr/local/include/tiff
+#
+#LIBS    =	-ltiff
+#DEFINES =	-DTIFF_SUPPORT -Dlocal_=local
+LIBS    =	
+DEFINES = -Dlocal_=local
+INCLUDES= /usr/local/include/
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
 PROGS   =	setup rods ribbon render
@@ -21,7 +23,7 @@ all:	$(PROGS)
 
 clean:
 	rm -f *.o *.u
-	rm -f render ribbon setup rods
+	rm -f render ribbon rods setup
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
@@ -32,12 +34,14 @@ tar:
 	compress  ../raster3d.tar
 
 ribbon:	$(RIBOBJS)
-	f77 -O $(RIBOBJS) -o ribbon
+	xlf -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
-	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+	cc $(DEFINES) $(INCLUDES) -c local.c
 
-render:	render.f local.o
-	f77 $(FFLAGS) -Olimit 2000 render.f local.o  \
-	$(LIBS) -o render $(LDFLAGS)
+render.o: render.f
+	xlf $(FFLAGS) -c render.f
+
+render:	render.o local.o
+	xlf $(FFLAGS) render.o local.o  $(LIBS) -o render $(LDFLAGS)
 

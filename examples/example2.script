@@ -24,7 +24,7 @@ rods  -h < temp.tmp > sugars.r3d
 # At the front goes a file containing the header records
 # describing the view angle, image size, lighting, etc.
 #
-cat header.r3d plane.r3d sugars.r3d balls.r3d > temp.tmp
+cat header2.r3d plane.r3d sugars.r3d balls.r3d > temp.tmp
 #
 # Feed the composite description through the rendering progran
 # and pipe the output to the ImageMagick display utility.

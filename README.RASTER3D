@@ -10,24 +10,28 @@ PROGRAM:
 	space-filling atoms, bonds, ball+stick, etc.  Raster3D can also be 
 	used to render pictures composed in Per Kraulis' MOLSCRIPT program 
 	in glorious 3D with highlights, shadowing, etc. (NB: you will need 
-	MOLSCRIPT V1.(4?) to get the full benefit of this).  Output is to 
+	MOLSCRIPT V1.4 to get the full benefit of this).  Output is to 
 	pixel image files with 24 bits of color information per pixel.
 
 AVAILABILITY:
 	Raster3d is freely available but unsupported. 
 	Programs for previewing and figure composition are written
 	for IRIS4D workstations (GL graphics), but all other code is
-	intended to be machine-independent. Version 2.0 is currently in 
-	beta-test, please see README.2.0.beta for further information.
+	intended to be machine-independent. The current version is 2.0,
+	please see README.2.0 for further information.
 
 REFERENCES:
+	original implementation:
 	Bacon, David J. and Anderson, Wayne F. (1988).  Journal of
 	Molecular Graphics 6, 219-220 (abstract of paper presented
 	at the Seventh Annual Meeting of the Molecular Graphics
 	Society, San Francisco, 10-12 August 1988).  "A Fast
 	Algorithm for Rendering Space-Filling Molecule Pictures."
 
-	Merritt, Ethan A. and Murphy, Michael (in preparation).
+	version 2.0:
+	Merritt, Ethan A. and Murphy, Michael E.P. (1994).
+	"Raster3D Version 2.0, a Program for Photorealistic Molecular Graphics"
+	Acta Cryst. D (in press)
 
 AUTHORS:
 	originally written by David J. Bacon and Wayne F. Anderson;
@@ -36,7 +40,8 @@ AUTHORS:
 	and Ethan A Merritt
 
 SOURCE:
-	anonymous ftp site:	stanzi.bchem.washington.edu   (128.95.12.38)
+	ftp:	stanzi.bchem.washington.edu   (128.95.12.38)
+	www:	ftp://stanzi.bchem.washington.edu/pub/raster3d/raster3d.html
 
 	contact:		Ethan A Merritt
 				Dept of Biological Structure SM-20
