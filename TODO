@@ -1,0 +1,96 @@
+- Dec 1996: First idea for labels that I'm actually excited about!
+  Define new object types for labels; these are ignored by render.
+  New utility program labels3d, however, reads same render input file,
+  interprets and applies header records, translates the label records
+  (only) to PostScript, and writes out a PostScript file of labels
+  + a short script to merge the render image and the PostScript.
+  Example:
+    10
+	Times-Roman 12. Left-align   (or Center or Relative or ???)
+    11
+	0. 0. 0.    1. 1. 0.
+	This is a yellow label at the origin
+    11
+	.7 .7 0.    0. 0. 1.
+	This is a blue label at the upper right
+
+  render -tiff render.tiff < render.r3d
+  labels3d < render.r3d > labels.ps
+  gs -sDevice=ppm -OutputFile=labels.ppm -g1024x768  labels.ps
+  combine -compose atop labels.ppm render.tiff  composite.tiff
+
+  Question: How would one specify "place after previous character"?
+	    I like the idea of allowing delta values for coords;
+	    e.g. +.01 -.01 +.0  1. 1. 1. would mean a white label
+	    just slightly down and to the right of the previous one.
+	    But that will break a Fortran read statement.
+	    Maybe allow a placement mode "Relative-to-last-character"
+	    and just interpret the [x y z] as delta values.
+
+  Don't forget that normal3d has to do something reasonable with labels
+	    also.  I.e. absolute coords must be modified by TMAT, but
+	    relative coords not?
+
+- More examples
+  Worms:  demonstrate use of -radius option in rods
+  Library of material definitions
+
+- Clipping plane
+  Where to specify in header?
+  No big deal for triangles, but would have to modify sphere/cylinder code
+  to check against back surface if front surface is clipped.
+
+- Texture maps
+
+- Benchmark example 6 in POVray or some other popular ray-tracing code.
+
+- JPEG output?  PNG?  Can you pipe either of these? (if so could replace AVS)
+
+- Debug the new helix code for Molscript.  Fixed edges?  Both sides?
+- Find pristine copy of Molscript V1.4 and confirm that patch instructions
+  work.
+
+- Add more intelligible error message if 2nd line of render input file
+  doesn't look like a header record
+
+- Use INMODE to signal processing options; all values >=3 use explicit object
+  types.
+
+- Command line option to render specifying anti-aliasing scheme; would override
+  SCHEME parameter in header.
+
+- Force formats to * in normal3d, rods
+
+- Add code to Molscript to make it emit comments at the start of each
+  new object.  Could also add label support now that render can handle it.
+
+- Could render "rough" objects just by tweaking surface normal?
+  Key may be to use fractional coords, rather than absolute pixel number.
+  E.g. xnorm += bump * cos( 25. * pi * I/(NPX*NTX) )
+       ynorm += bump * cos( 25. * pi * J/(NPY*NTY) )
+
+- not certain about feasibility of "solid shadow" option for alpha channel, 
+  maybe make the SHADOW parameter take a 3rd value, as in TRUE/FALSE/SOLID?
+
+- variable resolution oversampling for better anti-aliasing.
+  render with 2x oversampling, but before averaging check to see if
+  certain pixels would benefit from further expansion of the neighborhood.
+
+Jan 1996
+========
+Thoughts on transparency (yeah, I know, I tried this before and gave up on it).
+A) Shadows get tricky. For now I have made transparent objects cast no shadows,
+   but other possibilities exist (make it part of the material spec?)
+   E.g., for a shadow which falls on a solid object
+   1)	If this is SHDTOP object, no shadowing
+   2)	If this is SHD2ND object and SHDTOP is transparent, gets a partial
+	shadow colored by color of SHDTOP
+   3)	Otherwise full shadowing
+   I tried this, and it works, but the whole approach falls apart if there are
+   multiple transparent objects shadowing the solid one.  It might be worth it
+   anyway, maybe under the control of a new value for shadowing flag (F/T/P)?
+B) Questions:
+	- Could offer option to render using object-buffer rather than
+	  Z-buffer?  That would handle arbitrary #'s of transparency overlaps,
+	  but the shading code would probably have to be rewritten from
+	  scratch.  How slow would this be?

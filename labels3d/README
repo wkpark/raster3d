@@ -1,0 +1,27 @@
+labels3d V2.3b (beta test version)
+
+The labels3d program is still under development. 
+The final form may change more than slightly; in particular I may
+rewrite the whole thing in Perl rather than Fortran.
+Nevertheless, the present code may serve as a testbed for the
+additional of Raster3D-compatible labels to other programs.
+
+At the moment this directory contains
+
+	labels3d.f		- Fortran source code (may change!)
+	labeltest.r3d		- example of label use
+	labeltest.jpeg		- image produced by running test script
+	labels3d.ps		- intermediate PostScript file produced
+				  by running test script
+	labeltest.script	- the test script
+
+The test script requires that you have preivously installed
+	Raster3D (with TIFF support)
+	ghostscript (with PPM driver)
+	ImageMagick (for image compositing)
+
+Other PostScript interpreters and image compositing tools could probably
+be used instead, but I'm happy with the ghostscript/ImageMagick pair.
+
+
+			Ethan A Merritt   5-May-1997

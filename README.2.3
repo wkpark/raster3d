@@ -1,55 +1,48 @@
-most recent change:	 15-Feb-1996
+most recent change:	  6-May-1997
 
-The file Raster3D_2.2c.tar.Z contains version 2.2 of RASTER3D.
-It is a unified distribution which has been tested on the following 
-machines:
-	DECstation 5000 / Ultrix 4.3
-	Alpha / OSF 3.0
-	SGI Indigo / Irix 4.0 5.3 6.1
-	IBM RS6000 / AIX 3.2.5
-	HP
-Version 2.11 (not yet V2.2) also tested OK on:
+The file Raster3D_2.3c.tar.Z contains the complete distribution 
+of version 2.3 of RASTER3D.
+
+This unified distribution has been tested under the following 
+operating systems:
+
+	Alpha / OSF 4.0			(see INSTALL notes)
+	SGI Indigo / Irix 5.3
+	SGI Indigo / Irix 6.1
+	IBM RS6000 / AIX 4.2		(see INSTALL notes)
+
+People have reported success on the following, but I can't check them myself:
 	SUN Sparc  / SUNOS 4.1.3_U1
-	Intel 486 / linux
+	linux (redhat)
+	OS/2
 
-Version 2.2c (interim fix to reported problem):
+New in version 2.3:
 
-- Change default treatment of surface triangles (i.e. those with explicit
-  normals). Default is now to assume that whichever side of the triangle
-  faces the viewer is the one to be rendered. Previous (V2.2) assumption
-  was that if the normals indicated that the triangle faced away from the
-  viewer then it was the back side of a closed volume, and needn't be
-  rendered at all.  This gave a speed increase, but broke the representation
-  of non-closed surface fragments.   I'm working on a more general fix to this 
-  tradeoff.  
-  Also fixed a minor bug in shading near the edge of tmesh surfaces,
-  and added Makefile for HPUX.
+- new object types for render
+	type 10:	(reserved for labels)
+	type 11:	(reserved for labels)
+	type 12:	(reserved for labels)
+	type 13:	internal light source ("glow" light)
 
-New in version 2.2:
+- New programs
+	stereo3d	automatic script to produce side-by-side stereo pair
+	labels3d	first effort at Raster3D label support;
+			mostly intended to guide application development
 
-- Transparency! Material definitions (object type 8) now includes a parameter
-  describing the degree of transparency. This allows, for instance, the use of
-  transparent triangularly tesselated surfaces to render the solvent accessible
-  surface. 
-- Generally improved handling of special material definitions, including 
-  optional use of objects base colour for specular highlighting (recommended for
-  effective use of coloured transparent surfaces).
-- Major bug fix with regard to rotation of explicit surface normals.
-- A utility program "ungrasp" is included which will convert surface
-  description files produced by the program GRASP (Nicholls, 1992) into a
-  Raster3D input file for rendering.
-- A utility program "normal3d" is included to assist in merging Raster3D input
-  files produced by different programs (Molscript/GRASP/rods/balls).
-- Various bug fixes to increase portability of code and handle a few 
-  pathological cases. 
-- Makefile for Irix 6.x
-- Default 4th ("alpha blend") channel of avs output file is set to 255 rather 
-  than 0.
+- File indirection supported in Raster3d input files
+  (lines starting with @ cause input to be taken from a new file)
+
+- Additional properties and rendering options for special materials
+
+- Alpha blend (matte) channel in output image if SCHEME=0
+  Draft mode (SCHEME=1) and anti-aliasing mode (SCHEME=4) produce the
+  same output image size, unlike previous anti-aliasing options
 
 
-New in version 2.1:
 
-- updated documentation, including html versions
+Other changes since first distribution of version 2.0:
+
+- all documentation is on line in the form of HTML files
 - new object types for rendering
 	type 7:	explicit vertex normals for triangle
 	type 8: special material properties for lighting model
@@ -58,15 +51,11 @@ New in version 2.1:
   other system-dependent utilities called "setup"
 - more accounting information reported in render
 
-Other changes since first distribution of version 2.0:
-
-- fixed bug in input format and accounting of PLANE objects
 - added machine-independent utility filter avs2ps to produce dithered
   black&white PostScript output (supercedes machine-dependent stuff in
   viewtools)
 - added patch for Molscript V1.4 so that dotted lines can be passed
   on to Raster3D
-- fixed bug which could cause end of cylinder to have a bite out of it
 
 The render program may be run with any one of four output modes
 currently supported in the file local.c:
@@ -87,7 +76,7 @@ currently supported in the file local.c:
 Unless you specifically need libimage compatibility, I suggest
 that you simply use the default AVS-compatible output, and use John Cristy's
 ImageMagick package to view or process the output.  ImageMagick runs
-nicely on any machine supporting X11R4 windowing, and may be obtained
+nicely on any machine supporting X-windows, and may be obtained
 via anonymous ftp from a number of sites, including export.lcs.mit.edu.
 
 Using ImageMagick as a viewer, a typical command might look something like:

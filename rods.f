@@ -1,11 +1,17 @@
       PROGRAM RODS
-*
+*------------------------------------------------------------------------------
 *       Program to set up input for RENDER with CYLINDERs drawn between
 *	each pair of atoms lying closer than 0.6 * (sum of VanderWaals radii). 
 *	This program is the same as SETUP, except for what is generated.
 *	Input matrix or angles are taken from setup.matrix or setup.angles
 *	(NB: same files as setup)
 *
+* Eric Swanson   Oct 1991
+*	Modified to generate cylinders with half bond colors, where needed.
+* EAM Feb 1997
+*	-radius XX to set cylinder radius
+*
+*------------------------------------------------------------------------------
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
@@ -18,39 +24,46 @@
 C
 C	Ethan Merritt flags include -b (ball and stick)
 C				    -h (suppress header records in output)
+C				    -radius XX (set cylinder radius)
 C
       character*64 options
       logical      bflag, hflag
+      real	   cylrad
 c
-C	Ethan Merritt	Oct 1988
-C	Modified to read in 3x3 view matrix (e.g. from CCP FRODO view command)
-C	from file setup.matrix.  Matrix is applied before
-C	finding translation, center, and scale.  Afterwards the input matrix
-C	to RENDER is therefore the identity matrix.
+c	Read in 3x3 view matrix from file setup.matrix.  
+c	Matrix is applied before finding translation, center, and scale.  
+c	Afterwards the input matrix to RENDER is therefore the identity matrix.
 C                                                     
 	common /matrix/ matrix, coords
 	real*4		matrix(3,3), coords(3)
 	data		matrix / 1.,0.,0.,0.,1.,0.,0.,0.,1. /
 
-C	Eric Swanson   Oct 1991
-C	Modified to generate cylinders with half bond colors, where needed.
-
 c
     3	format(a,a)
 c
-	bflag = .FALSE.
-	hflag = .FALSE.
+	bflag  = .FALSE.
+	hflag  = .FALSE.
+	cylrad = 0.2
 	narg  = iargc()
-        do i = 1, narg
+	i = 1
+  500	continue
             call getarg( i, options )
             if (options(1:2) .eq. '-h') hflag = .true.
             if (options(1:2) .eq. '-b') bflag = .true.
-        end do
+	    if (options(1:2) .eq. '-r') then
+		i = i + 1
+		if (i.gt.narg) stop 'illegal radius value'
+		call getarg( i, options )
+		read (options,*) cylrad
+		if (cylrad.le.0) stop 'illegal radius value'
+	    end if
+	i = i + 1
+	if (i.le.narg) goto 500
 C
 	call view_matrix
 c
       if (.not. hflag) then
-	WRITE(OUTPUT,'(A)') 'Cylinder data types'
+	WRITE(OUTPUT,'(A)') 'rods V2.3'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') '12  12    pixels (x,y) per tile'
 	WRITE(OUTPUT,'(A)') '3         3x3 virtual pixels -> 2x2 pixels'
@@ -181,16 +194,13 @@ C	Here's the real loop.
 C	Look for pairs closer to each other than 0.60 times the
 C	sum of the vanderWaals radii.
 C	Draw all cylinders with 0.2A cylindrical radius.
-C	Cylinder color comes from whichever atom is encountered first,
-C	except that to avoid a common inversion we won't take color
-C	from CA atoms.
 C	For ball and stick pictures, shrink vanderWaals radius
 C	of balls by 0.20
 C	If two atoms of different colors are bonded, make half-bond
 C	cylinders with each color.
 C
       CLOSE = 1.6 * 1.6
-      CYLRAD = 0.2
+C     CYLRAD = 0.2
       SHRINK = 0.2
 C
       IF (BFLAG) THEN

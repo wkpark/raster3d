@@ -30,6 +30,7 @@ int		 i, j;
 float		 red, green, blue, alpha;
 extern float	 warpf();
 extern float	 warpm[];
+extern void	 dither();
 float		*inbuf1, *inbuf2, *tbuf;
 int		*index;
 int		*done;
@@ -212,6 +213,7 @@ static float avail[4][5] =	{
 			};
 
 
+void
 dither( nx, line1,  line2, pixels, index,  done )
 int   		 nx;
 float		*line1, *line2;

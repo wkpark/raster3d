@@ -1,0 +1,12 @@
+Digital Unix (3.0 - 4.0)
+	somewhere between -O1 and -O2 the f90 compiler breaks transparency
+	coloring in example6.  f77 compiler does fine.
+
+AIX 4.2
+	doesn't like READONLY or CARRIAGECONTROL in OPEN statements
+	(render.f and normal3d.f) 
+	READONLY can be replaced by ACTION='READ'
+	xlf also has odd notions of Q format (normal3d.f, ribbon.f, labels3d.f)
+Linux
+	flavors vary, may encounter same dislike as AIX for options in
+	OPEN statements (render.f and normal3d.f) and Q format

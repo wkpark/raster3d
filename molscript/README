@@ -11,17 +11,61 @@ You can contact Per Kraulis at the address:
 	S-112 87 Stockholm                fax   +46 8 695 40 82
 	SWEDEN                            email per.kraulis@sto.pharmacia.se
 
-This directory contains a diff file which can be used to patch Molscript
-version 1.4 so that dotted lines can be output in Raster3D mode.  You
-should be able to use the unix patch utility to apply these diffs to the
-file graphics.f in the Moslcript source distribution.  Even if you can't
-make the patch program work the change is simple enough that you can
-just apply it by hand.
+This directory contains two subroutines which can be used to patch Molscript
+version 1.4 to improve the interface to Raster3D.
 
-NB: This patch is specifically for Molscript version 1.4, if you have 
-any earlier version you will need to update it to 1.4 before doing
-anything else. Hopefully this patch will make its way into
-some subsequent version of Molscript.
+The routine RASPLN (file raspln.f) replaces an older version of the same
+routine in the Molscript source file graphics.f.  
+The older version could produce odd results near the edges of a helix,
+particularly if the Molscript "segments" parameter was too small. 
+The new version is much more forgiving.
+The new version also contains code to render all sides of a helix,
+rather than just the front (visible) surface.  I hope that this code
+will be selectable as an option in some future version of Molscript
+(e.g. "set helixsolid = yes"), but for now it is by default disabled.
+
+The routine GRLIND (file grlind.f) also needs to be inserted into the
+Molscript source file graphics.f.  You must also edit a couple of other 
+lines in graphics.f as described in step 4 below.
+These changes will allow Molscript to output dotted lines in Raster3D mode.
+
+=============================================================================
+Step by step instructions:
+
+1) Go to your Molscript source directory
+
+2) Make backup copies of the original Molscript source files
+   schematic.f and graphics.f
+
+3) [OPTIONAL - only needed if you want to investigate the use of solid helices]
+   Apply the patch file schematic.f.diff to the Molscript V1.4 source file 
+   schematic.f 
+   If you don't know how to apply a patch file, just skip this step and 
+   don't worry about it.
+
+4) Edit the Molscript V1.4 source file graphics.f 
+   (a)	Replace the routine RASPLN with the contents of the file raspln.f 
+	from the Raster3D distribution.
+   (b)	Insert the file grlind.f into the graphics.f source file.
+   (c)	Find SUBROUTINE GRLINE in the graphics.f source file.
+	Just *before* the line (should be line 516)
+		C Ignore if entirely outside of view
+	Insert the following code fragment:
+		C Ethan A Merritt Aug 1994
+		C	for Raster3D draw dashed lines as a string of spheres
+		      IF (RASTER .AND. (LINDSH(TOTGST).NE.0)) THEN
+			CALL GRLIND( COO1, COO2 )
+			RETURN
+		      END IF
+
+5) Rebuild and re-install Molscript
+
+=============================================================================
+
+NB: These patches are specifically for Molscript version 1.4, if you have 
+an earlier version you will need to update it to 1.4 before doing
+anything else. Hopefully this code will make its way into some subsequent 
+version of Molscript so that patching is not necessary.
 
 				Ethan A Merritt
-				August 1994
+				August 1996

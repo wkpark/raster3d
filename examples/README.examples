@@ -77,8 +77,8 @@ the format of such files is both version and machine dependent. A copy
 of the "ungrasp" utility program I used for conversion is included in
 the directory ../grasp, but you may have to modify this source depending
 on your local installation.  Finally, the molecular surface in this
-example illustrates the newly added support for rendering transparent
-objects in Raster3D.
+example illustrates the support for rendering transparent
+objects in Raster3D V2.2.
 
 Note:  It would be a more informative figure if the accessible surface
 of the protein were shown, rather than that of the bound sugar.  However
@@ -86,3 +86,9 @@ this would have required inclusion of an absolutely huge surface
 description file so I judged it impractical.  A JPEG figure illustrating
 Raster3D rendering of a protein surface should be available on the
 Raster3D distribution site.
+
+Example 7
+=========
+
+This example shows the use of multiple MATERIAL definitions, mostly
+transparent ones, and file indirection.

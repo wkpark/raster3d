@@ -1,6 +1,6 @@
 Files
 	avs2ps.l        render.l        rods.l       normal3d.l
-	raster3d.l      ribbon.l        balls.l
+	raster3d.l      ribbon.l        balls.l      stereo3d.l
 
 These are standard unix man pages to be filtered through nroff.
 Install these files by moving them to the appropriate system directory,
@@ -12,14 +12,14 @@ Files
 	avs2ps.html        render.html        rods.html
 	raster3d.html      ribbon.html        balls.html      normal3d.html
 	r3d_hints.html     r3d_labels.html    r3d_transparent.html
-	r3d_icon.gif       index_button.gif
+	stereo3d.html      r3d_icon.gif       index_button.gif
 
 These are hypertext versions of the PostScript documentation.  I do not 
 know of any truly general conventions for where to install them, but
 /usr/local/man/html seems a likely bet.
 
 File
-	docs.ps
+	manual.ps
 
 This file contains a PostScript version of the complete Raster3D
 documentation. It is formatted for printing to double-sided pages.

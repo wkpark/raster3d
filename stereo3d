@@ -1,0 +1,43 @@
+#!/bin/csh
+#
+# Raster3D Version 2.3 utility script "stereo3d" renders
+# a single Raster3D scene description as a side-by-side stereo pair.
+# Requires ImageMagick utilities identify, mogrify, and montage.
+# As written requires TIFF support, although this could be changed.
+# As written also requites nawk, although perl would do fine I'm sure.
+# This script was tested using ImageMagick version 3.8.0
+#
+# Usage:	stereo3d render_input_file
+# Temporary files:
+# 		left.r3d	header records for left eye view
+#		right.r3d	header records for right eye view
+#		stereo3d.tmp	normalization of render_input_file
+#		left.tiff	rendered image for left eye
+#		right.tiff	rendered image for right eye
+# Output:
+#		stereo.tiff	composite side-by-side stereo pair
+#
+# Ethan A Merritt March 1997
+#
+if ($1 == '') then
+   echo "Usage:"
+   echo "	stereo3d render_input_file"
+   exit
+endif
+#
+normal3d -stereo < $1 > stereo3d.tmp
+echo "@stereo3d.tmp" >> left.r3d
+echo "@stereo3d.tmp" >> right.r3d
+render -tiff left.tiff  < left.r3d
+render -tiff right.tiff < right.r3d
+mogrify -bordercolor black -border 2x2 left.tiff
+mogrify -bordercolor black -border 2x2 right.tiff
+setenv SIZE `identify left.tiff | nawk '{for(i=1;i<=NF;i++){if ($i~"[0-9]*x[0-9]*") {print $i}}}'`
+printenv SIZE
+montage -geometry $SIZE+0+0! -borderwidth 0 +frame -scene 0 -label "" left.tiff right.tiff stereo.tiff
+mogrify -bordercolor black -border 2x2 stereo.tiff
+#
+# clean up
+#
+rm -f left.r3d right.r3d stereo3d.tmp
+rm -f left.tiff right.tiff

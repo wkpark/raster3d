@@ -3,7 +3,7 @@
 #
 LDFLAGS = -bloadmap:loadmap.lis
 CFLAGS  = -g
-FFLAGS  = -O -qtkq_size=20000 
+FFLAGS  = -O -qtkq_size=20000 -qintlog
 
 #
 # If you choose to build Raster3D with support for direct output of

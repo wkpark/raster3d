@@ -1,0 +1,39 @@
+Example of material properties and file indirection
+64 51     tiles in x,y
+18 18     pixels (x,y) per tile
+3         3x3 virtual pixels -> 2x2 pixels
+0 0 0     background colour
+T         no shadows cast
+25        Phong power
+0.15      secondary light contribution
+0.05      ambient light contribution
+0.25      specular reflection component
+4.0       eye position
+1 1 1     main light source position
+1 0 0 0   input coordinate, radius transformation
+0 1 0 0
+0 0 1 0
+0 0 0 2.8
+3         mixed objects
+*
+*
+*
+9 Two rows of spheres drawn with different transparency options
+@ex7_row1.r3d
+@ex7_row2.r3d
+9 A few more spheres drawn with explicit materials
+@ex7_material1.r3d
+2
+ -0.8  0.5 0.5    0.2    0.0 0.3 1.0
+9 End that material, start another one
+@ex7_material2.r3d
+2
+  0.6 -0.4 0.5    0.2    0.1 1.0 0.2
+9 End that material, start another one
+@ex7_material3.r3d
+2
+  0.3 -0.7 0.5    0.2    1.0 0.2 0.1
+2
+ -0.3  0.5 0.5    0.2    0.7 0.7 0.6
+9 The following file contains further levels of indirection
+@ex7_rods.r3d

@@ -1,5 +1,5 @@
 /*
- * Raster3D V2.2
+ * Raster3D V2.3(alpha)
  * local.c
  *
  * Output from render.f is performed by calls to routine LOCAL,
@@ -27,6 +27,13 @@
  * Output images may be viewed using the "ipaste" command, and
  * manipulated using various other utilities provided under
  * 4DGifts/iristools/imgtools.
+ *
+ * V2.3(alpha)  These are for debugging, not intended for general use
+ *	command line options
+ *		-debug  passes flag back to render
+ *		-alpha  emit alpha channel
+ *		-aaN, 	where N=(0,1,2,3,4) forces anti-aliasing option
+ *		-invert	invert y coordinate axis
  */
 
 #include	<stdio.h>
@@ -42,6 +49,11 @@
 #include        <tiffio.h>
 #endif
 
+/* Define bits in returned status */
+#define		ANTIALIAS	007
+#define		INVERT		010
+#define		DEBUGGING	020
+
 /* HPUX lacks Fortran intrinsic functions AND and OR for some reason, */
 /* so I put a copy here. On the other hand HPUX has an unusually sane */
 /* calling convention for Fortran subroutine names.                   */
@@ -51,10 +63,11 @@ int and(i,j) int *i,*j; {return (*i & *j);}
 int or(i,j)  int *i,*j; {return (*i | *j);}
 #endif
 
+int		alpha_channel = 0;
 
-local_(option,buffer1,buffer2,buffer3)
+local_(option,buffer1,buffer2,buffer3,buffer4)
      int	*option;
-     short	*buffer1, *buffer2, *buffer3;
+     short	*buffer1, *buffer2, *buffer3, *buffer4;
 {
   
   /* Everyone needs these */
@@ -62,6 +75,8 @@ local_(option,buffer1,buffer2,buffer3)
   static int	mode= -1;
   int	        i;
   static char	*ofile;
+  int		status = 0;
+  int		invert = 0;
   
   /* For -original output mode only */
   static int header[8] = { 3, 1, 1, 0, 0, 0, 0, 0 };
@@ -82,12 +97,41 @@ local_(option,buffer1,buffer2,buffer3)
 #endif
   
   /*
-   * First call (option=0) is to determine the output mode
-   * Mode is returned to the caller (render.f), but is only used there
-   * to check for image inversion (0 => invert y-axis of picture)
+   * First call (option=0) is to determine the output mode.
+   * As of V2.2.1 multiple bits may be set in the value returned.
    */
   
   if (*option == 0) {
+    
+    if (strncmp( (char *)buffer1, "-alpha", 6) ==0)
+      {
+      fprintf(stderr,"\nAlpha channel on output\n");
+      alpha_channel = 1;
+      buffer1 = buffer2;   buffer2 = buffer3;
+      }
+
+    if (strncmp( (char *)buffer1, "-debug", 6) ==0)
+      {
+      fprintf(stderr,"\nDebugging mode selected\n");
+      status |= DEBUGGING;
+      buffer1 = buffer2;   buffer2 = buffer3;
+      }
+
+    if (strncmp( (char *)buffer1, "-aa",3) ==0)
+      {
+      if (((char *)buffer1)[3] == '1') status |= 1;
+      if (((char *)buffer1)[3] == '2') status |= 2;
+      if (((char *)buffer1)[3] == '3') status |= 3;
+      if (((char *)buffer1)[3] == '4') status |= 4;
+      if (status & ANTIALIAS == 0) status |= 4;
+      buffer1 = buffer2;   buffer2 = buffer3;
+      }
+
+    else if (strncmp( (char *)buffer1, "-invert", 7) ==0)
+      {
+      invert = !invert;
+      buffer1 = buffer2;   buffer2 = buffer3;
+      }
     
     if (strncmp( (char *)buffer1, "-tiff", 5) == 0)
       {
@@ -95,8 +139,12 @@ local_(option,buffer1,buffer2,buffer3)
 	mode  = 3;
 	ofile = (char *)buffer2;
 #else
-	fprintf(stderr,"\n This version of render does not support -tiff\n");
+	fprintf(stderr,
+		"\n This copy of render was not built with -tiff library\n");
 	exit(-1);
+#endif
+#ifndef TIFF_INVERT
+	invert = !invert;
 #endif
       }
     else if (strncmp( (char *)buffer1, "-sgi" , 4) == 0)
@@ -104,13 +152,18 @@ local_(option,buffer1,buffer2,buffer3)
 #ifdef      LIBIMAGE_SUPPORT
 	mode  = 2;
 	ofile = (char *)buffer2;
+	invert = !invert;
 #else
-	fprintf(stderr,"\n This version of render does not support -sgi\n");
+	fprintf(stderr,
+		"\n This copy of render was not built with -sgi library\n");
 	exit(-1);
 #endif
       }
     else if (strncmp( (char *)buffer1, "-orig", 5) == 0)
-      mode  = 1;
+      {
+      	mode  = 1;
+	invert = !invert;
+      }
     else if (strncmp( (char *)buffer1, "  ", 2) != 0)
       {
 	fprintf(stderr,
@@ -123,12 +176,10 @@ local_(option,buffer1,buffer2,buffer3)
       }
     else /* default avs mode */
       mode  = 0;
-#ifdef TIFF_INVERT
-    if (mode == 3)
-	return( 0 );
-    else
-#endif
-    return( mode );
+
+    if (invert) status |= INVERT;
+
+    return( status );
   }
   
   /*
@@ -161,13 +212,15 @@ local_(option,buffer1,buffer2,buffer3)
 	    ofile = "render.tif";
 	  tfile=TIFFOpen(ofile,"w");
 	  TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.2");
+	  TIFFSetField(tfile,TIFFTAG_SOFTWARE,"Raster3D Version 2.3alpha");
 	  TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
-	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,3);
+	  TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
 	  TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
 	  TIFFSetField(tfile,TIFFTAG_IMAGEWIDTH,xsize);
 	  TIFFSetField(tfile,TIFFTAG_IMAGELENGTH,ysize);
-/*	  TIFFSetField(tfile,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB); */
+#ifdef __alpha
+	  TIFFSetField(tfile,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB);
+#endif
 #ifdef	TIFF_INVERT
 	  TIFFSetField(tfile,TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
 #else
@@ -179,6 +232,13 @@ local_(option,buffer1,buffer2,buffer3)
 	  if (rows_per_strip == 0)
 	    rows_per_strip=1;
 	  TIFFSetField(tfile,TIFFTAG_ROWSPERSTRIP,rows_per_strip);
+	  if (alpha_channel)
+	    {
+	    uint16 extra_samples, sample_info[1];
+	    extra_samples=1;
+	    sample_info[0]=EXTRASAMPLE_ASSOCALPHA;
+	    TIFFSetField(tfile,TIFFTAG_EXTRASAMPLES,extra_samples,&sample_info[0]);
+	    }
 	  scanline=(unsigned char *) malloc(TIFFScanlineSize(tfile));
 	  if (scanline == (unsigned char *) NULL)
 	    {
@@ -196,7 +256,7 @@ local_(option,buffer1,buffer2,buffer3)
 	      ofile = strtok( ofile, " " );
 	    else
 	      ofile = "render.rgb";
-	    image = iopen(ofile,"w",RLE(1),3,xsize,ysize,3);
+	    image = iopen(ofile,"w",RLE(1),3,xsize,ysize,alpha_channel?4:3);
 	  }
 	else
 	  
@@ -228,7 +288,7 @@ local_(option,buffer1,buffer2,buffer3)
 #ifdef TIFF_SUPPORT
       if (mode ==3)
 	{
-	  my_write_tiff(tfile,buffer1,buffer2,buffer3,xsize,scanline);
+	  my_write_tiff(tfile,buffer1,buffer2,buffer3,buffer4,xsize,scanline);
 	}
       else
 #endif
@@ -239,6 +299,8 @@ local_(option,buffer1,buffer2,buffer3)
 	    putrow(image,buffer1,row,0);
 	    putrow(image,buffer2,row,1);
 	    putrow(image,buffer3,row,2);
+	    if (alpha_channel)
+	        putrow(image,buffer4,row,3);
 	    row++;
 	  }
 	else
@@ -256,9 +318,17 @@ local_(option,buffer1,buffer2,buffer3)
       
 	  else      /* AVS image file (AlphaRGB) bytes */
 	    {
+	    if (alpha_channel)
 	      for (i=0; i<xsize; i++)
 		{
-/*		  putchar( 0 );	*/
+		  putchar( buffer4[i] );
+		  putchar( buffer1[i] );
+		  putchar( buffer2[i] );
+		  putchar( buffer3[i] );
+		}
+	    else
+	      for (i=0; i<xsize; i++)
+		{
 		  putchar( 255 );
 		  putchar( buffer1[i] );
 		  putchar( buffer2[i] );
@@ -284,8 +354,8 @@ local_(option,buffer1,buffer2,buffer3)
       if (mode == 2)
 	iclose(image);
 #endif
+
       break;
-      
       
       /* option 4: add title to image file */
       
@@ -308,9 +378,9 @@ local_(option,buffer1,buffer2,buffer3)
 }
 
 #ifdef TIFF_SUPPORT
-void my_write_tiff(fp, buf1, buf2, buf3, size, scanline)
+void my_write_tiff(fp, buf1, buf2, buf3, buf4, size, scanline)
      TIFF *fp;
-     short buf1[], buf2[], buf3[];
+     short buf1[], buf2[], buf3[], buf4[];
      int   size;
      unsigned char scanline[];
 
@@ -318,11 +388,20 @@ void my_write_tiff(fp, buf1, buf2, buf3, size, scanline)
 static int row=0;
 int i, j= -1;
 
-for (i=0; i<size; i++) {
-  scanline[j++] = buf3[i];
-  scanline[j++] = buf1[i];
-  scanline[j++] = buf2[i];
-}
+  if (alpha_channel)
+    for (i=0; i<size; i++) {
+	scanline[j++] = buf4[i];
+	scanline[j++] = buf1[i];
+	scanline[j++] = buf2[i];
+	scanline[j++] = buf3[i];
+    }
+  else
+    for (i=0; i<size; i++) {
+	scanline[j++] = buf3[i];
+	scanline[j++] = buf1[i];
+	scanline[j++] = buf2[i];
+    }
+
 if (TIFFWriteScanline(fp,scanline,row,0) < 0)
   fprintf (stderr, "\n", "Bad return code from TIFF write\n");
 row++;

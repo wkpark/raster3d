@@ -1,0 +1,11 @@
+#!/bin/csh
+#
+render -tiff render.tiff < $1
+labels3d -fontscale 2.0 < $1 > labels3d.ps
+setenv SIZE `identify render.tiff | nawk '{for(i=1;i<=NF;i++){if ($i~"[0-9]*x[0-9]*") {print $i}}}'`
+alias gs3d gs -sDEVICE=ppm -dNOPAUSE -q -sOutputFile=labels3d.ppm
+gs3d -g$SIZE labels3d.ps -c quit
+combine -compose over render.tiff labels3d.ppm labels3d.tiff
+#
+rm -f labels3d.ps labels3d.ppm render.tiff
+#

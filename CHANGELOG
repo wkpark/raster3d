@@ -1,10 +1,27 @@
-29-Aug-96	Correct errors in documentation describing stereo figures 
- 5-Jun-96	V2.2c default is to treat surface triangles as "2-sided"
-		optionally (INMODE=4) skip rendering backward-facing ones for
-		savings in speed and storage space. Will probably fine-tune this
-		with additional options later.
-20-May-96	Makefile for HPUX from Andrew Dalke, 
-		and matching conditional HPUX code in local.c 
+ 8-May-97	correct order of scheme=4 testing in normal3d.f
+ 7-May-97	V2.3c 
+		remove DATA statements to make Sun compiler happy
+ 5-May-97	Multiple glow lights, corrections to label placement
+		glow lights and labels now handled by normal3d
+		example file for labels
+		make cyl1 a function (remove coordinate/scale dependence)
+19-Apr-97	Tidy things up for beta release V2.3b 
+ 8-Mar-97	Object type 13 = glow light source
+ 6-Mar-97	Large tiles + many objects could give shadowing errors
+		Increase SLOP parameter, and make it scale with tile size
+25-Feb-97	-radius option for rods
+		additional MATERIAL records signaled by OPT(4) > 0
+		stereo3d script
+27-Jan-97	trap end-on cylinders to prevent divide by zero
+		Accept (but ignore) label object types 10 and 11 in render.
+		New utility labels3d that processes labels in render input file
+22-Nov-96	per-tile transparency count (faster), also temp variable
+		for kstart(itile,jtile) (1.5% faster - not bad for single line)
+15-Nov-96	SCHEME=0 writes alpha channel to output image
+10-Oct-96	Trap and forgive shadowing error if NSX or NSY too small
+19-Aug-96	Revised set of patches to Molscript.  Not yet quite stable. 
+ 6-Jun-96	Change default to no HIDDEN triangles, fix minor bug in normals 
+ 3-May-96	File indirection added to render.f 
  9-Feb-96	add utility programs normal3d and ungrasp
  8-Feb-96	V2.2beta has support for transparent materials 
  1-Feb-96	Fix major problems with explicit surface normals

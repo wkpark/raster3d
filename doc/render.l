@@ -1,6 +1,6 @@
 .l
 .nh
-.TH RENDER 1 "7 February 1996" "Raster3D"
+.TH RENDER 1 "19 March 1997" "Raster3D V2.3"
 .SH NAME
 render - image rendering program of Raster3D molecular graphics package
 .SH SYNOPSIS
@@ -56,6 +56,7 @@ By default \fIrender\fP will produce an AVS-compatible image on stdout.
 The -tiff flag will cause it to output a TIFF image to the specified
 file instead.
 
+.TP 5
 .B "-sgi filename"
 
 Only if compiled with -DLIBIMAGE_SUPPORT.
@@ -65,6 +66,7 @@ instead.
 In this case default output is to the file render.rgb, but specifying a file
 on the command line will override this default.
 
+.TP 5
 .B "-original"
 
 This flag causes \fIrender\fP to produce an output image compatible with
@@ -100,17 +102,21 @@ Number of computing pixels per tile in each direction.
 Maximum = 36 (controlled by MAXNPX, MAXNPY in render.f)
 .TP 5 
 .B     SCHEME   
-Pixel averaging (anti-aliasing) scheme (1, 2, or 3), where
- 1 means   1 computing pixel  for 1 output pixel
- 2 means 2x2 computing pixels for 1 output pixel
- 3 means 3x3 computing pixels for 2x2 output pixels
+Pixel averaging (anti-aliasing) scheme. Anti-aliasing
+reduces the jaggedness of edges at the cost of additional
+computation.
+ 0 no anti-aliasing, include alpha blend (matte) channel 
+   in output image
+ 1 no anti-alaising, no matte channel
+ 2 anti-alias by averaging 2x2 block of computed pixels for 
+   each output pixel
+ 3 anti-alias by averaging 3x3 block of computed pixels for 
+   each 2x2 block of output pixels
 
-(i.e. scheme 1 produces a NTX*NPX by NTY*NPY pixel image,
-scheme 3 produces a (2/3)NTX*NPX by (2/3)NTY*NPY image)
-Increased anti-aliasing produces a scene in which objects
-have less jagged edges, at the cost of additional computation.
-Note that if you select scheme 3 then NPX and NPY must be
-multiples of 3.
+I.e. schemes 0, 1, and 4 produce a NTX*NPX by NTY*NPY pixel image;
+scheme 3 produces a (2/3)NTX*NPX by (2/3)NTY*NPY image.
+Scheme 3 requires NPX and NPY to be divisible by 3.
+Schemes 2 and 4 require NPX and NPY to be divisible by 2.
 .TP 5 
 .B     BKGND    
 Background colour (red, green, and blue components,
@@ -190,6 +196,8 @@ The Raster3D programs always use mode INMODE 3.
  type 8 = explicit material properties for subsequent objects
  type 9 = terminate previous explicit material properties (if any)
 	  otherwise ignored, so remainder of line may act as a comment
+ type 10/11/12 = reserved for label processing (new in version 2.3)
+ type 13 = glow light source (new in version 2.3)
  type 0 = end of input file
 .TP 5 
 .B     INFMT or INFMTS
@@ -248,6 +256,40 @@ molecular graphics tools to compose figures for Raster3D to render.
     The rest of this record is ignored, so object type 9 may also
     be used as a comment record.
 
+.TP 5
+.B ADDITIONAL OBJECT TYPES ADDED IN VERSION_2.3
+.PP
+Version 2.3 of Raster3D introduces preliminary support for labels in a
+render input file. The current version recognizes object types 10/11/12
+as labels, but otherwise ignores them.
+
+  Object type 10
+    Font specifier and alignment (single line of text)
+  Object type 11
+    [XYZ] [RGB]
+    Label text
+  Object type 12
+    reserved (single line of text)
+  Object type 13
+    Glow light source. i
+    This is a colored, non-shadowing, light source with finite [x y z]
+    coordinates and a limited range of illumination. 
+    Control parameters are read in free format from a single line of 
+    input following the line specifying the object type. 
+       GLOWSRC(3) 
+           [x y z] coordinates of light source 
+       GLOWRAD 
+           limiting radius of light source (see GOPT) 
+       GLOW 
+           fractional contribution (0.0 - 1.0) of glow light to total 
+	   lighting model 
+       GOPT 
+           (integer 0/1/2/3/...) - controls functional form in which 
+	   limiting radius is applied [under development] 
+       GPHONG 
+           Phong parameter controlling specular highlights from glow light
+       GLOWCOL(3) 
+           RGB triple specifying color of glow light source  
 
 .TP 5
 .B SAMPLE HEADER
@@ -272,6 +314,36 @@ molecular graphics tools to compose figures for Raster3D to render.
  *         (free format triangle descriptors)
  *         (free format sphere descriptors)
  *         (free format cylinder descriptors)
+
+
+.PP
+.SH FILE INDIRECTION
+.PP
+At any point in the input stream to render where an object descriptor
+would be legal, it is also legal to insert a line beginning with `@'.
+In this case the remainder of the line is interpreted as the
+name of a file from which further input is taken. This mechanism makes
+it possible to re-use standard objects in multiple rendered scenes, e.g.
+a set of bounding planes or standard definitions of material properties.
+When input from this level of file indirection is terminated by
+encountering an object descriptor of type 0, control returns to the
+previous input stream. Multiple levels of file indirection are possible,
+but probably not very useful.
+
+.SH ERROR MESSAGES
+.PP
+Some error messages may be safely ignored.
+.PP
+	Possible shadowing error NSXMAX= xxx
+.PP
+This is most usually caused by an object which projects far out of the field
+of view, for example a plane surface. In most cases the shadowing "error" 
+refers to a shadow which lies outside of the image entirely.  However, if
+your image does in fact contain missing or truncated shadows you can overcome
+this problem by re-compiling the render program with larger values of
+NSX and NSY as indicated by the error message.
+.PP
+Unfortunately, error other messages from render are generally not very helpful.
 
 
 .SH INCREASING THE ARRAY SIZES
@@ -307,6 +379,8 @@ recompile the render program by typing "make render".
 .TP 5
 	anonymous ftp site:	
                 ftp.bmsc.washington.edu
+	web URL:
+		http://www.bmsc.washington.edu/raster3d/raster3d.html
 .TP 5
 	contact:		
                 Ethan A Merritt

@@ -89,10 +89,12 @@ header records produced by \fIribbon\fP.
 .TP 5
 	anonymous ftp site:	
                 ftp.bmsc.washington.edu
+	web URL:
+		http://www.bmsc.washington.edu/raster3d/raster3d.html
 .TP 5
 	contact:		
                 Ethan A Merritt
-                Dept of Biological Structure SM-20
+                Dept of Biological Structure Box 357742
                 University of Washington, Seattle WA 98195
                 merritt@u.washington.edu
 

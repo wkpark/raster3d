@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH Raster3D 1 "7 February 1996" "Raster3D"
+.TH Raster3D 1 "19 March 1997" "Raster3D V2.3"
 .SH NAME
 .PP
 Raster3D molecular graphics package
@@ -20,6 +20,7 @@ figures for publication, please give proper credit to the authors:
 
      Bacon & Anderson (1988) J. Molec. Graphics 6, 219-220.
      Merritt & Murphy (1994) Acta Cryst. D50, 869-873.
+     Merritt & Bacon  (in press) Meth. Enzymol. 277.
 
 .SH DESCRIPTION
 .PP
@@ -46,22 +47,22 @@ format, the rendering program is not specific to molecular graphics.
 \fIRaster3D\fP currently supports rendering of five object types: 
 spheres, triangles, planes, smooth-ended cylinders, and round-ended
 cylinders.  
+
 Version 2.1 added support for two additional "object types"
 which are really modifiers for characteristic properties of existing objects.  
 One of these allows specification
 of explicit surface normals at triangle vertices; the other allows specification
 of surface reflectance properties specific to individual objects.  
 
-Version 2.2: The major new feature in Raster3D Version 2.2 is support
-for transparent objects. In conjunction with the provision for
-describing surfaces in terms of triangles with explicit surface normals
-this permits Raster3D rendering of transparent molecular surfaces
-jointly with the existing provisions for depicting molecular structures.
-In keeping with the philosophy of the package, the intention is not to
-duplicate the power of more general programs in composing or describing
-such surfaces, but rather to provide a tool for creating images with
-greater resolution and photorealism than is generally possible using a
-graphics workstation screen.
+Version 2.2 added support for transparent objects, including transparent 
+molecular surfaces.
+
+Version 2.3: The \fIrender\fP program now supports file indirection, additional
+anti-aliasing options, a separate alpha blend (matte) channel in the rendered
+image, internal light sources, and some additional properties for 
+special materials. There is now an option to specify an explicit bond radius 
+to \fIrods\fP. There is a new shell script \fIstereo3d\fP that can 
+automatically generate a side-by-side stereo pair from a Raster3D input file.
 
 .SH EXAMPLES
 
@@ -104,10 +105,12 @@ support has been built into the render program:
 .TP 5
 	anonymous ftp site:	
                 ftp.bmsc.washington.edu
+	web URL:
+		http://www.bmsc.washington.edu/raster3d/raster3d.html
 .TP 5
 	contact:		
                 Ethan A Merritt
-                Dept of Biological Structure SM-20
+                Dept of Biological Structure Box 357742
                 University of Washington, Seattle WA 98195
                 merritt@u.washington.edu
 

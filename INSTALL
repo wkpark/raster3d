@@ -10,13 +10,11 @@ To install Raster3D
    TIFF image files you must
 	1) Obtain and install the TIFF library. There are a number of
 	   implementations available on the net.  I have been using
-	   Sam Leffler's version 3.4beta024, available via anonymous ftp
+	   Sam Leffler's version 3.3beta, available via anonymous ftp
 	   from sgi.com.
-	2) Edit the DEFINES, INCLUDES and LIBS definitions in the Makefile,
-	   DEFINES = -DTIFF_SUPPORT
+	2) Edit the INCLUDES and LIBS definitions in the Makefile,
+	   INCLUDES = -DTIFF_SUPPORT
 	   LIBS     = -ltiff
-	3) You may also wish to add the option -DTIFF_INVERT to the
-	   DEFINES line (see notes below)
 
    On SGI machines you may want to build in support for direct output to
    image files compatible with the libimage utilities.  In this case you
@@ -24,8 +22,8 @@ To install Raster3D
 	1) Make sure that libimage.a is installed on your machine
 	   (the source is on one of the optional installation kits in the
 	   standard Irix distribution).
-	2) Edit the DEFINES and LIBS definitions in the Makefile,
-	   DEFINES = -DLIBIMAGE_SUPPORT
+	2) Edit the INCLUDES and LIBS definitions in the Makefile,
+	   INCLUDES = -DLIBIMAGE_SUPPORT
 	   LIBS     = -limage
 
 3) Install the package:
@@ -39,25 +37,41 @@ A sample installation on a DEC Alpha might go:
 	vi Makefile                    # to check options, etc
 	make install
 
-NOTES
-=====
+Notes -
 
-I am told that some applications used to print TIFF images
-(notable among them Adobe Photoshop) fail to correctly interpret the
-TIFF header tag which defines the image orientation.  As a work-around
-for this problem I have added support for a conditional compilation
-directive TIFF_INVERT.  If you find that your TIFF images end up
-inverted after printing (particularly if you know that you will be
-using PhotoShop), then you may wish to modify the Makefile to
-read:
-	DEFINES = -DTIFF_SUPPORT -DTIFF_INVERT
-Note that applications which correctly read the TIFF header should 
-work in either case; this workaround is just to fool the stupid ones
-which think they already know the orientation without bothering to
-look.
+	The install procedure does not automatically install the html
+version of the documentation, nor does it print the PostScript version.
 
-I don't have a linux machine or a SUN, so I haven't yet tested
-Version 2.2 on these systems.  If you find any problems with these or
-any other platforms please let me know.  The Makefile for HPUX 
-involves a bit more customization than most of the others; if you run
-into trouble during compilation, look carefully at the Makefile.
+=========================================================================
+Known Problems and notes for specific operating systems
+=========================================================================
+
+=== Digital Unix ===
+
+DEC's f90 compiler produces broken code for render.f when the optimization
+level is set higher than -O1.   Use the f77 compiler or f90 -O1.
+
+=== IBM/AIX ===
+
+AIX V4.2 doesn't like the READONLY keyword in Fortran OPEN statements.
+You can work around this by using the ACTION='READ' keyword for Fortran 90
+(which is also OK in the AIX xlf compiler).  This change is required in
+	render.f	line 875
+	normal3d.f	line 565
+The AIX compiler also doesn't like the Q formats, but that doesn't seem
+to hurt anything.
+
+=== OS/2 ===
+
+Uwe Baumert reports the following:
+
+I'm pleased to say that I was also able to compile your Raster3D package
+under OS/2 (Linux will follow). I used f2c 19970211. I had to modify some
+code (I got wrong iocontrols etc.).  
+[EAM - He means the OPEN statements as described for AIX above]
+I compiled against the libtiff-library (version 4.2). I used the one that
+was included in the NETPBM-Port of Peter Meerwald (pmeerw@cosy.sbg.ac.at)
+and is available from
+ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip. 
+
+=== Linux ===

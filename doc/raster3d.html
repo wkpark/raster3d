@@ -29,8 +29,10 @@ also render images composed using version 1.4 of
 	<li><a href="render.html">render</a> 
 	<li><a href="ribbon.html">ribbon</a>
 	<li><a href="rods.html">rods</a>
+	<li><a href="stereo3d.html">stereo3d</a>
 	</ul>
     <li><a href="#source">Distribution site</a>
+    <li><a href="#related">Related programs</a>
     <li><a href="#authors">Authors</a>
     <li><a href="#cite">Citing the program</a>
     <li><a href="#refs">References</a>
@@ -60,26 +62,30 @@ image.
 
 Raster3D currently supports rendering five object types: spheres,
 triangles, planes, smooth-ended cylinders, and round-ended cylinders.
+<p>
 Version 2.1 added support for two additional "object types" which are
 really modifiers for characteristic properties of existing objects. One
 of these allows specification of explicit surface normals at triangle
 vertices; the other allows specification of surface reflectance
-properties specific to individual objects.<p>
+properties specific to individual objects.
+<p>
 
-<b>Version 2.2</b>: The major new feature in Raster3D Version 2.2 is support
-for transparent objects.
-This permits Raster3D rendering of transparent molecular surfaces
-in combination with the existing provisions for depicting molecular structures.
-In keeping with the philosophy of the package, the intention is not to
-duplicate the power of more general programs for composing or describing
-such surfaces. The idea rather is to provide a tool for creating images with
-greater resolution and photorealism than is generally possible using a
-graphics workstation screen.<p>
+Version 2.2 added support for transparent objects, including transparent
+molecular surfaces.
+<p>
 
-Also new in this version is the 
-<a href="normal3d.html">normal3d</a>
-utility, a tool to facilitate merging Raster3D input files created by different
-programs.<p>
+<b>Version 2.3</b>:
+The <a href="render.html"> render</a> program
+now supports file indirection, additional anti-aliasing options, internal
+light sources, a separate alpha blend (matte) channel in the rendered image, 
+and some additional properties for special materials. 
+There is now an option to specify an explicit bond radius to the 
+<a href="rods.html">rods</a> program.
+There is a new shell script, 
+<a href="stereo3d.html">stereo3d</a>
+to automatically generate a side-by-side stereo pair from a Raster3D input file.
+
+
 
 <h4>
 <a name="examples">EXAMPLES</a></h4>
@@ -175,20 +181,59 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 <br>merritt@u.washington.edu</dl>
 
 <h4><a name="related">RELATED PROGRAMS </a></h4>
-In order to build in support for the direct output of TIFF image files, you
-must separately obtain and install a copy of the TIFF library (libtiff.a).
-Several implementations are available, including one by Sam Leffler which may
-be obtained via anonymous ftp from 
-<a href="ftp://ftp.sgi.com"> sgi.com</a>.<p>
-In order to view the rendered images on a workstation screen you must also
-obtain and install an image viewer. Two commonly available viewers are John
-Christy's 
-<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">ImageMagick</a> 
-(also available via anonymous ftp from 
-<a href="ftp://ftp.x.org"> ftp.x.org </a>) and John Bradley's xv.<p>
+
+<h5>Required for full installation:</h5>
+<dl>
+    <dt>TIFF
+    <dd>In order to build in support for the direct output of TIFF image files,
+	you must separately obtain and install a copy of the TIFF library 
+	(libtiff.a).  Several implementations are available, including one by 
+	Sam Leffler which may be obtained via anonymous ftp from 
+	<a href="ftp://ftp.sgi.com"> sgi.com</a>.
+    <dt>ImageMagick
+    <dd>In order to view the rendered images on a workstation screen you must 
+	also obtain and install an image viewer. 
+	Two commonly available viewers are John Christy's 
+	<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">
+	ImageMagick</a> 
+	(also available via anonymous ftp from 
+	<a href="ftp://ftp.x.org"> 
+	ftp.x.org </a>) 
+	and John Bradley's xv.<p>
+</dl>
+
+<h5>Some other programs with direct Raster3D output modes:</h5>
+<dl>
+    <dt>Molscript
+    <dd>Figures composed in Molscript can be rendered in Raster3D rather than
+	being printed as PostScript images.  The features of Raster3D version
+	2.0 are supported by Moslcript version 1.4 (with a couple of additional
+	patches that come in the Raster3D distribution).  To obtain Molscript
+	please contact Per Kraulis directly (Email:
+	<a href="mailto:per.kraulis@sto.pharmacia.se">
+	per.kraulis@sto.pharmacia.se</a>).
+    <dt>TkRaster3D
+    <dd> an X11-based front-end (GUI) for the Raster3D programs developed by 
+	Hillary Gilson at NIST, 
+	<a href="http://www.carb.nist.gov/TkRaster3D">
+	http://www.carb.nist.gov/TkRaster3D</a>
+    <dt>VMD
+    <dd>Biomolecular visualization tool from the Theoretical Biophysics group 
+	at the University of Illinois, 
+	<a href="http://www.ks.uiuc.edu/Research/vmd/">
+	http://www.ks.uiuc.edu/Research/vmd/</a>
+    <dt>Xfit/XtalView
+    <dd> General crystallographic model building, map fitting, and 
+	analysis program by Duncan McRee, available in both academic and 
+	commercial versions, 
+	<a href="http://www.scripps.edu/pub/dem-web/index.html">
+	http://www.scripps.edu/pub/dem-web/index.html</a>
+</dl>
+
 The avs2ps utility for direct production of black &amp; white PostScript images
 is now included in the Raster3D distribution. It replaces earlier
 machine-dependent programs in the viewtools kit.<p>
+
 Several auxiliary programs are available from the ftp site above which may be
 useful, though they have not been kept up to date with the current Raster3D
 version. These include two attempts to aid in the composition of Raster3D
@@ -217,6 +262,8 @@ Kraulis, P.J. (1991) ``MOLSCRIPT: a program to produce both detailed and
 schematic plots of protein structures''. J. Appl. Cryst. 24, 946-950.<p>
 Merritt, E.A. &amp; Murphy, M.E.P. (1994) ``Raster3D Version 2.0 - A Program
 for Photorealistic Molecular Graphics''. Acta Cryst. D50, 869-873.<p>
+Merritt, E.A. &amp; Bacon, D.J. (in press) ``Raster3D 
+Photorealistic Molecular Graphics''. Methods in Enzymology 277.<p>
 
 <hr>
 <a href="raster3d.html">

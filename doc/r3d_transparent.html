@@ -56,7 +56,7 @@ material.
 	<dd> red, green, and blue components of the specular highlights.
              Remember that each object has an associated RGB triple that 
              determines its colour. But the "colour" of a transparent object 
-             is somewhat problematic, you have the option of passing the
+             is somewhat problematic, so you have the option of passing the
              object's basic colour through to appear also in the specular
              highlighting. This is indicated by setting SR, SG, SB negative
              as in the example above.
@@ -69,8 +69,22 @@ material.
 
 <dt>OPTS   
 	<dd> These four parameters are reserved for future expansion of the
-             MATERIAL specification.  They must be present, but the current
-             version of the program ignores them.
+             MATERIAL specification.  They must be present, but 
+	     but version 2.3 of the program uses only the first one (OPTS[1]). 
+	     The current options supported for this parameter are:
+	     <dl>
+	     <dt>OPTS[1] = 0
+		 <dd> All transparent objects will be rendered, subject to the 
+		 limit that at a depth of three overlapping transparent objects
+		 the third is effectively opaque
+	     <dt>OPTS[1] = 1
+		 <dd> Only the topmost object of a transparent material will be
+		 rendered at all. This will, for example, cause internal 
+		 cavities to disappear from a molecular surface covering 
+		 an entire protein. It also allows rendering only the outside
+		 surface of a transparent CPK model.
+	     </dl>
+
 </dl>
 
 <h4>

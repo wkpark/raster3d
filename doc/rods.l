@@ -6,7 +6,7 @@
 rods - preprocessor for ball-and-stick models in Raster3D molecular graphics package
 .SH SYNOPSIS
 
-.B "rods" [\fI-h\fP] [\fI-b\fP]
+.B "rods" [\fI-h\fP] [\fI-b\fP] [\fI-radius R\fP]
 .PP
 \fIRods\fP reads a file describing atom colours and/or a Brookhaven 
 PDB coordinate file and produces a file containing Raster3D descriptor
@@ -44,6 +44,11 @@ By default \fIrods\fP will describe bonds only; the -b flag will
 cause it to include spheres at the atom positions also, yielding
 a ball-and-stick representation.  
 
+.B "-radius R"
+.PP
+By default \fIrods\fP will draw bonds as cylinders with a 0.2A radius.
+The radius option allows you to change this cylindrical radius.
+
 .SH DESCRIPTION
 .PP 
 The input to \fIrods\fP consists of a single text file
@@ -52,8 +57,8 @@ PDB data bank format.
 Coordinates are output as Raster3D descriptor records
 with colours and sphere radii assigned according to the COLO
 records described below.  
-Ball-and-stick figures have atoms drawn
-at 0.2 * VanderWaals radius, connected by rods with 0.2A cylindrical radius.
+Ball-and-stick figures have atoms drawn at 0.2 * VanderWaals radius, 
+connected by rods with a default 0.2A cylindrical radius.
 Bonds are drawn for atoms which lie closer to each other than
 0.6 * (sum of VanderWaals radii).
 By default the output file contains a set of header records as
@@ -119,10 +124,12 @@ header records produced by \fIrods\fP.
 .TP 5
 	anonymous ftp site:	
                 ftp.bmsc.washington.edu
+	web URL:
+		http://www.bmsc.washington.edu/raster3d/raster3d.html
 .TP 5
 	contact:		
                 Ethan A Merritt
-                Dept of Biological Structure SM-20
+                Dept of Biological Structure Box 357742
                 University of Washington, Seattle WA 98195
                 merritt@u.washington.edu
 

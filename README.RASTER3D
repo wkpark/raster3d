@@ -8,10 +8,10 @@ PROGRAM:
 	Ancillary programs process atomic coordinates from Brookhaven PDB 
 	files into rendering descriptions for pictures composed of ribbons, 
 	space-filling atoms, bonds, ball+stick, etc.  Raster3D can also be 
-	used to render pictures composed in Per Kraulis' MOLSCRIPT program 
-	in glorious 3D with highlights, shadowing, etc. (NB: you will need 
-	MOLSCRIPT V1.4 to get the full benefit of this).  Output is to 
-	pixel image files with 24 bits of color information per pixel.
+	used to render pictures composed in other widely used programs,
+	including Molscript, VMD, XtalView.  Output is to pixel image files
+	with 24 bits of color information per pixel plus an optional alpha
+	blend channel.
 
 AVAILABILITY:
 	Raster3d is freely available but unsupported. 

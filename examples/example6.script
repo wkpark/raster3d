@@ -42,12 +42,13 @@ normal3d -h < temp1.r3d > temp2.r3d
 #			subsequent objects to be rendered as transparent
 #	temp2.r3d	The normalized surface description we just made
 #
-cat example3.r3d transparent.r3d temp2.r3d > temp3.r3d
+cat example3.r3d transparent.r3d temp2.r3d > example6.r3d
 #
 # Now render it!
 #
-render < temp3.r3d | display avs:- &
+render < example6.r3d | display avs:- &
 #
 # Clean up
 #
-rm -f temp1.r3d temp2.r3d temp3.r3d
+rm -f temp1.r3d temp2.r3d
+#rm -f example6.r3d

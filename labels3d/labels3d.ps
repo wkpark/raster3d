@@ -1,0 +1,65 @@
+%!PS-Adobe-3.0
+%%Creator: Labels3d
+%%Pages: 1
+%%BoundingBox: 0 0   768   768
+%%BeginProlog
+% These are the only control parameters
+/FontSize  2.000 def
+/UnitHeight    384 def
+/UnitWidth     384 def
+% 
+/FontScale { FontSize mul scalefont } bind def
+/Center {
+ dup stringwidth
+ exch -2 div exch -2 div rmoveto
+ } bind def
+/Right {
+ dup stringwidth
+ exch -1 mul exch -1 mul rmoveto
+ } bind def
+/XYZmove {
+  pop moveto
+ } bind def
+/XYZrmove {
+  pop rmoveto
+ } bind def
+%%EndProlog
+%%BeginSetup
+gsave
+UnitWidth UnitHeight translate
+ 0.000 0.000 0.500 setrgbcolor
+UnitWidth -1 mul dup UnitHeight -1 mul newpath moveto
+UnitWidth UnitHeight -1 mul lineto UnitWidth UnitHeight lineto
+UnitHeight lineto closepath fill
+/Times-Bold findfont 12.00 FontScale setfont
+%%Endsetup
+ 0.300 0.400 0.900 setrgbcolor -180.7059  271.0588 -180.7059 XYZmove
+(This is the default font.)         show
+/Times-Roman findfont 12.00 FontScale setfont
+ 0.000 0.000 0.000 setrgbcolor   76.8000 -153.6000    0.0000 XYZmove
+(+)         show
+/Times-Italic findfont 12.00 FontScale setfont
+ 1.000 0.500 0.500 setrgbcolor   76.8000 -192.0000    0.0000 XYZmove
+(centered label?) Center  show
+/Times-Italic findfont 12.00 FontScale setfont
+ 1.000 0.500 0.500 setrgbcolor   76.8000 -230.4000    0.0000 XYZmove
+(Right label?)  Right  show
+/Times-Italic findfont 12.00 FontScale setfont
+ 1.000 0.500 0.500 setrgbcolor   76.8000 -268.8000    0.0000 XYZmove
+(Left label?)         show
+/Symbol findfont 18.00 FontScale setfont
+ 0.600 0.800 0.100 setrgbcolor -311.0886 -272.2025   38.8861 XYZmove
+(abc DEF)         show
+/Helvetica-Bold findfont 10.00 FontScale setfont
+ 0.500 0.500 0.500 setrgbcolor    0.0000   19.2000    0.0000 XYZrmove
+(superscript)         show
+/Palatino-BoldItalic findfont 30.00 FontScale setfont
+ 1.000 1.000 1.000 setrgbcolor -288.0000  326.4000    0.0000 XYZmove
+(R)         show
+/Palatino-BoldItalic findfont 18.00 FontScale setfont
+ 1.000 1.000 1.000 setrgbcolor    0.0000    0.0000    0.0000 XYZrmove
+(aster3D now does)         show
+ 1.000 1.000 1.000 setrgbcolor    0.0000    0.0000    0.0000 XYZrmove
+( labels!)         show
+%
+showpage

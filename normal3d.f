@@ -1,6 +1,13 @@
       PROGRAM NORMAL3D
 *
-* EAM Jan 1996	- 
+*     Version 2.3c (7 May 1997)
+*
+* EAM Jan 1996	- Initial release as part of version 2.2
+* EAM Aug 1996	- Add -expand option to deal with file indirection
+* EAM Feb 1997	- Handle additional MATERIAL records
+*		  -stereo flag to generate left.r3d and right.r3d
+* EAM Apr 1997	- now handles labels and glowlights
+* EAM May 1997	- (well, now it does) V2.3c
 *
 *	This program is part of the Raster3D package.
 *	It is simply a stripped down version of the input section of 
@@ -18,10 +25,12 @@
 *     - TITLE    anything you like
 *     - NTX,NTY  tiles in each direction
 *     - NPX,NPY  pixels per tile to compute in each direction
-*     - SCHEME   pixel averaging scheme (1, 2, or 3)
-*       - 1 means 1 computing pixel for 1 output pixel
+*     - SCHEME   pixel averaging scheme (0, 1, 2, 3 or 4)
+*       - 0 no anti-aliasing, maintain alpha channel
+*       - 1 no anti-aliasing, no alpha channel
 *       - 2 means 2x2 computing pixels for 1 output pixel
 *       - 3 means 3x3 computing pixels for 2x2 output pixels
+*       - 4 like 3, but NTX..NPY specify final rather than initial raster
 *     - BKGND    background colour (r,g,b in range 0 to 1)
 *     - SHADOW   "shadow mode?" (T or F)
 *     - IPHONG   Phong power (e.g., 20)
@@ -58,15 +67,18 @@
 *       - modes 1,2:  each object starts on a new line
 *         - read according to the single format given
 *       - mode 3:  each object is preceded by a line giving type
-*         - type 1:  triangle (to be read with 1st format)
-*         - type 2:  sphere (to be read with 2nd format)
-*         - type 3:  cylinder with rounded ends (3rd format) EAM
-*         - type 4:  trcone made of spheres (3rd format) not implemented
-*         - type 5:  cylinder with flat ends (3rd format) EAM
-*         - type 6:  plane (=triangle with infinite extent) (1st format) EAM
-*         - type 7:  normal vectors for previous triangle (1st format) EAM
-*         - type 8:  material definition which applies to subsequent objects EAM
-*         - type 9:  end previous material EAM
+*         - type 1:  triangle 
+*         - type 2:  sphere 
+*         - type 3:  cylinder with rounded ends 
+*         - type 4:  trcone made of spheres (not implemented)
+*         - type 5:  cylinder with flat ends
+*         - type 6:  plane (=triangle with infinite extent)
+*         - type 7:  normal vectors for previous triangle
+*         - type 8:  material definition which applies to subsequent objects
+*         - type 9:  end previous material
+*	  - type 10: font specifier, we need to note coordinate convention
+*	  - type 11: label, we may have to modify coordinates
+*	  - type 12:
 *         - type 0:  no more objects (equivalent to eof)
 *
 *-----------------------------------------------------------------------------
@@ -74,9 +86,17 @@
 *     Overkill:
       IMPLICIT REAL*4 (A-H, O-Z)
 *
-*     I/O units for control input, image output, info output
-      INTEGER INPUT, OUTPUT, NOISE
-      PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
+*     I/O units for control input, file indirection, data output, info output
+      INTEGER STDIN, INPUT0, OUTPUT, NOISE
+      PARAMETER (STDIN=5, INPUT0=7, OUTPUT=6, NOISE=0)
+      INTEGER LEFT, RIGHT
+      PARAMETER (LEFT=1, RIGHT=2)
+*     Allowable levels of file indirection.
+      PARAMETER (MAXLEV=3)
+      INTEGER    ILEVEL
+*
+      REAL*4	HUGE
+      PARAMETER (HUGE = 1.0e37)
 *
 *     Codes for triangle, sphere, truncated cone, and string of pearls
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
@@ -87,14 +107,15 @@
       PARAMETER (NORMS    = 7)
       PARAMETER (MATERIAL = 8)
       PARAMETER (MATEND   = 9)
-      PARAMETER (MXTYPE   = 9)
+      PARAMETER (FONT     = 10, LABEL = 11 )
+      PARAMETER (GLOWLIGHT= 13)
+      PARAMETER (MXTYPE   = 13)
 *
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
 *
 *     Title for run
       CHARACTER*80 TITLE
-      CHARACTER*80 LINE
 *
 *     Number of tiles
       INTEGER NTX, NTY
@@ -132,6 +153,9 @@
 *     Input mode
       INTEGER INMODE
 *
+*     Buffer one line of input for decoding
+      CHARACTER*80 LINE
+*
 *     Input format(s)
       CHARACTER*80 INFMTS(MXTYPE),INFMT
 *
@@ -165,14 +189,26 @@
       INTEGER IDET(MXTYPE), SDET(MXTYPE)
 *
 c
-c	-h option suppresses header records in output
 c
-      LOGICAL      HFLAG
+      LOGICAL      HFLAG, XFLAG, SFLAG
       CHARACTER*80 FLAGS
+*
+*     Stuff for labels
+      CHARACTER*80 FONTNAME, LABELSTRING, FONTALIGN
+      REAL*4       FONTSIZE, FONTSCALE
+*
+* Support for a "glow" light source 
+      REAL 	GLOWSRC(3), GLOWCOL(3), GDIST(3), GLOWRAD, GLOW
+      INTEGER	GOPT, GPHONG
 *
 *     Keep track of actual coordinate limits (for information only)
       REAL*4 TRULIM(3,2)
-      DATA TRULIM / 9999.,9999.,9999.,-9999.,-9999.,-9999. /
+      TRULIM (1,1) = HUGE
+      TRULIM (2,1) = HUGE
+      TRULIM (3,1) = HUGE
+      TRULIM (1,2) = -HUGE
+      TRULIM (2,2) = -HUGE
+      TRULIM (3,2) = -HUGE
 *
       IDET(TRIANG) = 12
       IDET(SPHERE) = 7
@@ -182,6 +218,8 @@ c
       IDET(PLANE)  = 12
       IDET(NORMS ) = 9
       IDET(MATERIAL) = 10
+      IDET(LABEL)  = 6
+      IDET(GLOWLIGHT) = 10
       SDET(TRIANG) = 13
       SDET(SPHERE) = 4
       SDET(CYLIND) = 8
@@ -193,8 +231,8 @@ c
       ASSOUT = NOISE
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
-      WRITE (NOISE,*) '%             Raster3D normalization program ',
-     &                'V2.2              %'
+      WRITE (NOISE,*) '%             Raster3D normalization ',
+     &                'program V2.3c             %'
       WRITE (NOISE,*) '%            -------------------------',
      &                '-------------            %'
       WRITE (NOISE,*) '% If you publish figures generated by this ',
@@ -211,23 +249,47 @@ c
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
 c
 c	-h option suppresses header records in output
+c	-expand option expands and in-lines all file indirection
+c		(and normalizes the in-lined data)
+c	-noexpand (the default) simply copies file indirection commands
+c		to output file
+c	-stereo will create parallel files left.r3d and right.r3d
 c
       HFLAG = .FALSE.
+      XFLAG = .FALSE.
+      SFLAG = .FALSE.
       NARG  = IARGC()
       DO i = 1, NARG
 	CALL GETARG(I,FLAGS)
-	IF (FLAGS(1:2) .EQ. '-h') HFLAG = .TRUE.
+	IF (FLAGS(1:2) .EQ. '-h')   HFLAG = .TRUE.
+	IF (FLAGS(1:4) .EQ. '-exp') XFLAG = .TRUE.
+	IF (FLAGS(1:2) .EQ. '-s')   SFLAG = .TRUE.
       ENDDO
+      IF (SFLAG) THEN
+	HFLAG = .TRUE.
+	OPEN(UNIT=LEFT,FILE='left.r3d',CARRIAGECONTROL='LIST',
+     &	     STATUS='UNKNOWN')
+	OPEN(UNIT=RIGHT,FILE='right.r3d',CARRIAGECONTROL='LIST',
+     &	     STATUS='UNKNOWN')
+      ENDIF
+*
+*     Ready for input records
+      ILEVEL = 0
+      INPUT  = STDIN
 *
 *     Get title
 1     FORMAT (A80)
       READ (INPUT,1) TITLE
       IF (.NOT.HFLAG) WRITE(OUTPUT,1) TITLE
+      IF (SFLAG) WRITE(LEFT,1)  TITLE
+      IF (SFLAG) WRITE(RIGHT,1) TITLE
 *
 *     Get number of tiles
       READ (INPUT,1) LINE
       READ (LINE,*) NTX,NTY
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
 *
@@ -235,6 +297,8 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) NPX,NPY
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (NPX.GT.0, 'npx.le.0')
       CALL ASSERT (NPY.GT.0, 'npy.le.0')
 *
@@ -242,20 +306,30 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) SCHEME
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
-      CALL ASSERT (SCHEME.GE.1 .AND. SCHEME.LE.3, 'bad scheme')
-      IF (SCHEME.EQ.1) THEN
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
+      CALL ASSERT (SCHEME.GE.0 .AND. SCHEME.LE.4, 'bad scheme')
+      IF (SCHEME.LE.1) THEN
         NOX = NPX
         NOY = NPY
       ELSEIF (SCHEME.EQ.2) THEN
         NOX = NPX/2
         NOY = NPY/2
-        CALL ASSERT (MOD(NPX,2).EQ.0,'mod(npx,2).ne.0')
-        CALL ASSERT (MOD(NPY,2).EQ.0,'mod(npy,2).ne.0')
+        CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 2 requires NPX even')
+        CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 2 requires NPY even')
       ELSEIF (SCHEME.EQ.3) THEN
         NOX = 2*(NPX/3)
         NOY = 2*(NPY/3)
-        CALL ASSERT (MOD(NPX,3).EQ.0,'mod(npx,3).ne.0')
-        CALL ASSERT (MOD(NPY,3).EQ.0,'mod(npy,3).ne.0')
+        CALL ASSERT (MOD(NPX,3).EQ.0,'scheme 3 requires mod(NPX,3)=0')
+        CALL ASSERT (MOD(NPY,3).EQ.0,'scheme 3 requires mod(NPY,3)=0')
+      ELSEIF (SCHEME.EQ.4) THEN
+	NOX = NPX
+	NOY = NPY
+	CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 4 requires NPX even')
+	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
+	NPX = NPX + NPX/2
+	NPY = NPY + NPY/2
+	SCHEME = 3
       ELSE
         CALL ASSERT (.FALSE.,'crash 2')
       ENDIF
@@ -272,6 +346,8 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) BKGND
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (BKGND(1).GE.0., 'bkgnd(1) < 0')
       CALL ASSERT (BKGND(2).GE.0., 'bkgnd(2) < 0')
       CALL ASSERT (BKGND(3).GE.0., 'bkgnd(3) < 0')
@@ -283,11 +359,15 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) SHADOW
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
 *
 *     Get Phong power
       READ (INPUT,1) LINE
       READ (LINE,*) IPHONG
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (IPHONG.GE.0, 'iphong < 0')
 *     A derived constant for numerical purposes in applying the
 *     Phong power in the shading algorithm.
@@ -300,6 +380,8 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) STRAIT
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (STRAIT.GE.0., 'strait < 0')
       CALL ASSERT (STRAIT.LE.1., 'strait > 1')
 *
@@ -310,6 +392,8 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) AMBIEN
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (AMBIEN.GE.0., 'ambien < 0')
       CALL ASSERT (AMBIEN.LE.1., 'ambien > 1')
 *
@@ -317,6 +401,8 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) SPECLR
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (SPECLR.GE.0., 'speclr < 0')
       CALL ASSERT (SPECLR.LE.1., 'speclr > 1')
 *
@@ -328,12 +414,16 @@ c
       READ (INPUT,1) LINE
       READ (LINE,*) EYEPOS
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (EYEPOS.GT.0., 'eyepos.le.0')
 *
 *     Get position of primary light source
       READ (INPUT,1) LINE
       READ (LINE,*) SOURCE
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       SMAG = SQRT(SOURCE(1)**2 + SOURCE(2)**2 + SOURCE(3)**2)
       SOURCE(1) = SOURCE(1) / SMAG
       SOURCE(2) = SOURCE(2) / SMAG
@@ -345,15 +435,29 @@ c
         READ (INPUT,*) (TMAT(I,J),J=1,4)
         WRITE (NOISE,*) (TMAT(I,J),J=1,4)
 11    CONTINUE
-      IF (.NOT.HFLAG) WRITE (OUTPUT,*) ' 1. 0. 0.   0.'
-      IF (.NOT.HFLAG) WRITE (OUTPUT,*) ' 0. 1. 0.   0.'
-      IF (.NOT.HFLAG) WRITE (OUTPUT,*) ' 0. 0. 1.   0.'
-      IF (.NOT.HFLAG) WRITE (OUTPUT,*) ' 0. 0. 0.   1.'
+      IF (.NOT.HFLAG) THEN
+	WRITE (OUTPUT,*) ' 1. 0. 0.   0.'
+      	WRITE (OUTPUT,*) ' 0. 1. 0.   0.'
+      	WRITE (OUTPUT,*) ' 0. 0. 1.   0.'
+      	WRITE (OUTPUT,*) ' 0. 0. 0.   1.'
+      ENDIF
+      IF (SFLAG) THEN
+	WRITE (LEFT,*)  ' 1.   0. 0.   0.'
+      	WRITE (LEFT,*)  ' 0.   1. 0.   0.'
+      	WRITE (LEFT,*)  ' 0.03 0. 1.   0.         Left eye view'
+      	WRITE (LEFT,*)  ' 0.   0. 0.   1.'
+	WRITE (RIGHT,*) ' 1.   0. 0.   0.'
+      	WRITE (RIGHT,*) ' 0.   1. 0.   0.'
+      	WRITE (RIGHT,*) '-0.03 0. 1.   0.         Right eye view'
+      	WRITE (RIGHT,*) ' 0.   0. 0.   1.'
+      ENDIF
 *
 *     Get input mode
       READ (INPUT,1) LINE
       READ (LINE,*) INMODE
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
+      IF (SFLAG) WRITE (LEFT,1)  LINE
+      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (INMODE.GE.1.,'bad inmode')
       IF (INMODE.GT.3) WRITE (NOISE,*) 'Non-standard INMODE',INMODE
 *
@@ -361,6 +465,8 @@ c
       IF (INMODE.EQ.1.OR.INMODE.EQ.2) THEN
         READ (INPUT,'(A)') INFMT
         IF (.NOT.HFLAG) WRITE (OUTPUT,'(A1)') '*'
+        IF (SFLAG) WRITE (LEFT, '(A1)') '*'
+        IF (SFLAG) WRITE (RIGHT,'(A1)') '*'
         II = 0
 2       CONTINUE
         IF (INFMT(1:1).EQ.' ') THEN
@@ -378,6 +484,8 @@ c
         DO 4 I=1,3
           READ (INPUT,'(A)') INFMTS(I)
           IF (.NOT.HFLAG) WRITE (OUTPUT,'(A1)') '*'
+          IF (SFLAG) WRITE (LEFT, '(A1)') '*'
+          IF (SFLAG) WRITE (RIGHT,'(A1)') '*'
           II = 0
 3         CONTINUE
           IF (INFMTS(I)(1:1).EQ.' ') THEN
@@ -396,10 +504,16 @@ c
 	INFMTS(PLANE) = INFMTS(TRIANG)
 	INFLGS(NORMS) = INFLGS(TRIANG)
 	INFMTS(NORMS) = INFMTS(TRIANG)
-	INFLGS(MATERIAL) = .TRUE.
+	INFLGS(MATERIAL)  = .TRUE.
+	INFLGS(FONT)      = .TRUE.
+	INFLGS(LABEL)     = .TRUE.
+	INFLGS(GLOWLIGHT) = .TRUE.
       ELSE
         CALL ASSERT (.FALSE.,'crash 4')
       ENDIF
+*
+      IF (SFLAG) CLOSE(LEFT)
+      IF (SFLAG) CLOSE(RIGHT)
 *
 *     Compute the rotation matrix which takes the light
 *     source to the +z axis (i.e., to the viewpoint).
@@ -436,28 +550,55 @@ c     Objects in, and count up objects that may impinge on each tile
       MDET = 0
       N = 0
 c
+c     Read in next object
 7     CONTINUE
       IF (INMODE.EQ.1.OR.INMODE.EQ.2) THEN
         INTYPE = INMODE
-      ELSEIF (INMODE.GE.3) THEN
-        READ (INPUT,'(A80)',END=50) LINE
-	READ (LINE,*) INTYPE
-	IF (INTYPE .EQ. MATEND) THEN
-	    WRITE (OUTPUT,*) LINE 
+	GOTO 8
+      ENDIF
+c     Aug 1996 - allow file indirection
+      READ (INPUT,'(A)',END=50) LINE
+      IF (LINE(1:1) .NE. '@') THEN
+ 	READ (LINE,*) INTYPE
+      ELSE IF (.NOT.XFLAG) THEN
+	WRITE (OUTPUT,1) LINE
+	GOTO 7
+      ELSE
+ 	CALL ASSERT(ILEVEL.LT.MAXLEV, 
+     &	            'Too many levels of indirection')
+ 	DO I=80,2,-1
+	  IF (LINE(I:I).NE.' ') J = I
+ 	  IF (LINE(I:I).EQ.' ') LINE(I:I) = CHAR(0)
+ 	ENDDO
+C f90 	OPEN (UNIT=INPUT0+ILEVEL,ERR=71,STATUS='OLD',ACTION='READ',
+	OPEN (UNIT=INPUT0+ILEVEL,ERR=71,STATUS='OLD',READONLY,
+     &	      FILE=LINE(J:80))
+ 	WRITE (NOISE,'(A,A)') '  + Opening input file ',LINE(2:80)
+	INPUT  = INPUT0+ILEVEL
+ 	ILEVEL = ILEVEL + 1
+ 	GOTO 7
+   71	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(2:80)
+ 	GOTO 7
+      ENDIF
+c
+      IF (INTYPE.EQ.0) GO TO 50
+      	IF (INTYPE .EQ. MATEND) THEN
+	    WRITE (OUTPUT,1) LINE 
 	    GOTO 7
 	ELSE
 	    WRITE (OUTPUT,'(I2)') INTYPE
 	END IF
-        IF (INTYPE.EQ.0) GO TO 50
         CALL ASSERT (INTYPE.GE.1.AND.INTYPE.LE.MXTYPE,'bad object')
-c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
         CALL ASSERT (INTYPE.NE.PEARLS,'sorry, no pearls yet')
+c
+8     CONTINUE
         INFMT = INFMTS(INTYPE)
         INFLG = INFLGS(INTYPE)
-      ELSE
-        CALL ASSERT (.FALSE.,'crash 8')
-      ENDIF
-      IF (INFLG) THEN
+c
+      IF (INTYPE.EQ.FONT) THEN
+*	handle non-numerical input elsewhere
+	GOTO 9
+      ELSE IF (INFLG) THEN
         READ (INPUT,*,END=50) (BUF(I),I=1,IDET(INTYPE))
       ELSE
         READ (INPUT,INFMT,END=50) (BUF(I),I=1,IDET(INTYPE))
@@ -466,9 +607,9 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 *     benefit of those of us who might inadvertently supply
 *     a series of blank records after our real input as a
 *     side-effect of tape blocking or sloppiness or ...
-      DO 8 I=1,IDET(INTYPE)
+      DO I=1,IDET(INTYPE)
         IF (BUF(I).NE.0.) GO TO 9
-8     CONTINUE
+      ENDDO
       GO TO 50
 9     CONTINUE
       N = N + 1
@@ -628,7 +769,79 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	OPT(4) = BUF(10)
 	WRITE (OUTPUT,94) SPHONG, SSPEC, SR,SG,SB, CLRITY,
      &                    OPT(1),OPT(2),OPT(3),OPT(4)
-94      FORMAT (F5.0,F6.3,X,3F6.3,X,F6.3,3X,4F3.0)
+94      FORMAT (F5.0,F6.3,X,3F7.3,X,F6.3,3X,4F6.1)
+*	24-Feb-1997 OPT(4) signals additional MATERIAL records
+	IF (OPT(4).GT.0) THEN
+	  DO I = 1, OPT(4)
+            READ (INPUT,'(A)',END=50) LINE
+	    WRITE(OUTPUT,1) LINE
+	  ENDDO
+	ENDIF
+*
+*     Font alignment options:
+*	C - centered, have to transform coords
+*	L - left,     ""
+*	R - right,    ""
+*	O - offset,   leave font offsets alone!
+      ELSEIF (INTYPE .EQ. FONT) THEN
+        READ (INPUT,'(A)',END=50) LINE
+	READ (LINE,*) FONTNAME, FONTSIZE, FONTALIGN
+	IF (FONTALIGN(1:1).EQ.'C') THEN
+	    IALIGN=1
+	ELSE IF (FONTALIGN(1:1).EQ.'R') THEN
+	    IALIGN=2
+	ELSE IF (FONTALIGN(1:1).EQ.'O') THEN
+	    IALIGN=3
+	ELSE
+	    IALIGN=0
+	ENDIF
+	WRITE(OUTPUT,1) LINE
+	GOTO 7
+      ELSEIF (INTYPE .EQ. LABEL ) THEN
+	READ (INPUT,702,END=50) len,LABELSTRING
+702	FORMAT(Q,A)
+	nlabels = nlabels + 1
+        XA = BUF(1)
+        YA = BUF(2)
+        ZA = BUF(3)
+        IF (IALIGN.NE.3) CALL TRANSF (XA,YA,ZA, TMAT)
+        RED = BUF(4)
+        GRN = BUF(5)
+        BLU = BUF(6)
+        CALL ASSERT (RED.GE.0., 'red < 0 in label')
+        CALL ASSERT (GRN.GE.0., 'grn < 0 in label')
+        CALL ASSERT (BLU.GE.0., 'blu < 0 in label')
+        CALL ASSERT (RED.LE.1., 'red > 1 in label')
+        CALL ASSERT (GRN.LE.1., 'grn > 1 in label')
+        CALL ASSERT (BLU.LE.1., 'blu > 1 in label')
+	WRITE (OUTPUT,801) XA,YA,ZA, RED,GRN,BLU
+801	FORMAT(3f10.4,2x,3f6.3)
+	WRITE (OUTPUT,1) LABELSTRING
+	GOTO 7
+ 
+      ELSEIF (INTYPE .EQ. GLOWLIGHT) THEN 
+ 	GLOWSRC(1) = BUF(1)
+ 	GLOWSRC(2) = BUF(2)
+ 	GLOWSRC(3) = BUF(3)
+ 	GLOWRAD    = BUF(4)
+ 	GLOW       = BUF(5)
+ 	GOPT       = BUF(6)
+ 	GPHONG     = BUF(7)
+ 	CALL TRANSF(GLOWSRC(1),GLOWSRC(2),GLOWSRC(3),TMAT)
+ 	GLOWRAD = GLOWRAD/TMAT(4,4)
+ 	RED = BUF(8)
+ 	GRN = BUF(9)
+ 	BLU = BUF(10)
+ 	CALL ASSERT (RED.GE.0., 'red < 0 in glow light')
+ 	CALL ASSERT (GRN.GE.0., 'grn < 0 in glow light')
+ 	CALL ASSERT (BLU.GE.0., 'blu < 0 in glow light')
+ 	CALL ASSERT (RED.LE.1., 'red > 1 in glow light')
+ 	CALL ASSERT (GRN.LE.1., 'grn > 1 in glow light')
+ 	CALL ASSERT (BLU.LE.1., 'blu > 1 in glow light')
+ 	WRITE (OUTPUT,802) GLOWSRC,GLOWRAD,GLOW,GOPT,GPHONG,RED,GRN,BLU
+802	FORMAT(4f10.4,1x,f4.2,1x,i4,1x,i4,2x,3f6.3)
+ 	GOTO 7
+ 
 *
       ELSEIF (INTYPE.EQ.TRCONE) THEN
         CALL ASSERT(.FALSE.,'trcones coming soon...')
@@ -642,6 +855,17 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 *     here for end of objects
 *
 50    CONTINUE
+      IF (ILEVEL.GT.0) THEN
+	ILEVEL = ILEVEL - 1
+	WRITE (NOISE,*) ' - closing indirect input file'
+	CLOSE(INPUT)
+	IF (ILEVEL.EQ.0) THEN
+	  INPUT = STDIN
+	ELSE
+	  INPUT = INPUT - 1
+	ENDIF
+	GOTO 7
+      ENDIF
 *
       WRITE(NOISE,*)'-------------------------------'
       IF (NPLANES.NE.0) WRITE(NOISE,*) 'planes            =',NPLANES

@@ -13,17 +13,32 @@ any coordinate manipulations specified in the header, and writes the
 modified file to <i>stdout</i>.  <br>
 
 <listing>
-normal3d [-h] &lt; infile.r3d &gt; normalized.r3d
+normal3d [-h] [-expand] [-stereo] &lt; infile.r3d &gt; normalized.r3d
 </listing>
 
 The output file from <b>normal3d</b> describes exactly the same image as the
 original input file. Header records are left unchanged except for
 the transformation matrix (which becomes the identity matrix) and the
-format specifiers (which are set to *). The -h flag suppresses all header
+format specifiers (which are set to *). <p>
+
+The <i>-h</i> flag suppresses all header
 records in the output file.  All objects in the input file
 are also in the output file, but their coordinate descriptions have been
 normalized (i.e. the original transformation matrix has been
 applied).<p>
+
+The <i>-expand</i> flag causes the program to
+In-line and normalize all instances of file indirection in the input stream.
+This results in a single render input file containing no file indirection.
+The default is to simply copy file indirection lines (those begining
+with @) to the new input file without opening them or normalizing their
+contents.<p>
+
+The <i>-stereo</i> flag causes the program to produce two additional files,
+<i>left.r3d</i> and <i>right.r3d</i>, containing header records suitable
+for rendering the normalized object description file as a side-by-side
+stereo pair (see 
+<a href="stereo3d.html">stereo3d</a>).<p>
 
 <b>normal3d</b> also reports the total number of objects in the input file by
 object type, and gives the array sizes which would be required for the

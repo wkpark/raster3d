@@ -1,0 +1,5 @@
+9 Material description for coloured transparent surface.
+9 The -1.0 values mean that specular highlights will get the base color
+9 of the object.
+8
+ 17.  0.6       -1.0 -1.0 -1.0     0.8   0 0 0 0

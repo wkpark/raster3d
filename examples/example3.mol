@@ -25,7 +25,7 @@ plot
 !
 ! Increase the number of segments to get smoother shading
 !
-     set segments 12 ;
+     set segments 10 ;
 
 !
 ! B5 pentamer 

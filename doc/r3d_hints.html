@@ -96,75 +96,35 @@ stereo pairs.<p>
 Unfortunately Molscript does not pass any
 information about area, page layout, or even aspect ratio, on to the Raster3D
 input file. This means that all objects emitted by a Molscript run are simply
-placed into a single raster grid description. I.e., the pairs of ``plot'' and
+placed into a single scene description. That is, the pairs of ``plot'' and
 ``end plot'' statements in a Molscript input file have no effect in Raster3D
-mode. Note that the header records controlling this grid are taken from file
-header.r3d if it exists, otherwise there is an internal set of header records
-which Molscript uses by default. Therefore a Molscript file which describes a
+mode. Therefore a Molscript file which describes a
 stereo pair as two separate plots will not work correctly when fed through to
-render. To produce a Raster3D stereo pair starting from a Molscript file you
-have a number of options:
-<ul>
-<li>	Describe the pair within a single Molscript plot rather than as two
-separate plots.
-<li>	Use two Molscript plots, but split them into separate runs. You can then
-generate two separate Raster3D images which may be pasted side-by-side either
-electronically (see below) or physically.
-<li>	Work from a single Molscript image and generate the stereo pair by
-manipulating the header records for render. This is what I normally do. The
-steps of the process are:
-    <ol>
-    <li>Run Molscript to generate an input file for render. Molscript
-transforms all coordinates so that the view matrix is an identity matrix with
-scale 1.0
-    <li>Run this input file through render. You now have the right half of a
-stereo pair.
-    <li>Edit the header records so that the view matrix described by TMAT (see
-render documentation) is the one given below. This matrix describes a shear
-operation, which is more correct than a pure rotation matrix for the purpose of
-generating stereo images.
+<b><i>render</i></b>. 
+You should instead use Molscript to produce a single [mono] scene description
+for Raster3D, and run it through <b><i>render</i></b> twice to produce the 
+two images making up a stereo pair.
 
-<pre>
-	1    0    0    0
-	0    1    0    0
-	0.05 0    1    0
-	0.   0.   0.   1.
-</pre>
-
-    <li>Run the edited input file through render. You now have the left half of
-a stereo pair.
-    <li>You can either print the two images separately and mount them side by
-side, or merge them electronically before printing. I use the montage command
-of ImageMagick to combine the separate raster images into a single double-width
-image containing the stereo pair. Here is an ImageMagick command which will
-combine a left and a right image, each 500x500 pixels, into a single stereo
-pair:
-<listing>
-montage -geometry 500x500+0+0! -borderwidth 0 +frame -label ```` \ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; left.tiff right.tiff stereo.tiff
-</listing>
-    <li>If you compose separate header files in advance, one in which the TMAT
-records describe the identity matrix and another in which TMAT describes the
-shear matrix, then this procedure can be automated. Note that creating an empty
-file header..r3d will cause Molscript to produce an output file with no header
-records. Here is a sample shell script:
+<b><i>New in Version 2.3</i></b>: There is now a shell script in the Raster3D
+distribution called <a href="stereo3d.html">stereo3d</a> that will do this for 
+you automatically.  It will take any input file for render and use it to
+create a side-by-side stereo pair. Here is an example:
 <listing>
 #
-# Make sure header file is empty
+# Use molscript to generate a Raster3D input file
 #
-rm header.r3d
-touch header.r3d
+molscript -r < image.mol > image.r3d
 #
-# render image twice, once with header for right, once for left
+# Render image once to check that it's what we want
 #
-molscript -r &lt; image.mol &gt; image.r3d
-cat right_header.r3d image.r3d | render -tiff right.tiff
-cat left_header.r3d &nbsp; image.r3d | render -tiff left.tiff
+render -tiff mono.tiff < image.r3d
 #
-# combine left and right images into single stereo pair
+# Render it again, this time as a stereo pair
+# Note: the output file is always called stereo.tiff
 #
-montage [...options...] left.tiff right.tiff stereo.tiff
+stereo3d image.r3d
+display stereo.tiff
 </listing>
-    </ol>
 </ul>
 
 <a name="colours">
