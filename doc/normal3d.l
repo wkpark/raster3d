@@ -1,13 +1,13 @@
 .ad l
 .nh
-.TH NORMAL3D 1 " 29 December 1997" "Raster3D V2.4b"
+.TH NORMAL3D 1 " 8 May 1999" "Raster3D"
 .SH NAME
 
 normal3d - apply transformation matrix in Raster3D input file
 
 .SH SYNOPSIS
 
-   normal3d [-h] [-expand] [-stereo] < infile.r3d > normalized.r3d
+normal3d [-h] [-expand] [-stereo] < infile.r3d > normalized.r3d
 
 .SH DESCRIPTION
 .PP
@@ -54,22 +54,20 @@ stereo pair.  This option always suppresses header records in the
 primary output file.
 
 .SH SOURCE
-.TP 5
-anonymous ftp site:	
-	ftp.bmsc.washington.edu
-.TP 0
-web URL:
-	http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
-	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+.
+.B web URL:
+ 	http://www.bmsc.washington.edu/raster3d/raster3d.html
+ 
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(1), Raster3D(1), stereo3d(1)
+render(l), Raster3D(l), stereo3d(l)
 .PP
 .SH AUTHORS
-
  Ethan A Merritt.

@@ -24,9 +24,10 @@ or
 ribbon [-h] -d[0123456] -
 </listing>
 Ribbon
-reads a Brookhaven PDB coordinate file and produces a file on stdout containing
-Raster3D descriptor records for a ribbon representation constructed from a
-triangular mesh. The file produced by ribbon may be fed directly to render or
+reads a Brookhaven PDB coordinate file and produces a stream of Raster3D
+object descriptor records on stdout describing
+a ribbon constructed from a triangular mesh. 
+The file produced by ribbon may be fed directly to render or
 it may be combined with descriptor files produced by other Raster3D utilities.
 <h4>
 <a name="RTFToC21">EXAMPLES</a></h4>
@@ -59,13 +60,13 @@ bypass any interactive input.
 <br>-d2 		shade from blue at N-terminus to red at C-terminus 
 <br>-d3 		one surface of ribbon is blue, other surface is grey 
 <br>-d4 		shade front surface from blue to red, back surface is grey 
-<br>-d5 		color separate chains using successive color cards from input stream.
-Note that pattern
-<br>		matching on the color records is not done; colors are simply taken
-sequentially as new 
-<br>		chains are encountered.</dl><h4>
-<br>-d6 		Take color from nearest CA atom using color match templates
-<br>			from the COLOUR records at the head of the input file.
+<br>-d5 		color separate chains using successive color cards from 
+                        input stream.
+Note that pattern matching on the color records is not done; 
+colors are simply taken sequentially as new chains are encountered.
+<br>-d6 		Take color from nearest CA atom using color match 
+                templates from the COLOUR records at the head of the input file.
+</dl><h4>
 <a name="RTFToC22">DESCRIPTION</a></h4>
 The input to ribbon consists of a single text file containing colour
 information [optional] and atomic coordinates in Brookhaven PDB data bank

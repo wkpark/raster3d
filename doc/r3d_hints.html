@@ -15,6 +15,8 @@ Topics covered:
 	Shadowing</a>
     <li><a href="#output device">
 	Tailoring your image to the output device</a>
+    <li><a href="#modularity">
+	Making your pictures modular</a>
     <li><a href="#stereo1">
 	Side-by-side figures and stereo pairs</a>
     <li><a href="#stereo2">
@@ -73,6 +75,50 @@ particular output device regularly, it is worth an initial round of
 experimentation to determine the best gamma value for future runs. The
 appropriate gamma correction can then be applied to each rendered picture
 before sending it for printing.<p>
+
+<a name="modularity">
+<b><i>Making your pictures modular:</i></b></a>
+
+So long as you stick to a consistent coordinate system, you can build up
+a complex Raster3D scene from bits and pieces created by various
+different tools and programs. For example, you could create a scene that
+is defined by a viewpoint selected interactively in Xfit, and that
+contains a protein molecule drawn by Molscript, a molecular surface
+drawn by GRASP, and a "floor" or bounding box from the Raster3D library
+of pre-described objects. This scene can conveniently be described to
+the render program by using file indirection in the input stream, which
+might look something like this:
+<pre>
+	#
+	# Header records written from inside Xfit
+	@viewpoint.r3d
+	#
+	# Molscript V2.0 output file
+	@secondary-structure.r3d
+	#
+	# Make the molecular surface (from GRASP via ungrasp)
+	# transparent by using a material definition
+	# from the Raster3D library $R3D_LIB 
+	@transparent.r3d
+	@surface.r3d
+	@end_material.r3d
+	#
+	# Add a few extra goodies
+	@red.r3d
+	@floor.r3d
+</pre>
+This makes it very easy to experiment with your composition without
+having to edit huge input files. You could, for example, change the
+color of the floor by substituting the library file <i>blue.r3d</i> for the
+file <i>red.r3d</i>. Or you could render the same scene from a different
+viewpoint by changing the view matrix in viewpoint.r3d. Even better, you
+could select from a number of pre-defined views described by header
+records in files <i>view1.r3d, view2.r3d, view2.r3d</i>, and so on just by
+making <i>viewpoint.r3d</i> be a symbolic link to the particular view you want
+to render. That way you needn't edit any input files at all to shift the
+scene. This approach is particularly useful for producing
+<a href="r3d_animation.html">animation</a>.
+<p>
 
 <a name="stereo1">
 <b><i>Side-by-side figures and stereo pairs:</i></b></a>

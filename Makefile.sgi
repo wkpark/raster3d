@@ -1,46 +1,51 @@
 #
-# Raster3D makefile for SGI under
-# Irix 4.*  Irix 5.3  Irix 6.2
+# Raster3D makefile for SGI Irix V5.3
+# (for Irix V6.x use Makefile.irix6 instead)
 #
-# (Use Makefile.irix6 for Irix versions 6.1 and 6.4
+include VERSION
 #
-LDFLAGS =
-CFLAGS  = -g -w
+LDFLAGS = 
+CFLAGS  = -g -w $(INCLUDES)
 FC	= f77
-
-# Most of the programs in Raster3D do not care much about optimization,
-# so it is safest to use the -g flag.
-
-  FFLAGS = -g
-
-# 
-# Render really benefits from optimization, however, so try to get this right.
-# These are otimizations recommended by the compiler on my test machine. 
-# Yours might vary.  
-
-  FOPTS  = -O -Olimit 3000
+FFLAGS	= -g
 
 #
-# If you build Raster3D to use the Iris imagetools output format
-# (local.sgi), then add -DLIBIMAGE_SUPPORT to the DEFINES statement.
-# You will also need to add -limage to the LIBS statement.
-# Source for libimage.a is available in the 4DGifts kit from SGI.
+# Render really benefits from optimization, so try to get this right.
+# These are the optimizations recommended on my test machine;
+# Yours may vary
+FOPTS	= -O -Olimit 3500
+
 #
-# If you choose to build Raster3D with support for direct output of
-# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
-# You will also need to add -ltiff to the LIBS definition.
+# TIFF support (enabled by default)
+#     add -DTIFF_SUPPORT to the DEFINES statement.
+#     add -ltiff to the LIBS definition.
 # The TIFF_INVERT option is a work-around for broken programs
 # (e.g. PhotoShop) that don't properly read the TIFF header.
 #
-DEFINES = -DLIBIMAGE_SUPPORT -DTIFF_SUPPORT -DTIFF_INVERT
-LIBS    = -limage -ltiff
+# JPEG support (disabled by default)
+#     add -DJPEG_SUPPORT to the DEFINES statement.
+#     add -ljpeg to the LIBS definition.
 #
-#DEFINES  = -DLIBIMAGE_SUPPORT
-#LIBS     = -limage
-INCLUDES = -I/usr/local/TIFF/libtiff
+# Auto conversion of output using ImageMagick (enabled by default)
+#     add -DIMAGEPIPE to the DEFINES statement.
+#
+# SGI imagetools support (-sgi output option to produce *.rgb files)
+#     add -DLIBIMAGE_SUPPORT to the DEFINES statement.
+#     add -limage to the LIBS definition
+#         (source for libimage.a is available in the 4DGifts kit from SGI)
+#
+ LIBS    =	-ltiff -limage
+ DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT \
+		-DIMAGEPIPE -DLIBIMAGE_SUPPORT
+INCLUDES =	-I/usr/local/include/
+
+#LIBS    =
+#DEFINES =
+#INCLUDES=
+
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
-PROGS =		balls normal3d rastep rods ribbon render avs2ps
+PROGS   =	balls normal3d rastep rods ribbon render avs2ps
 
 all:	$(PROGS)
 
@@ -51,10 +56,12 @@ clean:
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
 	cp stereo3d /usr/local/bin
+	cp doc/*.l /usr/local/man/manl
 
 tar:
-	(cd ..; tar -cvvf raster3d.tar raster3d)
-	compress  ../raster3d.tar
+	(cd ..; tar -cvf Raster3D_$(VERSION).tar raster3d)
+	/usr/bin/compress  ../Raster3D_$(VERSION).tar
+	(cd ..; gtar -czvf Raster3D_$(VERSION).tar.gz raster3d)
 
 normal3d: normal3d.o quadric.o
 	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
@@ -63,7 +70,7 @@ rastep:	rastep.o quadric.o
 	$(FC) $(FFLAGS) rastep.o quadric.o -o rastep
 
 ribbon:	$(RIBOBJS)
-	$(FC) $(RIBOBJS) -o ribbon
+	$(FC) -O $(RIBOBJS) -o ribbon
 
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
@@ -71,17 +78,10 @@ local.o: local.c
 render.o: render.f
 	$(FC) $(FOPTS) -c render.f
 
-render:	render.o local.o quadric.o
-	$(FC) $(FFLAGS) render.o quadric.o local.o  \
+render:	render.o local.o quadric.o 
+	$(FC) $(FFLAGS) render.o quadric.o local.o \
 	$(LIBS) -o render $(LDFLAGS)
 
-local_jpeg.o: local_jpeg.c
-	cc -g $(INCLUDES) $(DEFINES) -c local_jpeg.c
-
-render_jpeg: render.o local_jpeg.o quadric.o
-	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
-	-ljpeg -o render_jpeg
-
 avs2ps:	avs2ps.c
-	cc -O avs2ps.c -o avs2ps
+	cc -O avs2ps.c -o avs2ps -lm
 

@@ -1,9 +1,9 @@
 .ad l
 .nh
-.TH RODS 1 "11 Sept 1997" "Raster3D"
+.TH RODS 1 " 8 May 1999" "Raster3D"
 .SH NAME
 
-rods - preprocessor for ball-and-stick models in Raster3D molecular graphics package
+rods - Raster3D preprocessor for ball-and-stick models 
 .SH SYNOPSIS
 
 .HB rods [\fI-h\fP] [\fI-b\fP] [\fI-radius R\fP] \fI[-Bcolor Bmin Bmax\fP]
@@ -125,26 +125,24 @@ fails to match any previous COLO record.  This idea of matching masks for
 colour specifications is due to Colin Broughton.
 
 .SH ENVIRONMENT
-.TP 5
-
-The files setup.matrix and setup.angles, if they exist, affect the
-header records produced by \fIrods\fP.
+The files setup.matrix and setup.angles, if they exist, 
+affect the header records produced by \fIrods\fP.
 
 .SH SOURCE
-.TP 5
-	anonymous ftp site:	
-                ftp.bmsc.washington.edu
-	web URL:
-		http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
-	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+ 
+.B web URL:
+ 	http://www.bmsc.washington.edu/raster3d/raster3d.html
+ 
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(1), ribbon(1), balls(1)
+render(l), ribbon(l), balls(l)
 .PP
 .SH AUTHORS
 	Ethan A Merritt

@@ -11,20 +11,15 @@
 balls is a preprocessor which prepares a description of a space-filling model
 for the 
 <a href="raster3d.html">Raster3D</a> molecular graphics package <p>
-<em>Note:</em> balls 
-used to be called "setup" in previous releases of Raster3D. 
-The name has been changed to avoid conflicts with other programs called setup
-on some systems.  For compatibility with previous versions the command "setup"
-may be installed as a symbolic link to balls.
 <listing>
 balls [-h]
 </listing>
 balls
 reads a file describing atom colours and/or a Brookhaven PDB coordinate file
-and produces on stdout a file containing Raster3D descriptor records for each
-atom in the input file. The file produced by balls may be fed directly to
-render or it may be combined with descriptor files produced by other Raster3D
-utilities.
+and produces a stream of Raster3D object descriptors on stdout, one sphere
+for each atom in the input file. 
+The file produced by balls may be fed directly to render or it may be 
+combined with descriptor files produced by other Raster3D utilities.
 <h4>
 <a name="RTFToC32">EXAMPLES</a></h4>
 To describe a simple space-filling model coloured by residue type:
@@ -66,7 +61,7 @@ matrix contained in file setup.matrix (if it exists), or to the Eulerian angles
 contained in file setup.angles (if it exists).<p>
 Colours are assigned to atoms using a matching process, using COLOUR records
 prepended to the input PDB file. Raster3D uses a pseudo-PDB record type with
-the same basic layout as the above but with COLO in the first 4 columns:
+COLO in the first 4 columns:
 <dl>
 <dt><b><i></i></b><dd>Columns		Contents
 <br> 1 - 4 		COLO
@@ -76,7 +71,7 @@ the same basic layout as the above but with COLO in the first 4 columns:
 <br> 47 - 54 		Blue component
 <br> 55 - 60 		van der Waals radius in Angstroms
 <br> 61 - 80 		Comments</dl>Note that the Red, Green, and Blue components are
-in the same positions as the X, Y, and Z components of an ATOM or HETA record,
+in the same positions as the X, Y, and Z components of a PDB ATOM or HETA record,
 and the van der Waals radius goes in place of the Occupancy. The Red, Green,
 and Blue components must all be in the range 0 to 1.<p>
 The Mask field is used in the matching process as follows. First the program

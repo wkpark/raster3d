@@ -1,12 +1,8 @@
-Digital Unix (3.0 - 4.0A/B)
-	Somewhere between -O1 and -O2 the f90 compiler breaks transparency
-	coloring in example6. Works OK starting in DU 4.0D.
-
 AIX V 4.2
 	File indirection in render doesn't work, because opening Fortran
 	LUN 6 clobbers C I/O in local.c
 	Work-around : 
-		Patch file render_patch.aix causes render to use
+		Patch file render_patch.aix modifies render to use
 		LUNs 5,4,3,2,1 for file indirection rather than 6,7,...
 
 Linux (Redhat 4.2)
@@ -14,6 +10,12 @@ Linux (Redhat 4.2)
 	quadric.f.  I tweaked the source to work around the problem, but
 	it may recur elsewhere.  g77 compiler doesn't like the Q formats
 	in ribbon1.f
+
+Windows
+	I am relying entirely on the instructions kindly provided by 
+	Suhaib Siddiqi, and have not tested the installation procedure at all.
+	In particular I haven't done anything about adding the label-handling 
+	code to the Makefile.
 
 All platforms
 =============
@@ -23,7 +25,13 @@ All platforms
 	  linear fog model does not correspond to reality. 
 	  It would be possible to handle transparency correctly for an 
 	  exponential fog model, but doesn't seem worth the effort right now.
-
+	- Z-clipped objects cast un-clipped shadows.
 	- The mixed Fortran/C calls to local() generate an interesting 
 	  variety of compiler warnings because of inadequte type-casting
 	  on the Fortran side.  
+	- General quadric surfaces (other than ellipsoids) may cast spurious
+	  shadows, and always fail to shadow themselves.
+	- Explicit vertex colors take precedence over material colors;
+	  I'm not sure whether that's good or bad.
+	- The stereo3d script doesn't know about label processing
+	  (should call label3d rather than render if labels are present).

@@ -1,9 +1,9 @@
 .ad l
 .nh
-.TH RIBBON 1 "4 August 1997" "Raster3D"
+.TH RIBBON 1 "8 May 1999" "Raster3D"
 .SH NAME
 
-ribbon - preprocessor for ribbon models in Raster3D molecular graphics package
+ribbon - Raster3D molecular graphics package ribbon-drawer
 .SH SYNOPSIS
 
    "ribbon" [\fI-h\fP] [\fI-d[0123456]\fP] pdbfile
@@ -48,17 +48,24 @@ By default \fIribbon\fP requires interactive input to select
 ribbon parameters and coloring information.  Five default coloring
 schemes are implemented, however, and these may be selected as a
 command line option to bypass any interactive input.
-     -d or -d0	same as -d2 below
-     -d1 	solid color ribbon (defaults to blue)
-     -d2	shade from blue at N-terminus to red at C-terminus
-     -d3	one surface of ribbon is blue, other surface is grey
-     -d4	shade front surface from blue to red, back surface is grey
-     -d5	color separate chains using successive color cards from
-		input stream. Note that pattern matching on the color
-		records is _not_ done; colors are simply taken sequentially
-		as new chains are encountered.
-     -d6	Color by nearest CA atom as taken from the COLOUR records
-		at the head of the input file (new in version 2.3d)
+.TP 5
+ -d or -d0	same as -d2 below
+.TP 5
+ -d1	solid color ribbon (defaults to blue)
+.TP 5
+ -d2	shade from blue at N-terminus to red at C-terminus
+.TP 5
+ -d3	one surface of ribbon is blue, other surface is grey
+.TP 5
+ -d4	shade front surface from blue to red, back surface is grey
+.TP 5
+ -d5	color separate chains using successive color cards
+from input stream. Note that pattern matching on the color
+records is _not_ done; colors are simply taken sequentially
+as new chains are encountered.
+.TP 5
+ -d6	Color by nearest CA atom as taken from the COLOUR
+records at the head of the input file
 
 .SH DESCRIPTION
 .PP 
@@ -88,25 +95,24 @@ The files setup.matrix and setup.angles, if they exist, affect the
 header records produced by \fIribbon\fP.
 
 .SH SOURCE
-.TP 5
-	anonymous ftp site:	
-                ftp.bmsc.washington.edu
-	web URL:
-		http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
-	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+ 
+.B web URL:
+ 	http://www.bmsc.washington.edu/raster3d/raster3d.html
+ 
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
 
 .SH SEE ALSO
-MOLSCRIPT(1), render(1), rods(1), balls(1)
+MOLSCRIPT(l), render(l), rods(l), balls(l)
 .PP
 .SH AUTHORS
-
- Original ribbon code written by Phil Evans for the CCP4
- version of FRODO.  Modification to describe solid ribbons
- as triangular mesh for Phong shading in Raster3D package 
- by Ethan A Merritt.
+Original ribbon code written by Phil Evans for the CCP4
+version of FRODO.  Modification to describe solid ribbons
+as triangular mesh for Phong shading in Raster3D package 
+by Ethan A Merritt.
 

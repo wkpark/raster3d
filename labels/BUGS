@@ -1,0 +1,11 @@
+This whole thing is not quite ready for prime time, but it does work.
+
+Problems:
+
+- The label3d script is hard-wired to use -fontscale 3.0, which is approximately
+  correct for eventual printing at 300dpi.  That is, if you request a 12 pt font
+  and print the resulting image at 300dpi it really does come out approximately
+  12 pt.  If you are printing at some other resolution (or viewing on a monitor
+  screen) this factor is wrong and your fonts will either be huge or tiny.
+  
+- The stereo3d script doesn't yet know about label processing.  

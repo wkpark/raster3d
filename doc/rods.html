@@ -14,8 +14,9 @@ rods is a preprocessor for ball-and-stick figures in the
 rods [-h] [-b] [-radius R] [-Bcolor Bmin Bmax]
 </listing>
 rods
-reads a file describing atom colours and/or a Brookhaven PDB coordinate file
-and produces on stdout a file containing Raster3D descriptor records. The file
+reads a Brookhaven PDB coordinate file, including COLOUR records as
+described below, 
+and produces a stream of Raster3D descriptor records on stdout. The file
 produced by rods may be fed directly to render or it may be combined with
 descriptor files produced by other Raster3D utilities.
 <h4>
@@ -70,8 +71,7 @@ Colours are assigned to atoms using a matching process, using COLOUR records
 prepended to the input PDB file. 
 If no COLOUR records are present in the input file, atoms will receive 
 default CPK colors (C=grey, O=red, N=blue, S=yellow, P=green, other=magenta).
-Raster3D uses a pseudo-PDB record type with
-the same basic layout as the above but with COLO in the first 4 columns:
+Raster3D uses a pseudo-PDB record type with COLO in the first 4 columns:
 <dl>
 <dt><b><i></i></b><dd>Columns		Contents
 <br> 1 - 4 		COLO

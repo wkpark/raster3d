@@ -1,0 +1,78 @@
+<html>
+<head>
+<title> label3d - Raster3D package </title>
+</head>
+<body>
+
+<h1 align=center>
+LABEL3D
+</h1>
+<h4>
+SYNOPSIS</h4>
+label3d is a shell script that processes a
+<a href="raster3d.html"> Raster3D </a> 
+input file containing label descriptors (object types 10, 11, 12)
+into a TIFF image  <i>label3d.tiff</i> containing both the
+molecular graphics image and the associated labels.
+
+<listing>
+label3d render_input_file.r3d; display label3d.tiff
+</listing>
+
+Unfortunately, the Raster3D render program cannot process labels.
+To overcome this lack, the Raster3D distribution includes an 
+auxilliary program <a href="r3dtops.html">r3dtops</a> that
+complements render in that it can process the labels but not the
+graphics objects. The label3d script automates the process of
+running a Raster3D input file in parallel through render and
+through r3dtops and ghostscript, and then recombines the two
+component images into a single TIFF image containing both the
+molecular graphics objects and the associated labels.
+<p>
+
+
+Several intermediate files are produced by label3d:
+<ul>
+<li>label3d.tmp - temporary copy of the input file
+<li>label3d.ps  - PostScript description of the labels, created to r3dtops
+<li>label3d.ppm - PBM+ format raster image produced by ghostscript (labels but no graphics objects)
+<li>render.tiff - TIFF image produced by render (graphics objects but no labels)
+<li>label3d.tiff - TIFF output image combining the graphics objects and the labels.
+</ul>
+
+<h4>ENVIRONMENT</h4>
+This script requires TIFF support in render, the unix utility nawk, the
+<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">
+ImageMagick</a> image processing package, and 
+ghostscript. 
+The intermediate files listed above are created each time the script is run. 
+Any exiting files by these names will be destroyed.
+
+<h4>BUGS</h4>
+<dl>
+<dd>
+The whole nature of label handling in Raster3D is not yet settled.
+It would be much nicer if all the label processing were taken
+care of by the render program itself.<p>
+<dd>
+The script assumes that the image is being prepared for printing
+at 300 dpi (r3dtops is called with <i>-fontscale 3.0</i>).<p>
+<dd>
+Labels always appear on top of the molecular graphics image,
+even labels which should be occluded by a foreground object.<p>
+<dd>
+At the moment the stereo3d script does not know to call label3d
+if there are labels present.<p>
+</dl>
+
+<h4>AUTHORS</h4>
+Ethan A Merritt.
+
+<hr>
+<a href="raster3d.html">
+<img src="/images/index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
+
+</body>
+</html>

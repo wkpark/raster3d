@@ -1,17 +1,12 @@
 .ad l
 .nh
-.TH BALLS 1 "29 April 1995" "Raster3D"
+.TH BALLS 1 "8 May 1999" "Raster3D"
 .SH NAME
 
 balls - preprocessor for space-filling models in Raster3D molecular graphics package
 .SH SYNOPSIS
 .PP
 .B "balls" [\fI-h\fP]
-.PP
-\fINote: balls\fP went by the name "setup" in previous releases of Raster3D. 
-This was changed to prevent conflicts on some systems with other utilities 
-called "setup".  For backwards compatibility "setup" may be installed as a
-symbolic link to \fIballs\fP.
 .PP
 \fIBalls\fP reads a file describing atom colours and/or a Brookhaven 
 PDB coordinate file and produces a file containing Raster3D descriptor
@@ -66,8 +61,8 @@ contained in file \fIsetup.angles\fP (if it exists).
 .PP 
 Colours are assigned to atoms using a matching process,
 using COLOUR records prepended to the input PDB file.
-Raster3D uses a pseudo-PDB record type with the same basic
-layout as the above but with COLO in the first 4 columns:
+Raster3D uses a pseudo-PDB record type with 
+with COLO in the first 4 columns:
  
    Columns
  
@@ -119,22 +114,22 @@ The files setup.matrix and setup.angles, if they exist, affect the
 header records produced by \fIballs\fP.
 
 .SH SOURCE
-.TP 5
-	anonymous ftp site:	
-                ftp.bmsc.washington.edu
-	web URL:
-		http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
-	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+ 
+.B web URL:
+ 	http://www.bmsc.washington.edu/raster3d/raster3d.html
+ 
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(1), rods(1), ribbon(1)
+render(l), rods(l), ribbon(l)
 .PP
 .SH AUTHORS
-	Originally written by David J. Bacon and Wayne F. Anderson.
-	Extensions and revisions by Ethan A Merritt.
+Originally written by David J Bacon and Wayne F Anderson.
+ Extensions and revisions by Ethan A Merritt.
 

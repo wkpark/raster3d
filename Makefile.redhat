@@ -5,30 +5,47 @@
 # Assumes that the perl script fort77 [locally called f77] 
 # is used as a Fortran compiler
 #
+include VERSION
+
+#
 # Where to put things
 #
 prefix = /usr/local
 bindir = $(prefix)/bin
 mandir = $(prefix)/man/manl
+
 #
-CC       = gcc
-F2       =f2c
-FC      = f77
-RM      = /bin/rm -f
+# Compiler options
 #
-INSTALL         = /usr/bin/install -o root -g root
-#
+CC 	= gcc
+F2 	= f2c
+FC 	= f77
+RM 	= /bin/rm -f
+INSTALL	= /usr/bin/install -o root -g root
+
 LDFLAGS  = 
 CFLAGS   = -g -m486 
 FFLAGS   = -O
+
 #
-# If you choose to build Raster3D with support for direct output of
-# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
-# You will also need to add -ltiff to the LIBS definition.
- LIBS    =	/usr/local/lib/libtiff.a
- DEFINES =	-DLINUX -DTIFF_SUPPORT -DTIFF_INVERT -DNETWORKBYTEORDER
-#LIBS    =
-#DEFINES =
+# TIFF support (enabled by default)
+#     add -DTIFF_SUPPORT to the DEFINES statement.
+#     add -ltiff to the LIBS definition.
+# The TIFF_INVERT option is a work-around for broken programs
+# (e.g. PhotoShop) that don't properly read the TIFF header.
+#
+#
+# JPEG support (enabled by default)
+#     add -DJPEG_SUPPORT to the DEFINES statement.
+#     add -ljpeg to the LIBS definition.
+#
+# Auto conversion of output using ImageMagick (enabled by default)
+#     add -DIMAGEPIPE to the DEFINES statement.
+#
+
+ LIBS    =	-ltiff -ljpeg
+ DEFINES =	-DLINUX -DTIFF_SUPPORT -DTIFF_INVERT -DNETWORKBYTEORDER \
+		-DJPEG_SUPPORT -DIMAGEPIPE
 INCLUDES =	-I/usr/include
 
 RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
@@ -38,7 +55,7 @@ all:	$(PROGS)
 
 clean:
 	rm -f *.o *.u core
-	rm -f $(PROGS) render_jpeg
+	rm -f $(PROGS)
 
 install: $(PROGS)
 	$(INSTALL) -m 755 $(PROGS) $(bindir)
@@ -46,7 +63,7 @@ install: $(PROGS)
 	$(INSTALL) -m 644 doc/*.l $(mandir)
 
 tar:
-	(cd ..; tar -zcvvf raster3d.tgz raster3d)
+	(cd ..; tar -czvf Raster3D_$(VERSION).tar.gz raster3d)
 
 ribbon:	$(RIBOBJS)
 	$(FC) $(LDFLAGS) $(RIBOBJS) -o ribbon
@@ -65,13 +82,6 @@ quadric.o: quadric.f
 render:	render.f local.o quadric.o
 	$(FC) $(FFLAGS) render.f local.o quadric.o \
 	$(LIBS) -o render
-
-local_jpeg.o: local_jpeg.c
-	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local_jpeg.c
-
-render_jpeg: render.o local_jpeg.o quadric.o
-	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
-	-ljpeg -o render_jpeg
 
 normal3d: normal3d.f.bak normal3d.f quadric.o
 	$(FC) $(FFLAGS) normal3d.f quadric.o -o normal3d

@@ -9,21 +9,34 @@
 <h4> SYNOPSIS</h4>
 render is the central image rendering program of the 
 <a href="raster3d.html"> Raster3D </a> 
-molecular graphics package
+molecular graphics package.<br>
+Usage:
 
 <listing>
-render [-tiff outfile.tiff] [-sgi outfile.rgb] [-original] [-invert] 
-       &lt; input.r3d &gt; outfile
+     render [-invert]                     < input.r3d > outfile.avs
+or
+     render [-invert] [-quality NN] -jpeg < input.r3d > outfile.jpeg
+or
+     render [-invert] -tiff outfile.tiff  < input.r3d
+or
+     render [-invert] -sgi outfile.rgb    < input.r3d
+or
+     render [-invert] -out outfile.xxx    < input.r3d
 </listing>
+
 Render
 reads an ascii file consisting of several header lines followed by individual
 object descriptors. The objects are rendered using a fast Z-buffer algorithm to
-produce a high quality pixel image which contains two light sources, specular
-highlighting, Phong shaded surfaces, and shadows. Output is to stdout [or
+produce a high quality pixel image which contains one shadowing light source, 
+additional non-shadowing light sources, specular highlighting, transparency,
+and Phong shaded surfaces. Output is to stdout [or
 optional file] in the form of a pixel image with 24 bits of color information
 per pixel. The default output file format is an AVS image sent to stdout. 
-Support for TIFF or SGI libimage image files may be optionally included 
+Support for JPEG, TIFF or SGI libimage image files may be optionally included 
 during installation of the Raster3D package.
+Additional output formats are possible by using the -out option if ImageMagick 
+is installed also.
+
 <p>
 There are several utility programs that will create all or part of an acceptable
 input file by reading atomic coordinates from a Brookhaven PDB file. These
@@ -45,6 +58,7 @@ Molscript [Per Kraulis (1991) J. Appl. Cryst. 24, 946-950].<p>
 </tr>
 <tr>
 <td><a href="#examples">Examples</a> </td>
+<td><a href="#options">Options</a> </td>
 <td><a href="#description">Description</a> </td>
 <td><a href="#header">Header Records</a> </td>
 </tr>
@@ -106,23 +120,39 @@ can be modified to produce a TIFF file without conversion:
 <listing>
     cat ribbon.r3d cofactor.r3d | render -tiff picture.tiff
 </listing>
-<h4>OPTIONS</h4>
+
+<h4><a name="options">OPTIONS</a></h4>
 <dl>
-<dt><i>-tiff filename</i><dd>Only if compiled with -DTIFF_SUPPORT. By default
-render will produce an AVS-compatible image on stdout. The -tiff flag will
-cause it to output a TIFF image to the specified file instead.
-<dt><i> -sgi filename</i><dd>Only if compiled with -DLIBIMAGE_SUPPORT. By
-default render will produce an AVS-compatible image on stdout. The -sgi flag
-will cause it to output an SGI libimage style *.rgb file instead. In this case
-default output is to the file render.rgb, but specifying a file on the command
-line will override this default.
-<dt><i> -original</i><dd>This flag causes render to produce an output image
-compatible with some earlier versions of the Raster3D package. Output is to
-stdout.
-<dt><i> -invert</i><dd>Invert the image top-to-bottom. This could be necessary
-if you are using some odd viewing program.
-</dl><h4>
-<a name="description">DESCRIPTION</a></h4>
+    <dt><i> -invert</i>
+    <dd>Invert the image top-to-bottom. This could be necessary
+	if you are using some odd viewing program.
+    <dt><i> -quality NN</i>
+    <dd>Only meaningful in conjunction with the -jpeg option;
+	sets the output image quality parameter. Allowable values range from 1-100 (default = 90).
+    <dt><i>-jpeg </i>
+    <dd>Only if compiled with -DJPEG_SUPPORT. By default
+	render will produce an AVS-compatible image on stdout. The -jpeg flag will
+	cause it to output a JPEG image stream to stdout instead.
+    <dt><i>-tiff filename.tiff</i>
+    <dd>Only if compiled with -DTIFF_SUPPORT.
+	The -tiff flag will cause render to output a TIFF image to the specified file.
+    <dt><i> -sgi [filename.rgb]</i>
+    <dd>Only if compiled with -DLIBIMAGE_SUPPORT.  The -sgi flag
+	will cause render to output an SGI libimage style *.rgb file instead. In this case
+	default output is to the file render.rgb, but specifying a file on the command
+	line will override this default.
+    <dt><i> -out filename.xxx</i>
+    <dd>Only if compiled with -DIMAGEPIPE. The -out flag will cause render to pipe output to the 
+	ImageMagick command convert, with instructions to convert it to an image file whose type is 
+	determined by the filename extension xxx. 
+
+    <dt><i> -original</i>
+    <dd>This flag causes render to produce an output image
+	compatible with some earlier versions of the Raster3D package. Output is to
+	stdout.
+</dl>
+
+<h4><a name="description">DESCRIPTION</a></h4>
 The input to render consists of a single text file containing everything
 necessary to prepare the image of a scene consisting of coloured spheres,
 cylinders and triangles. The header records contain information global to the
@@ -198,9 +228,9 @@ of each object, whereas specular reflections are white.
 <dt><i>EYEPOS</i><dd>You can think of the image produced by render as
 corresponding to a photograph taken by a camera placed a certain distance away
 from the objects making up the scene. This distance is controlled by the EYEPOS
-parameter. EYEPOS = 4 describes a perspective corresponding to a viewing
-distance 4 times the narrow dimension of the described scene. A very large
-value of EYEPOS will yield a scene with essentially no parallax or perspective.
+parameter. EYEPOS = 4 describes a perspective corresponding to a viewing 
+distance 4 times the narrow dimension of the described scene.
+EYEPOS = 0 disables perspective.
 <dt><i>SOURCE</i><dd>Primary light source position (e.g., 1 1 1). This is a
 white light point source at infinite distance in the direction of the vector
 given (see note on co-ordinate convention below). The secondary light source is
@@ -366,6 +396,12 @@ F 	  no shadows cast
 SOLID     1.0 0.0 0.0
 BACKFACE  0.3 0.3 1.0   0 0
 </listing>
+Here is the complete list of modifiers currently available, and their parameters
+<listing>
+    SOLID       RED GREEN BLUE
+    BACKFACE    RED GREEN BLUE MPHONG MSPEC
+    FRONTCLIP   ZFRONT
+</listing>
     </dl>
 
 <dt> Object type 9	
@@ -377,29 +413,62 @@ BACKFACE  0.3 0.3 1.0   0 0
      rather than '9'.
      <p>
 
-<dt>Version 2.3 introduced preliminary support for labels in a render input
-file. The actual implementation of label handling is not done in render,
-however, but rather in a separate, parallel program called labels3d.
-Object types 10, 11, and 12 will be used to specify labels. The current
-version of the render program will recognize these, but otherwise ignore
-them. (If you are developing a higher-level application that will pass
-labels to Raster3D for rendering, please contact me so that we can make
-sure the protocols are compatible <i>-EAM</i>)<p>
+<dt> Object types 10-12
+<dt><font color=#BB2222>Label descriptors</font>
+<dd>
+Version 2.3 introduced preliminary support for labels in a render input
+file. This has been substantially upgraded in version 2.4j.
+Object types 10, 11, and 12 are used to specify labels. 
+The current implementation of label handling is not done in render,
+however, but rather in a separate program called 
+<a href="r3dtops.html">r3dtops</a>.  The executable shell script 
+<a href="label3d.html">label3d</a> will automatically feed an input 
+file containing labels through render, r3dtops, ghostscript and ImageMagick
+to yield a final image containing both the renderered molecular 
+graphics objects and the specified labels. 
+Here is an example:
+<pre>
+        # Force the label coordinates to be interpreted as screen coords
+        # (obviously you wouldn't do this if you want the label to get the
+        # same translation/rotation/scaling as other objects do)
+        15
+        # Choose a font
+        10
+        "Times-Italic" 12. "Center-align"
+        # specifiy a label 
+        11
+        0.0 0.45 0.0       1.0 0.0 0.0
+        I am a red title centered at the top of the image
+        # Terminate isolation from coordinate transformation
+        9
+</pre>
 
-<dt> Object type 10
-<dt><font color=#BB2222>(label support)</font>
-<dd> Font specifier and alignment (single line of text)
-     <p>
+      <dl>
+	<dt> Object type 10
+	<dd> "Font specifier" size  "alignment"<br>
+	     Legal fonts specifiers are subject to the details of label processing implementation.
+	     In the context of label3d/r3dtops/ghostscript processing, <br>
+	     fontname is any PostScript font name recogized by ghostscript,<br>
+	     size is the font size in points (assuming eventual printing at 300 dpi),<br>
+	     alignment is either "Right-align", "Left-align", or "Center-align" 
+	     (only the first character is checked).<br>
+	     The default is "Times-Bold" 10 "Left-align".
+	     <p>
+	
+	<dt> Object type 11
+	<dd> [XYZ] [RGB]<br>
+	     Label text
+	     <p>
+	
+	<dt> Object type 12
+	<dd> reserved (single line of text)
+	     <p>
 
-<dt> Object type 11
-<dt><font color=#BB2222>(label support)</font>
-<dd> [XYZ] [RGB]<br>
-     Label text
-     <p>
-
-<dt> Object type 12
-<dt><font color=#BB2222>(label support)</font>
-<dd> reserved (single line of text)
+	<dt>
+	    (If you are developing a higher-level application that will pass
+	    labels to Raster3D for rendering, please contact me so that we can make
+	    sure the protocols are compatible <i>-EAM</i>). 
+     </dl>
      <p>
 
 <dt> Object type 13	
@@ -443,7 +512,7 @@ surface located anywhere, for efficiency during rendering it is also
 useful to know the center and a bounding sphere. So by convention we
 require that (A...J) describe a surface centered at the origin, and add
 additional parameters x, y, z to add a translation component. Therefore
-a QUADRIC descriptor to render has the 17 parameters listed above.
+a quadric surface descriptor to render has the 17 parameters listed above.
 <p>
 The surface itself is the set of points for which Q(x,y,z) = 0 where 
 <dl>
@@ -458,7 +527,10 @@ limiting radius are not rendered.
 <dt><font color=#BB2222>begin isolation from TMAT transformation</font>
 <dd> Objects following this descriptor are interpreted as being in an
      absolute coordinate system centered at the origin and having unit extent
-     in X, Y, and Z. The rotation and translation described by the TMAT
+     in X, Y, and Z.  If the image is square, the coordinates run from
+     -0.5 to +0.5 on both X and Y. If the image is rectangular, coordinates 
+     run from -0.5 to +0.5 on the shorter dimension.
+     The rotation and translation described by the TMAT
      matrix is not applied. This isolation from TMAT applies to subsequent
      objects until an object of type 9 is encountered.
      <p>
@@ -466,8 +538,9 @@ limiting radius are not rendered.
 <dt> Object type 16
 <dt><font color=#BB2222>Global properties</font>
 <dd> Object type 16 is always followed by a single record that affects the rendering
-    of the entire scene. The only global property supported at the moment is
-    FOG, which allows depth-cueing using either a linear or an exponential
+    of the entire scene. The only global properties supported at the moment
+    are listed below.
+    FOG allows depth-cueing using either a linear or an exponential
     model of fog density. A record simply consisting of the keyword FOG will
     produce reasonable depth-cueing (linear decrease in intensity front closest
     object to farthest object). If you need to control the depth-cueing indepently
@@ -475,7 +548,7 @@ limiting radius are not rendered.
     consistent between frames of an animation) then you should specify explicit
     values for fogfront, fogback and fogden.
     <p>
-<pre>FOG fogtype fogfront fogback fogden</pre>
+<pre>FOG        fogtype fogfront fogback fogden</pre>
 	<DL>
 	<DT>fogtype</DT>
 	<DD>0 = linear multiplier = fogden * (fogfront - Z) / (fogfront - fogback)</DD>
@@ -492,11 +565,26 @@ limiting radius are not rendered.
 	
 	</DL>
     <p>
+<pre>BACKCLIP   zback</pre>
+	<DL>
+	<DT>zback</DT>
+	<DD>Z coord of rear clipping plane for all objects; in original units
+	    of original coordinate system, but relative to the center of the
+	    transformed coordinate system. </DD>
+	</DL>
+<pre>FRONTCLIP  zfront</pre>
+	<DL>
+	<DT>zfront</DT>
+	<DD>Z coord of front clipping plane for all objects; in original units
+	    of original coordinate system, but relative to the center of the
+	    transformed coordinate system. </DD>
+	</DL>
+    <p>
 
 
 <dt> Object type 17	
-<dt><font color=#BB2222>explicit coloring at vertices of preceding triangle</font>
-<dd> R1 G1 B1   R2 G2 B2   R3 G3 B3
+<dt><font color=#BB2222>explicit coloring at vertices of preceding triangle or cylinder</font>
+<dd> R1 G1 B1   R2 G2 B2   R3 G3 B3<br>
      Normally a triangle is colored uniformly in the color specified by the
      RGB triple in the TRIANGLE record itself. Using this additional object,
      however, you can specify a separate color for each vertex of the triangle.
@@ -506,6 +594,9 @@ limiting radius are not rendered.
      triangular mesh.  In this case the component triangles of the surface are
      described by three successive objects of types 1, 7, and 17.
      (The ordering 1, 17, 7 is also acceptable).
+     <p>
+     As of version 2.4j this mechanism may also be used to interpolate colors
+     along the length of a cylinder. In this case the third RGB triple is ignored.
      <p>
 
 <dt> Object type 0	

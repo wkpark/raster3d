@@ -1,7 +1,7 @@
 Files
-	avs2ps.l        render.l        rods.l       normal3d.l
-	raster3d.l      ribbon.l        balls.l      stereo3d.l
-	rastep.l
+	avs2ps.l   normal3d.l     rastep.l    ribbon.l
+	balls.l    r3d_objects.l  raster3d.l  rods.l
+	label3d.l  r3dtops.l      render.l    stereo3d.l
 
 These are standard unix man pages to be filtered through nroff.
 Install these files by moving them to the appropriate system directory,
@@ -10,11 +10,11 @@ In the latter case you may have to rename them so that the suffix is
 "1" (number) rather than "l" (lower case L).
 
 Files
-	avs2ps.html            r3d_examples.html      raster3d.html
-	balls.html             r3d_hints.html         render.html
-	normal3d.html          r3d_labels.html        ribbon.html
-	pdb_anisou.html        r3d_transparent.html   rods.html
-	r3d_animation.html     rastep.html            stereo3d.html
+	avs2ps.html      r3d_animation.html    r3dtops.html   rods.html
+	balls.html       r3d_examples.html     rastep.html    stereo3d.html
+	label3d.html     r3d_hints.html        raster3d.html
+	normal3d.html    r3d_labels.html       render.html
+	pdb_anisou.html  r3d_transparent.html  ribbon.html
 
 These are hypertext versions of the PostScript documentation.  I do not 
 know of any truly general conventions for where to install them, but

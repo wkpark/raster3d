@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH RASTEP 1 "14 August 1998" "Raster3D"
+.TH RASTEP 1 " 8 May 1999" "Raster3D"
 
 .SH NAME
 
@@ -107,27 +107,24 @@ the Uij values in the order specified for ANISOU records in PDB format.
 That is, columns 29-70 of the PDB record are interpreted as integers
 representing 10000 * Uij, in the order U11 U22 U33 U12 U13 U23.
 Note in particular that the order of the cross-terms is not the same as that
-used by ORTEP or shelx, neither of which us PDB format anyway.
+used by ORTEP or shelx, neither of which use PDB format anyway.
 However, the program shelxpro will produce correctly formatted PDB records
 from a shelx coordinate file.
 
 
 .SH SOURCE
-.TP 5
-	anonymous ftp site:	
-                ftp.bmsc.washington.edu
-.TP 0
-	web URL:
-		http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
-	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+.B web URL:
+  	http://www.bmsc.washington.edu/raster3d/raster3d.html
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
 
 .SH SEE ALSO
-Raster3D(1), render(1)
+Raster3D(l), render(l)
 .PP
 .SH AUTHORS
 	Ethan A Merritt.

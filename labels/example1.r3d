@@ -1,0 +1,105 @@
+Example of labels in Raster3D/ghostscript
+64 64     tiles in x,y
+12 12     pixels (x,y) per tile
+1         no anti-aliasing
+0 0.1 0   background colour
+T         no shadows cast
+25        Phong power
+0.15      secondary light contribution
+0.05      ambient light contribution
+0.25      specular reflection component
+4.0       eye position
+1 1 1     main light source position
+1 0 0 0   input coordinate, radius transformation
+0 1 0 0
+0 0 1 0
+0 0 0 2
+3         mixed objects
+*
+*
+*
+# A couple of transparent spheres
+8
+ 17.0  0.6               1.0 0.9 0.2  1.0    2 0 0 0 
+2
+ -0.1  0.1 0.0    0.35   0.7 0.3 0.1
+2
+ -0.3 -0.3 0.0    0.2    0.7 0.7 0.6
+9 End transparency
+#
+# Test for default font
+11
+-.5 .75 -.5   .3 .4 .9
+This is the default font.
+#
+# Select a font
+10
+"Times-Roman" 12. "Left-align"
+#
+# Compare centering options
+# Center label on small sphere
+2
+ .2 -.4 -.1  0.04  0.8 0.8 0.8
+10
+"Times-Italic" 12. "Center-align"
+11
+ .2 -.4 -.1   0. 1. 0.
++
+11
+ .2 -.4 -.1   1. .5 .5
+Centered label
+#
+# Label to right of small sphere
+2
+ .2 -.6 -.1  0.04  0.8 0.8 0.8
+10
+"Times-Italic" 12. "Right-align"
+11
+ .2 -.6 -.1  1. .5 .5
+Right label+
+#
+# Label to left of small sphere
+2
+ .2 -.7 -.1  0.04  0.8 0.8 0.8
+10
+"Times-Italic" 12. "Left-align"
+11
+ .2 -.7 -.1   1. .5 .5
++Left label
+#
+#
+#
+2
+  0.3  0.3 0.0    0.2    0.4 0.2 0.9
+3
+ -0.5 -0.5 0.0  0.1  0.5  0.5 0.0  0.1  0.8 0.8 0.8
+10
+"Symbol" 10. "Left-align"
+11
+-.9 -.7 .1  .6 .8 .1
+abc DEF
+10
+"Helvetica-Bold" 7. "Offset"
+11
+.0 .025 .0  .5 .5 .5
+superscript
+#
+# Test isolation of labels
+#
+15
+10
+"Palatino-BoldItalic" 30. "Left-align"
+11
+-0.45 0.40 0.0     1.0 1.0 1.0
+R
+10
+"Palatino-BoldItalic" 18. "Offset"
+11
+0.0 0.0 0.0        1.0 1.0 1.0
+aster3D now does
+11
+0.0 0.0 0.0        1.0 1.0 1.0
+ labels!
+#
+# End isolation
+9

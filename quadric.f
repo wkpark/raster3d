@@ -1,8 +1,9 @@
 ************************************************************************
 *              Support routines for quadric surfaces                   *
 ************************************************************************
-* EAM June 1997	- initial version, supports version 2.4(alpha) of render 
-* EAM  May 1998	- additional error checking to go with Parvati/rastep
+* EAM Jun 1997	- initial version, supports version 2.4(alpha) of render 
+* EAM May 1998	- additional error checking to go with Parvati/rastep
+* EAM Jan 1999	- version 2.4i
 ************************************************************************
 *
 * Quadric surfaces include spheres, cones, ellipsoids, paraboloids, and
@@ -47,11 +48,11 @@ C
 	subroutine qsetup
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
-     &                  TMAT, TINV, TINVT, SROT, SRINV, SRINVT
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
       REAL   EYEPOS
       REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
-      REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+      REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
 *
       COMMON /ASSCOM/ noise, verbose
       integer         noise
@@ -90,8 +91,13 @@ C
 *
 *	Same thing again for shadow rotation matrix
 	call  trnsp4( TRAN, SROT )
-	det = tinv4( SRINV, TRAN )
-	call  trnsp4( SRINVT, SRINV )
+	det = tinv4( SRTINV, TRAN )
+	call  trnsp4( SRTINVT, SRTINV )
+	if (abs(1. - abs(det)) .gt. 0.02) then
+	    write (noise,903) abs(det)
+  903	    format('>>> Warning: Determinant of shadow matrix =',
+     &           F7.3,' <<<')
+	endif
 *
 	return
 	end
@@ -100,9 +106,10 @@ C
 CCC     Process single object descriptor during input phase
 CC
 C
-	subroutine qinp( buf, detail, shadow, sdtail )
+	function qinp( buf, detail, shadow, sdtail )
 *
 	IMPLICIT NONE
+	logical  qinp
 	real    buf(100)
 	real    detail(17), sdtail(14)
 	logical shadow
@@ -126,18 +133,21 @@ C
       INTEGER         NTX,NTY,NPX,NPY
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
-     &                  TMAT, TINV, TINVT, SROT, SRINV, SRINVT
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
       REAL   EYEPOS
       REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
-      REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+      REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
 *
       COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
       INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
       INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
-      COMMON /NICETIES/ TRULIM,      ZLIM
-      REAL              TRULIM(3,2), ZLIM(2)
+      COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
+      REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
+*
+* Assume this is legitimate
+	qinp = .TRUE.
 *
 * Update limits (have to trust the center coords)
 *
@@ -187,6 +197,12 @@ c	    pfac = 1./(1.-zq/eyepos)
 *	save transformed Z limits
 	zlim(1) = min( zlim(1), zc )
 	zlim(2) = max( zlim(2), zc )
+*
+*	check for Z-clipping
+	if (zc .gt. FRONTCLIP) then
+	    qinp = .FALSE.
+	    return
+	endif
 *
 	detail(1) = xc
 	detail(2) = yc
@@ -298,8 +314,8 @@ CD	write (noise,191) 'QP  ',((QP(i,j),j=1,4),i=1,4)
 	enddo
 	enddo
 *	transform QQ into shadow space as well
-	call tmul4( qt, qp, srinv )
-	call tmul4( qp, srinvt, qt )
+	call tmul4( qt, qp, srtinv )
+	call tmul4( qp, srtinvt, qt )
 	sdtail(5)  = qp(1,1)
 	sdtail(6)  = qp(2,2)
 	sdtail(7)  = qp(3,3)
@@ -336,11 +352,11 @@ C
 	real    center(3), coeffs(10), xp, yp, zp, qnorm(3)
 *
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
-     &                  TMAT, TINV, TINVT, SROT, SRINV, SRINVT
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
       REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
       REAL   EYEPOS
       REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
-      REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+      REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
 *
 	real    QA,QB,QC,QD,QE,QF,QG,QH,QI,QJ
 	real    AA,BB,CC,DD,EE
@@ -771,11 +787,11 @@ C
 	FUNCTION PERSP( Z )
 	REAL PERSP, Z
 	COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
-     &                  TMAT, TINV, TINVT, SROT, SRINV, SRINVT
+     &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
 	REAL   XCENT, YCENT, SCALE, SXCENT, SYCENT
 	REAL   EYEPOS
 	REAL   TMAT(4,4), TINV(4,4),   TINVT(4,4) 
-	REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+	REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
 	IF (Z/EYEPOS .GT. 0.999) THEN
 	    PERSP = 1000.
 	ELSE

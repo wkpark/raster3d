@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH STEREO3D 1 " 9 September 1997" "Raster3D V2.3"
+.TH STEREO3D 1 " 8 May 1999" "Raster3D"
 .SH NAME
 
 stereo3d - render a Raster3D scene as a side-by-side stereo pair
@@ -8,6 +8,7 @@ stereo3d - render a Raster3D scene as a side-by-side stereo pair
 .SH SYNOPSIS
 
    stereo3d render_input_file
+   display stereo3d.tiff
 
 .PP
 \fIstereo3d\fP is a shell script that renders a single Raster3D input 
@@ -46,20 +47,22 @@ listed above are created each time the script is run. Any exiting files
 named left.tiff, right.tiff, or stereo.tiff will be destroyed.
 
 .SH SOURCE
-.TP 5
- anonymous ftp site:	
-    ftp.bmsc.washington.edu
- web URL:
-    http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
- 	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+ 
+.B web URL:
+ 	http://www.bmsc.washington.edu/raster3d/raster3d.html
+ 
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
+
+
 
 .SH SEE ALSO
-normal3d(1), render(1), Raster3D(1)
+normal3d(l), render(l), Raster3D(l)
 .PP
 .SH AUTHORS
 

@@ -5,7 +5,7 @@
 1) copy the appropriate Makefile.xxx for your machine to Makefile
 
 2) inspect the Makefile to make sure that it is appropriate for your site,
-   and possibly edit the file to include TIFF or LIBIMAGE support.
+   and possibly edit the file to include TIFF, JPEG, or LIBIMAGE support.
 
    In order to build Raster3D so that it supports the direct output of
    TIFF image files you must
@@ -17,6 +17,18 @@
 	   DEFINES  = -DTIFF_SUPPORT
 	   LIBS     = -ltiff
 
+   In order to build Raster3D so that it supports the direct output of
+   JPEG image files you must
+	1) Obtain and install a JPEG library. The current version is
+	   jpeg-6b, available from ftp://ftp.uu.net/graphics/jpeg/jpegsrc.v6b.tar.gz
+	2) Note that the JPEG headers and libraries distributed with Irix versions
+	   prior to Irix V6.5 were internally incompatible. There is a workaround in
+	   Makefile.irix6, but you may want to just build and use a correct current
+	   version of the jpeg library from the ftp site listed above.
+	3) Edit the DEFINES and LIBS definitions in the Makefile,
+	   DEFINES  = -DJPEG_SUPPORT
+	   LIBS     = -ljpeg
+
    On SGI machines you may want to build in support for direct output to
    image files compatible with the libimage utilities.  In this case you
    must
@@ -27,19 +39,17 @@
 	   INCLUDES = -DLIBIMAGE_SUPPORT
 	   LIBS     = -limage
 
-3) You can, if you like, build an alternate version of the rendering 
-   program that directly outputs a JPEG file. This could be useful, say,
-   for the back end of a web server. Depending on where your JPEG 
-   library is installed you may be able to simply try "make render_jpeg".
-   If this fails you will have to edit the Makefile to point correctly
-   to the JPEG library, and perhaps alter the #include statements in 
-   local_jpeg.c  or the INCLUDES definition in the Makefile.
+   There is also an option (new in this version) to pipe output directly to
+   ImageMagick for conversion to many other image file types. This is enabled
+   by default under the control of the flag -DIMAGEPIPE.
+
 
 4) Install the package:
+	make all
 	make install
-   If this doesn't work, just copy the executables to wherever you want
-   them to live (usually /usr/local/bin/), and copy the manual pages to
-   /usr/local/man/manl/.
+   If the installation part doesn't work, just copy the executables to 
+   wherever you want them to live (usually /usr/local/bin/), 
+   and copy the manual pages to /usr/local/man/manl/.
 
 5) [Optional] add R3D_LIB to your system-wide initialization of environmental
    variables, or instruct users to insert one of the following into their
@@ -57,13 +67,30 @@
    and if that fails then look for $(R3D_LIB)/transparent.r3d 
 
 
-6) Go to the examples subdirectory and try running the example scripts
+6) [Optional] If you have ImageMagick version 4.1.8 or newer installed, you
+   may want to teach it how to use the Raster3D rendering program as a 
+   delegate.  You can do this by adding lines at the end of the file
+   /usr/local/share/ImageMagick/delegates.mgk   as shown below:
+
+#
+# Use Raster3D rendering program as a delegate for files ending in .r3d
+   r3d=>
+	   render -tiff %o < %i
+
+
+7) Go to the examples subdirectory and try running the example scripts
    to verify installation.
 
 A sample installation on a DEC Alpha might go:
 	cp Makefile.dec Makefile
 	vi Makefile                    # to check options, etc
-	make install
+	make all                       # build the programs
+	make install                   # install them
+	cd examples                    # run the demo/verification scripts
+	./example1.script
+	./example2.script
+	./example3.script
+	... and so on ...
 
 Notes -
 
@@ -89,14 +116,17 @@ Makefile.sgi worked for me on test machines running Irix versions
 4.0.5, 5.3, and 6.2.  This Makefile uses the old f77 compiler (-mips 2).
 
 Makefile.irix6 uses the new f77 compiler (-mips 3), which produces 
-code for render that runs about 30% faster.  Tested under Irix 6.1 6.2 6.4,
-but you may have to fiddle with the library search paths to bring in
-compatible versions of the libimage, libtiff, and libjpeg libraries.
+code for render that runs about 30% faster.  
+Under Irix 6.1 6.2 6.4, you may have to fiddle with the library search 
+paths to bring in compatible versions of the libimage, libtiff, and libjpeg 
+libraries.
+Works with no fiddling under Irix 6.5
 
 Some versions of Irix 6 include self-incompatible versions of 
 libjpeg.h and libjpeg.so.  To work around this there is a conditional
 flag in local_jpeg.c triggered by adding the definition -DBROKEN_LIBJPEG
-in the Makefile.
+in the Makefile. Or just obtain and build a correct version of libjpeg.so
+from the independent JPEG development group ftp://ftp.uu.net/graphics/jpeg/
 
 linux
 =====
@@ -107,7 +137,7 @@ the redhat distribution except for the f77 alias.
 There are some gotchas, however:
 	- "nawk" is installed as "awk" in redhat, so you need to either
 	  define nawk as an alias for awk or just change "nawk" to "awk"
-	  in the stereo3d script.
+	  in the stereo3d and label3d scripts.
 	- Sometimes the TIFF library dumps core after closing an image
 	  file in TIFFClose().  Very annoying, but other than producing
 	  a core dump it doesn't hurt anything - the image file has 
@@ -148,7 +178,7 @@ ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip.
 Many thanks to Suhaib Siddiqi, who offers the following recipe for 
 building Raster3D under Windows:
 
-I have successfully compiled Raster#d 2.4g on Windows NT/95/98.  It is a
+I have successfully compiled Raster3D 2.4g on Windows NT/95/98.  It is a
 direct port of your source code without any modifications or deletions.
 
 1) Go to http://sourceware.cygnus.com/cygwin
@@ -166,6 +196,13 @@ is very important.
 (Note: Don't use WinZip or any other Windows programs to extract archive of 
 Raster3D and JPEG etc libraries otherwise you will get parse errors during 
 compilation). 
+
+Please let your users know that they will also need to download compiled
+binaries of Image Formate Libraries from http://www.sgi.com - Go to OpenGL
+web pages and look for OpenGL Optimizer Version 1.1 download site.  You will
+find Image Formate Libraries for Windows there.  I used these libraries
+together with libjepg.a and libtiff.a for linking.  They produced better
+results - that is images were of better quality.
 
 To use Raster3D from /usr/H-i586-cygwin32/bin copy cygwin1.dll to Raster3D
 directory and include Raster3D to your Windows enviroment.  That is it.

@@ -1,31 +1,39 @@
-VERSION = Raster3D_2.4h
 #
 # Raster3D makefile for Alpha OSF / Digital Unix 4.0
 #
-#          f77 compiler seems to be fine
-#	   f90 compiler is fine as of DU 4.0D;
-#	       earlier versions were broken for optimization greater than -O1
+include VERSION
 #
 LDFLAGS = 
-CFLAGS  = -O $(INCLUDES)
+CFLAGS  = -O -w $(INCLUDES)
 #FC	= f90
 #FFLAGS	= -O -fast -static -d_lines
 FC	= f77
-FFLAGS  = -O -fast -static -w1 -d_lines
-#FFLAGS  = -g -static -w1 -d_lines
+FFLAGS  = -O -fast -static -d_lines
 #
-# If you choose to build Raster3D with support for direct output of
-# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
-# You will also need to add -ltiff to the LIBS definition.
+# TIFF support (enabled by default)
+#     add -DTIFF_SUPPORT to the DEFINES statement.
+#     add -ltiff to the LIBS definition.
 # The TIFF_INVERT option is a work-around for broken programs
 # (e.g. PhotoShop) that don't properly read the TIFF header.
 #
-#LIBS    =	-ltiff /usr/local/lib/libjpeg.a
-#DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT
-#INCLUDES = -I/usr/local/include/ -I/usr/local/include/jpeg
+#
+# JPEG support (enabled by default)
+#     add -DJPEG_SUPPORT to the DEFINES statement.
+#     add -ljpeg to the LIBS definition.
+#
+# Auto conversion of output using ImageMagick (enabled by default)
+#     add -DIMAGEPIPE to the DEFINES statement.
+#
 
- LIBS    =
- DEFINES =
+ LIBS    =	-ltiff -ljpeg
+ DEFINES =	-DTIFF_SUPPORT -DTIFF_INVERT \
+		-DIMAGEPIPE -DJPEG_SUPPORT
+INCLUDES =	-I/usr/local/include/
+
+#LIBS    =
+#DEFINES =
+#INCLUDES=
+
 
 RIBOBJS =	ribbon.o ribbon1.o modsubs.o
 PROGS   =	balls normal3d rastep rods ribbon render avs2ps
@@ -35,7 +43,6 @@ all:	$(PROGS)
 clean:
 	rm -f *.o *.u core
 	rm -f $(PROGS)
-	rm -f render_jpeg
 
 install: $(PROGS)
 	mv $(PROGS) /usr/local/bin
@@ -43,9 +50,9 @@ install: $(PROGS)
 	cp doc/*.l /usr/local/man/manl
 
 tar:
-	(cd ..; tar -cvf $(VERSION).tar raster3d)
-	/usr/bin/compress  ../$(VERSION).tar
-	(cd ..; gtar -czvf $(VERSION).tar.gz raster3d)
+	(cd ..; tar -cvf Raster3D_$(VERSION).tar raster3d)
+	/usr/bin/compress  ../Raster3D_$(VERSION).tar
+	(cd ..; gtar -czvf Raster3D_$(VERSION).tar.gz raster3d)
 
 normal3d: normal3d.o quadric.o
 	$(FC) $(FFLAGS) normal3d.o quadric.o -o normal3d
@@ -59,16 +66,9 @@ ribbon:	$(RIBOBJS)
 local.o: local.c
 	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
 
-local_jpeg.o: local_jpeg.c
-	cc -g $(INCLUDES) $(DEFINES) -c local_jpeg.c
-
-render:	render.f local.o quadric.o
+render:	render.f local.o quadric.o 
 	$(FC) $(FFLAGS) render.f quadric.o local.o \
 	$(LIBS) -o render $(LDFLAGS)
-
-render_jpeg: render.o local_jpeg.o quadric.o
-	$(FC) $(LDFLAGS) render.o quadric.o local_jpeg.o \
-	$(LIBS) -o render_jpeg
 
 avs2ps:	avs2ps.c
 	cc -O avs2ps.c -o avs2ps -lm

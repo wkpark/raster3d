@@ -1,0 +1,24 @@
+#!/bin/csh
+#
+# Bugs:
+#	label3d.ps left around if r3dtops exits due to no labels
+#	sometimes combine fails to recognize white background ?!
+#
+if ($1 == ''-'') then
+   cat > label3d.tmp
+else
+   cp $1 label3d.tmp
+endif
+#
+rm -f render.tiff label3d.ps label3d.ppm
+render -tiff render.tiff < label3d.tmp
+if (! -e render.tiff) exit(-1)
+r3dtops -fontscale 3.0 < label3d.tmp > label3d.ps || exit(-1)
+setenv SIZE `identify render.tiff | nawk '{for(i=1;i<=NF;i++){if ($i~"[0-9]*x[0-9]*") {print $i}}}'`
+alias gs3d gs -sDEVICE=ppm -dNOPAUSE -q -sOutputFile=label3d.ppm
+gs3d -g$SIZE label3d.ps -c quit
+combine -compose over render.tiff label3d.ppm label3d.tiff
+#
+rm -f label3d.ps 
+rm -f label3d.tmp label3d.ppm render.tiff
+#

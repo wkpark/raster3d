@@ -5,7 +5,7 @@
 <body>
 <hr>
 <img src="r3d_icon.gif" alt="" align=left>
-<h1 align=center>Raster3D V2.4g</h1>
+<h1 align=center>Raster3D V2.4j</h1>
 <br clear=all>
 
 The Raster3D molecular graphics package consists of a core program 
@@ -13,7 +13,7 @@ The Raster3D molecular graphics package consists of a core program
 and a number of ancillary programs
 which produce input files
 for rendering from Brookhaven PDB files of atomic coordinates. Raster3D can
-also render images composed using version 1.4 or later of 
+also render images composed using other programs such as 
 <a href="#refs">Molscript</a>
 <p>
 
@@ -51,7 +51,9 @@ also render images composed using version 1.4 or later of
 	<ul>
 	<li><a href="avs2ps.html">avs2ps</a>
 	<li><a href="balls.html">balls</a>
+	<li><a href="label3d.html">label3d</a>
 	<li><a href="normal3d.html">normal3d</a>
+	<li><a href="r3dtops.html">r3dtops</a>
 	<li><a href="rastep.html">rastep</a>
 	<li><a href="render.html">render</a> 
 	<li><a href="ribbon.html">ribbon</a>
@@ -68,6 +70,8 @@ also render images composed using version 1.4 or later of
 	Shadowing</a>
     <li><a href="r3d_hints.html#output device">
 	Tailoring your image to the output device</a>
+    <li><a href="r3d_hints.html#modularity">
+	Making your picture modular</a>
     <li><a href="r3d_hints.html#stereo1">
 	Side-by-side figures and stereo pairs</a>
     <li><a href="r3d_hints.html#stereo2">
@@ -96,16 +100,16 @@ also render images composed using version 1.4 or later of
 
 <h4><a name="general">SYNOPSIS</a></h4>
 Raster3D uses a fast Z-buffer algorithm to produce high quality pixel images
-featuring two light sources, specular highlighting, Phong shaded surfaces, and
-shadowing. Output is in the form of a pixel image with 24 bits of color
+featuring one shadowing light source, additional non-shadowing light sources,
+specular highlighting, transparency, and Phong shaded surfaces.
+Output is in the form of a pixel image with 24 bits of color
 information per pixel.<p>
-Raster3D does not depend on graphics hardware for operation. Four image output
-formats are supported: AVS, TIFF, SGI libimage, and a private format which is
-backwards-compatible with earlier versions of Raster3D. To actually view or
+Raster3D does not depend on graphics hardware. Four common image output
+formats are supported: AVS, JPEG, TIFF, and SGI libimage.  To actually view or
 manipulate the images produced, you must also have installed an image viewing
 package (e.g. John Cristy's ImageMagick or the SGI libimage utilities).
-An alternate version of the rendering may be built which directly outputs
-JPEG images [only].<p>
+The Raster3D rendering program can be integrated with ImageMagick to
+expand the flexibility of output formats and interactive use.
 
 Ancillary programs are provided for the generation of object
 descriptions based on atomic coordinates stored in Brookhaven PDB format.
@@ -141,15 +145,24 @@ There is a new shell script, <a href="stereo3d.html">stereo3d</a>
 to automatically generate a side-by-side stereo pair from a Raster3D input file.
 <p>
 
-<b>Version 2.4</b>
-The <a href="render.html"> render</a> program
-now supports generalized quadric surfaces (ellipsoids, cones, etc).
+Version 2.4 added support for
+generalized quadric surfaces (ellipsoids, cones, etc) and interpolation
+of colors assigned to the vertices of triangles.
+Input lines beginning with '#' are treated as comments.
 There is a new utility program <a href="rastep.html">rastep</a>
 which generates "thermal ellipsoid" representations of atoms based on the
 Biso or Uij entries in a PDB file (ANISOU cards). The option of colouring 
-based on B values has been added here and elsewhere. Triangles now may be
-colored by interpolation of colors assigned to the three vertices. Input
-lines beginning with '#' are treated as comments.
+based on B values has been added here and elsewhere.
+<p>
+
+<b>Version 2.4j</b> adds support for Z-clipping, output to a JPEG image
+file on stdout, piped output to ImageMagick for automatic conversion to
+additional image types, per-vertex color information for cylinders,
+and file indirection of header records.
+It also includes upgraded support for handling labels (object types
+10,11,12), including addition of the programs 
+<a href="r3dtops.html">r3dtops</a> and <a href="label3d">label3d</a>
+to the main distribution.
 
 <h4>
 <a name="examples">EXAMPLES</a></h4>
@@ -231,6 +244,12 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	(libtiff.a).  Several implementations are available, including one by 
 	Sam Leffler which may be obtained via anonymous ftp from 
 	<a href="ftp://ftp.sgi.com"> sgi.com</a>.
+    <dt>JPEG
+    <dd>In order to build in support for output of JPEG images you must have a
+	copy of the JPEG library. If your system does not already have this
+	library installed, you can obtain it directly from the Indepent JPEG Group development 
+	project via anonymous ftp from 
+	<a href="ftp://ftp.uu.net/graphics/jpeg/">ftp.uu.net/graphics/jpeg/</a>.
     <dt>ImageMagick
     <dd>In order to view the rendered images on a workstation screen you must 
 	also obtain and install an image viewer. 
@@ -241,6 +260,9 @@ http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 	<a href="ftp://ftp.x.org"> 
 	ftp.x.org </a>) 
 	and John Bradley's xv.<p>
+    <dt>Ghostscript
+    <dd>Used only by the label-processing tools 
+	<a href="r3dtops.html">r3dtops</a> and <a href="label3d">label3d</a>.
 </dl>
 
 <h5>Some other programs with direct Raster3D output modes:</h5>

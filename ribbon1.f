@@ -54,8 +54,8 @@ C	to RENDER is therefore the identity matrix.
 C EAM Aug 1997 - Honor COLOUR requests
 C                                                     
 c
-	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3),
-     &  		RGB(3,MAXCOL)
+	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
+     &  		,RGB(3,MAXCOL)
 	common /SPAM/   natm, SPAM(4,MAXATM), SCAM(MAXATM)
 	integer		SCAM
 	common /FLAGS/  mflag, hflag, dflag
@@ -393,8 +393,8 @@ C
 	parameter (ndata =  500)	! maximum # guidepoints 
 	parameter (ndata1 = 501)
 c
-	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3),
-     &			RGB(3,MAXCOL)
+	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
+     &			,RGB(3,MAXCOL)
 	common /FLAGS/  mflag, hflag, dflag
 	logical		mflag, hflag, dflag
 c
@@ -480,7 +480,7 @@ c
 		end if
 c
 		call colorit( color, fraction,
-     1  		smooth(1,ires,1), smooth(1,jres,2), smooth(1,inext,1))
+     1  	  smooth(1,ires,1), smooth(1,jres,2), smooth(1,inext,1))
 c
 		write (output,iformat) (smooth(i,ires,  1),i=1,3),
      1  		          (smooth(i,jres,  2),i=1,3),
@@ -489,7 +489,7 @@ c
 c
 		if (jres .eq. kres) goto 2100
 		call colorit( color, fraction,
-     1  		smooth(1,kres,2), smooth(1,inext,1), smooth(1,jres,2))
+     1  	  smooth(1,kres,2), smooth(1,inext,1), smooth(1,jres,2))
 		write (output,iformat) (smooth(i,jres,  2),i=1,3),
      1  		          (smooth(i,inext,1),i=1,3),
      2  		          (smooth(i,kres,  2),i=1,3),
@@ -532,8 +532,8 @@ c	   scheme 4	combination of 2 and 3 above
 c	   scheme 5	color each new chain a new color from RGB 
 c
         PARAMETER (MAXCOL=5000, MAXATM=10000)
-	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3),
-     &			RGB(3,MAXCOL)
+	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
+     &			,RGB(3,MAXCOL)
 	common /SPAM/ NATM, SPAM(4,MAXATM), SCAM(MAXATM)
 	integer SCAM
 	real	vec1(3), vec2(3), vec3(3)
@@ -547,9 +547,12 @@ c
 			color(2) = color3(2)
 			color(3) = color3(3)
 		else if (ischeme .eq. 4) then
-			color(1) = fraction*color2(1) + (1.-fraction)*color1(1)
-	 		color(2) = fraction*color2(2) + (1.-fraction)*color1(2)
-			color(3) = fraction*color2(3) + (1.-fraction)*color1(3)
+			color(1) = fraction*color2(1) 
+     &				 + (1.-fraction)*color1(1)
+	 		color(2) = fraction*color2(2) 
+     &				 + (1.-fraction)*color1(2)
+			color(3) = fraction*color2(3) 
+     &				 + (1.-fraction)*color1(3)
 		else
 			color(1) = color1(1)
 			color(2) = color1(2)
@@ -560,7 +563,8 @@ c
 		color(2) = fraction*color2(2) + (1.-fraction)*color1(2)
 		color(3) = fraction*color2(3) + (1.-fraction)*color1(3)
 	else if (ischeme .eq. 5) then
-		call vload( color, RGB(1,cindex), RGB(2,cindex), RGB(3,cindex) )
+		call vload( color, 
+     &			    RGB(1,cindex), RGB(2,cindex), RGB(3,cindex))
 	else if (ischeme .eq. 6) then
 		ICOL = SCAM(fraction)
 		color(1) = RGB(1,icol)

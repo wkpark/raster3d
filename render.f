@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.4h ( 8 Dec 1998)
+*     Version 2.4j (18 May 1999)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -54,12 +54,15 @@
 * EAM Jul 1998	- Object type 16 (GLOBAL PROPERTIES); fog
 * EAM Aug 1998	- render back side of transparent flat-ended cylinders
 *		  by duplicating object with INSIDE flag bit set.
-* EAM Oct 1998	- use environmental variable R3D_LIB for input file indirection
-*		- some preliminary code to support Z-clipping
-* EAM Dec 1998	- 2.4h (minor bug fixes)
+* EAM Oct 1998	- check environmental variable R3D_LIB for input file indirection
+*		- V2.4g includes some preliminary code to support Z-clipping
+* EAM Nov 1998	- more work on Z-clipping
+* EAM Feb 1999	- re-work output module local.c to support -jpeg and -out
+* EAM May 1999	- allow explicit vertex colors for cylinders also
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
+*
 *
 *     General organization:
 *
@@ -154,7 +157,7 @@
 *	  - type 14: quadric surface (usually an ellipsoid)
 *	  - type 15: disable coordinate transformation of subsequent objects
 *	  - type 16: global properties (e.g. FOG)
-*	  - type 17: RGB triple for each vertex of preceding triangle
+*	  - type 17: RGB triple for each vertex of preceding triangle or cylinder
 *         - type  0: no more objects (equivalent to eof)
 *
 *-----------------------------------------------------------------------------
@@ -316,8 +319,8 @@
       IMPLICIT REAL   (A-H, O-Z)
 *
 *     I/O units for control input, image output, info output
-      INTEGER INPUT, INPUT0, OUTPUT, NOISE
-      PARAMETER (INPUT0=5, OUTPUT=2, NOISE=0)
+      INTEGER INPUT, INPUT0, NOISE
+      PARAMETER (INPUT0=5, NOISE=0)
 *     Allowable levels of file indirection.
       PARAMETER (MAXLEV=5)
 *
@@ -335,7 +338,7 @@
 *
 *     Descriptor codes for the various object types
       INTEGER TRIANG, SPHERE, TRCONE, PEARLS, CYLIND, CYLFLAT
-      INTEGER PLANE, QUADRIC, MXTYPE
+      INTEGER PLANE, QUADRIC, MXTYPE, FONT, GLOWLIGHT, VERTEXRGB
       PARAMETER (TRIANG = 1, SPHERE = 2, TRCONE = 3, PEARLS = 4)
       PARAMETER (CYLIND = 3, CYLFLAT= 5)
       PARAMETER (PLANE    = 6)
@@ -396,7 +399,7 @@
 *
 *     Maximum number of objects
 ***   PARAMETER (MAXOBJ =   7500)
-      PARAMETER (MAXOBJ = 200000)
+      PARAMETER (MAXOBJ = 275000)
 *
 *     Array elements available for object details 
 *     Should be roughly 10*MAXOBJ
@@ -460,7 +463,7 @@
 *     Transformation matrix, inverse, and transponsed inverse
       REAL   TMAT(4,4), TINV(4,4), TINVT(4,4)
 *     Shortest rotation from light source to +z axis
-      REAL   SROT(4,4), SRINV(4,4), SRINVT(4,4)
+      REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
 *
 *     Distance (in +z) of viewing eye
       REAL   EYEPOS
@@ -507,6 +510,7 @@
 *     and remember any special props of current material on input
       INTEGER MLIST(MAXMAT)
       LOGICAL MATCOL, BACKFACE, ISOLATE
+      LOGICAL CLIPPING, MAYCLIP, JUSTCLIPPED
       REAL    RGBMAT(3)
 *
 *     Object details, shadow object details
@@ -545,8 +549,8 @@
 *
 *     Support for quadrics
       REAL     QNORM(3)
-      EXTERNAL QTEST
-      LOGICAL  QTEST, ISQUAD
+      EXTERNAL QINP, QTEST
+      LOGICAL  QINP, QTEST, ISQUAD
 *
 *     Support for transparency
       COMMON /TRANS/ NTRANSP, INDTOP, IND2ND, IND3RD, ZTOP, Z2ND, Z3RD,
@@ -564,16 +568,12 @@
       PARAMETER (MAXGLOWS = 10)
       INTEGER	GLOWLIST(MAXGLOWS), NGLOWS
 *
-* Z-clipping has never been user-controlled, but maybe in the future...
-      REAL  	BACKCLIP
-      LOGICAL	CLIPPING, MAYCLIP
-*
 *     Output buffer
 *     EAM May 1990 invert index order for packing efficiency on IRIS
       INTEGER*2 OUTBUF(OUTSIZ,4)
 *
 *     Also keep track of command line options and output mode
-      CHARACTER*64 ARG1, ARG2, ARG3
+      CHARACTER*64 ARG1, ARG2, ARG3, ARG4
 *
 *     Copy of NOISE for ASSERT to see
       INTEGER ASSOUT
@@ -582,8 +582,8 @@
       SAVE /ASSCOM/
 *
 *     Keep track of actual coordinate limits
-      COMMON /NICETIES/ TRULIM,      ZLIM
-      REAL              TRULIM(3,2), ZLIM(2)
+      COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
+      REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
 *
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
@@ -631,7 +631,7 @@
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
-      WRITE (NOISE,*) 'Raster3D V2.4h'
+      WRITE (NOISE,*) 'Raster3D V2.4j'
 *
 *     Initialize to level 0 of file indirection
       INPUT = INPUT0
@@ -653,27 +653,37 @@
 *     Initialize global properties
       FOGTYPE = -1
 *
-* !!! N.B. If, on your system, unit-file associations are not made
-*     externally, put statements something like this in:
-*
-*     OPEN (INPUT, FILE='<your input file>', STATUS='OLD',
-*    &     FORM='FORMATTED', ACCESS='SEQUENTIAL')
-*
-*     OPEN (OUTPUT, FILE='<image output file>', STATUS='NEW',
-*    &     FORM='UNFORMATTED', ACCESS='SEQUENTIAL')
-*
 *     Get title
+  100 CONTINUE
       READ (INPUT,'(A)') TITLE
+      IF (TITLE(1:1) .EQ. '#') GOTO 100
+      IF (TITLE(1:1) .EQ. '@') THEN
+	K = 80
+	DO I=80,2,-1
+	  IF (TITLE(I:I).NE.' ') J = I
+	  IF (TITLE(I:I).EQ.'#') K = I-1
+	  IF (TITLE(I:I).EQ.'!') K = I-1
+	  IF (TITLE(I:I).EQ.'	') TITLE(I:I) = ' '
+	ENDDO
+	OPEN (UNIT=INPUT+1,ERR=101,STATUS='OLD',FILE=TITLE(J:K))
+	WRITE (NOISE,'(A,A)') '  + Opening input file ',TITLE(J:K)
+	INPUT = INPUT + 1
+	READ (INPUT,'(A)',ERR=101) TITLE
+	GOTO 102
+  101	WRITE (NOISE,'(A,A)')' >> Cannot open or read file ',TITLE(2:K)
+	CALL EXIT
+  102	CONTINUE
+      ENDIF
       WRITE (NOISE,*) 'title=',TITLE
 *
 *     Get number of tiles
-      READ (INPUT,*,ERR=101,END=101) NTX,NTY
+      READ (INPUT,*,ERR=103,END=103) NTX,NTY
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
-      GOTO 102
-101   CALL ASSERT(.FALSE.,
+      GOTO 104
+103   CALL ASSERT(.FALSE.,
      &           '>>> This doesnt look like a Raster3D input file! <<<')
-102   CONTINUE
+104   CONTINUE
 *
 *     Get number of pixels per tile
       READ (INPUT,*) NPX,NPY
@@ -723,10 +733,12 @@
 	arg1 = ' '
 	arg2 = ' '
 	arg3 = ' '
+	arg4 = ' '
 	if (iargc() .gt. 0) call getarg( 1, arg1 )
 	if (iargc() .gt. 1) call getarg( 2, arg2 )
 	if (iargc() .gt. 2) call getarg( 3, arg3 )
-	otmode = local(0, arg1, arg2, arg3)
+	if (iargc() .gt. 3) call getarg( 4, arg4 )
+	otmode = local(0, arg1, arg2, arg3, arg4)
 C
       IF (AND(OTMODE,DEBUGGING).NE.0) THEN
 	VERBOSE = .TRUE.
@@ -752,7 +764,8 @@ C	Header records and picture title
       SYCENT = NSY*NPY/2.
       SCALE = 2.*MIN(XCENT,YCENT)
 *     This was always true; now it's explicit
-      BACKCLIP = -(SCALE+1.0)
+      BACKCLIP  = -(SCALE+1.0)
+      FRONTCLIP =  HUGE
 *
 *     Get background colour
       READ (INPUT,*) BKGND
@@ -936,6 +949,13 @@ C         WRITE (NOISE,*) INFMTS(I)
       ELSE
         CALL ASSERT (.FALSE.,'crash 4')
       ENDIF
+c
+c     Done with header records
+c
+      IF (INPUT.NE.INPUT0) THEN
+	CLOSE(INPUT)
+	INPUT = INPUT0
+      ENDIF
 *
 *     Give them a notice to stare at while the program cranks along
       WRITE (NOISE,'(/)')
@@ -1005,16 +1025,18 @@ c     Nov 1997 - allow # comments
       	GOTO 7
 c     May 1996 - allow file indirection
       ELSE IF (LINE(1:1) .EQ. '@') THEN
+	K = 80
 	DO I=80,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
-c	  IF (LINE(I:I).EQ.' ') LINE(I:I) = CHAR(0)
+	  IF (LINE(I:I).EQ.'#') K = I-1
+	  IF (LINE(I:I).EQ.'!') K = I-1
+	  IF (LINE(I:I).EQ.'	') LINE(I:I) = ' '
 	ENDDO
 	OPEN (UNIT=INPUT+1,ERR=71,STATUS='OLD',
-Cf90 &	      ACTION='READ',
-     &	      FILE=LINE(J:LEN(LINE)))
-	FULLNAME = LINE(J:LEN(LINE))
+     &	      FILE=LINE(J:K))
+	FULLNAME = LINE(J:K)
 	GOTO 72
-   71	CALL LIBLOOKUP( LINE(J:80), FULLNAME )
+   71	CALL LIBLOOKUP( LINE(J:K), FULLNAME )
 	OPEN (UNIT=INPUT+1,ERR=73,STATUS='OLD',FILE=FULLNAME)
    72	CONTINUE
 	WRITE (NOISE,'(A,A)') '  + Opening input file ',FULLNAME
@@ -1022,7 +1044,7 @@ Cf90 &	      ACTION='READ',
 	CALL ASSERT(INPUT-INPUT0.LE.MAXLEV, 
      &	            'Too many levels of indirection')
 	GOTO 7
-   73	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(2:80)
+   73	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
 	GOTO 7
       ELSE
 	READ (LINE,*,END=50) INTYPE
@@ -1050,7 +1072,7 @@ Cf90 &	      ACTION='READ',
       ELSEIF (INTYPE .EQ. NOTRANS) THEN
 	ISOLATE = .TRUE.
 	GOTO 7
-c     Currently the only legal global propery is FOG
+c     Currently the only documented global propery is FOG
       ELSEIF (INTYPE .EQ. GPROP) THEN
 	READ (INPUT,'(A)',END=50) LINE
 	IF (LINE(1:3).EQ.'FOG') THEN
@@ -1062,7 +1084,13 @@ c     Currently the only legal global propery is FOG
      	  FOGRGB(3) = BKGND(3)
 	  CALL CHKRGB(FOGRGB(1),FOGRGB(2),FOGRGB(3),'invalid fog color')
 	  IF (FOGTYPE.NE.1)  FOGTYPE = 0
-	  IF (FOGDEN.LE.0.0) FOGDEN = 1.0
+	  IF (FOGDEN.LE.0.0) FOGDEN = 0.5
+	ELSE IF (LINE(1:9).EQ.'FRONTCLIP') THEN
+	  READ (LINE(11:72),*) FRONTCLIP
+	  FRONTCLIP = FRONTCLIP * SCALE / TMAT(4,4)
+	ELSE IF (LINE(1:8).EQ.'BACKCLIP') THEN
+	  READ (LINE(10:72),*) BACKCLIP
+	  BACKCLIP = BACKCLIP * SCALE / TMAT(4,4)
 	ELSE
 	WRITE(NOISE,'(A,A)') 
      &         'Unrecognized or incomplete GPROP option ',LINE
@@ -1189,6 +1217,13 @@ C     20-Feb-1997 Save both object type and material type
 *	save transformed Z limits
 	ZLIM(1) = MIN( ZLIM(1), Z1C,Z2C,Z3C )
 	ZLIM(2) = MAX( ZLIM(2), Z1C,Z2C,Z3C )
+*	check for Z-clipping
+	IF (MIN(Z1C,Z2C,Z3C) .GT. FRONTCLIP) THEN
+	    JUSTCLIPPED = .TRUE.
+	    GOTO 45
+	ELSE
+	    JUSTCLIPPED = .FALSE.
+	ENDIF
 *       solve for coefficients of plane eqn z=Ax+By+C
         CALL PLANER(X1C,Y1C,Z1C,
      &             X2C,Y2C,Z2C,
@@ -1376,6 +1411,13 @@ C     20-Feb-1997 Save both object type and material type
 *	save transformed Z limits
 	ZLIM(1) = MIN( ZLIM(1), ZC )
 	ZLIM(2) = MAX( ZLIM(2), ZC )
+*	check for Z-clipping
+	IF (ZC .GT. FRONTCLIP) THEN
+	    JUSTCLIPPED = .TRUE.
+	    GOTO 45
+	ELSE
+	    JUSTCLIPPED = .FALSE.
+	ENDIF
 *       save results
         DETAIL(NDET+1) = XC
         DETAIL(NDET+2) = YC
@@ -1534,6 +1576,13 @@ C     20-Feb-1997 Save both object type and material type
 *	save transformed Z limits
 	ZLIM(1) = MIN( ZLIM(1), Z1C,Z2C )
 	ZLIM(2) = MAX( ZLIM(2), Z1C,Z2C )
+*	check for Z-clipping
+	IF (MIN(Z1C,Z2C) .GT. FRONTCLIP) THEN
+	    JUSTCLIPPED = .TRUE.
+	    GOTO 45
+	ELSE
+	    JUSTCLIPPED = .FALSE.
+	ENDIF
 *       save results
         DETAIL(NDET+1) = X1C
         DETAIL(NDET+2) = Y1C
@@ -1630,6 +1679,7 @@ c	with specs for the current object; we just need to set flags.
 *
       ELSEIF (INTYPE.EQ.NORMS) THEN
 *	vertex normals as given (these belong to previous triangle)
+	IF (JUSTCLIPPED) GOTO 7
 	IPREV = N - 1
 	IF (TYPE(IPREV).EQ.VERTEXRGB) IPREV = IPREV - 1
 	CALL ASSERT (TYPE(IPREV).EQ.TRIANG,'orphan normals')
@@ -1722,17 +1772,28 @@ C
 	  MDET = MDET + SDET(INTYPE)
 	ENDIF
 *
-*	Nov 1997 - allow specification of RGB triple for each vertex of
-*		   preceding triangle. We don't store this separately, just
-*		   extend KDET record for the triangle
+*	Allow specification of RGB triple for each vertex of preceding
+*	triangle or cylinder. Overrides base RGB.
+*	Also overrides MATERIAL RGB, which is arguably a bug.
+*
       ELSEIF (INTYPE .EQ. VERTEXRGB) THEN
-	IPREV = N - 1
-	IF (TYPE(IPREV).EQ.NORMS) IPREV = IPREV - 1
-	CALL ASSERT (TYPE(IPREV).eq.TRIANG,'orphan vertex colours')
-	FLAG(IPREV) = OR( FLAG(IPREV), VCOLS )
+	IF (JUSTCLIPPED) GOTO 7
 	CALL CHKRGB(BUF(1),BUF(2),BUF(3),'invalid vertex color')
 	CALL CHKRGB(BUF(4),BUF(5),BUF(6),'invalid vertex color')
 	CALL CHKRGB(BUF(7),BUF(8),BUF(9),'invalid vertex color')
+	IPREV = N - 1
+	IF (TYPE(IPREV).EQ.NORMS) IPREV = IPREV - 1
+c	we should only see a SPHERE is if it's a collapsed cylinder
+	IF (TYPE(IPREV).EQ.SPHERE) THEN
+	    K = LIST(IPREV)
+	    DETAIL(K+5) = BUF(1)
+	    DETAIL(K+6) = BUF(2)
+	    DETAIL(K+7) = BUF(3)
+	    GOTO 7
+	ENDIF
+	CALL ASSERT (TYPE(IPREV).EQ.TRIANG .OR. TYPE(IPREV).EQ.CYLIND,
+     &		'orphan vertex colours')
+	FLAG(IPREV) = OR( FLAG(IPREV), VCOLS )
 	DETAIL(NDET+1) = BUF(1)
 	DETAIL(NDET+2) = BUF(2)
 	DETAIL(NDET+3) = BUF(3)
@@ -1775,12 +1836,7 @@ C
 	CLROPT = BUF(7)
 	DETAIL(NDET+7) = BUF(7)
 *	A few remaining fields are reserved for future expansion
-*	Oct 1998 - playing around with options for Z-clipping
 	DETAIL(NDET+8) = BUF(8)
-	IF (BUF(8).GT.0) THEN
-	    NCLIP = NCLIP + 1
-	    CLIPPING = .TRUE.
-	ENDIF
 	DETAIL(NDET+9) = BUF(9)
 *	Additional properties may continue on extra lines
 	IF (BUF(10).GT.0) THEN
@@ -1800,6 +1856,8 @@ C
 	    DETAIL(NDET+14) = PHONGM
 	    DETAIL(NDET+15) = SPECM
 	  ELSE IF (LINE(1:9).EQ.'FRONTCLIP') THEN
+	    CLIPPING = .TRUE.
+	    ZCLIP = FRONTCLIP
 	    READ (LINE(11:72),*,END=720) ZCLIP
 	    ZCLIP = ZCLIP * SCALE / TMAT(4,4)
 	    DETAIL(NDET+16) = ZCLIP
@@ -1889,7 +1947,10 @@ C
 	    BUF(7) = RGBMAT(3)
 	  ENDIF
 	ENDIF
-	CALL QINP( BUF(1), DETAIL(NDET+1), SHADOW, SDTAIL(MDET+1) )
+*
+	ISQUAD = QINP( BUF(1), DETAIL(NDET+1), SHADOW, SDTAIL(MDET+1) )
+*
+	IF (.NOT. ISQUAD) GOTO 45
 	NDET = NDET + KDET(INTYPE)
 	IF (SHADOW) THEN
 	  MDET = MDET + SDET(INTYPE)
@@ -1905,6 +1966,13 @@ C
         CALL ASSERT(.FALSE.,'crash 50')
       ENDIF
       GO TO 7
+c
+c     here to discard object due to clipping planes
+c
+45    CONTINUE
+      NCLIP = NCLIP + 1
+      N = N - 1
+      GO TO 7
 *
 *     here for end of objects
 *
@@ -1916,15 +1984,25 @@ C
 	GOTO 7
       ENDIF
 *    
-      WRITE (NOISE,*) 'True center of input coordinates (not used):'
+*     help people re-center objects
+*
 	XA = (TRULIM(1,1) + TRULIM(1,2)) / 2.0
 	YA = (TRULIM(2,1) + TRULIM(2,2)) / 2.0
 	ZA = (TRULIM(3,1) + TRULIM(3,2)) / 2.0
+	CALL TRANSF( XA, YA, ZA, TMAT )
+	XA = TMAT(4,1) - XA * TMAT(4,4)
+	YA = TMAT(4,2) - YA * TMAT(4,4)
+	ZA = TMAT(4,3) - ZA * TMAT(4,4)
+	IF (AND(OTMODE,INVERT).EQ.0) YA = -YA
+      WRITE (NOISE,*) 'To center objects in rendered scene, ',
+     &                'change translation to:'
       WRITE (NOISE,*) XA, YA, ZA
-      WRITE (NOISE,*) 'Limits of transformed Z:', ZLIM(1),ZLIM(2)
-      WRITE (NOISE,*) 'Scale: ', SCALE
 *
 *     Now we can set depth-cueing 
+      WRITE (NOISE,*)    'Limits of transformed Z:', ZLIM(1),ZLIM(2)
+      IF (FRONTCLIP.NE.HUGE) 
+     &    WRITE(NOISE,*) '      Z-clipping limits:', BACKCLIP,FRONTCLIP
+      WRITE (NOISE,*)    'Scale:                  ', SCALE
       IF (FOGTYPE .GE. 0) THEN
       	FOGLIM(1) = ZLIM(1)
 	FOGLIM(2) = ZLIM(2)
@@ -1999,9 +2077,9 @@ C
       IF (NTRI.NE.0) WRITE(NOISE,57)    'plain triangles   =',NTRI
       IF (NRIB.NE.0) WRITE(NOISE,57)    'ribbon triangles  =',NRIB
       IF (NSUR.NE.0) WRITE(NOISE,57)    'surface triangles =',NSUR
-      IF (NQUADS.NE.0) WRITE(NOISE,57)  'quadratic surfaces=',NQUADS
+      IF (NQUADS.NE.0) WRITE(NOISE,57)  'quadric surfaces  =',NQUADS
       IF (NPROPM.NE.0) WRITE(NOISE,57)  'special materials =',NPROPM
-      IF (NCLIP.NE.0)   WRITE(NOISE,57) 'clipped materials =',NCLIP
+      IF (NCLIP.NE.0)   WRITE(NOISE,57) 'Z-clipped objects =',NCLIP
       IF (NTRANSP.NE.0) WRITE(NOISE,57) 'transparent objs  =',NTRANSP
       IF (NHIDDEN.NE.0) WRITE(NOISE,57) 'hidden surfaces   =',NHIDDEN
       IF (NINSIDE.NE.0) WRITE(NOISE,57) 'inside surfaces   =',NINSIDE
@@ -2040,11 +2118,7 @@ C
 	  Z2 = DETAIL(K+7)
 	  R1 = DETAIL(K+4)
 	  R2 = DETAIL(K+8)
-c	  IF (  AND(FLAG(I),INSIDE).NE.0) THEN
-c		ZTEMP(I) = MIN(Z1+R1,Z2+R2)
-c	  ELSE
-	  	ZTEMP(I) = MAX(Z1+R1,Z2+R2)
-c	  ENDIF
+	  ZTEMP(I) = MAX(Z1+R1,Z2+R2)
 	ELSEIF (TYPE(I).EQ.PLANE) THEN
 *	  EAM Mar 1993 (but not sure it's necessary)
 	  ZTEMP(I) = SCALE + 1.0
@@ -2398,11 +2472,10 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               U = (X1-X3)*(YP-Y3) - (Y1-Y3)*(XP-X3)
               IF ( (S.LT.0. .OR. T.LT.0. .OR. U.LT.0.) .AND.
      &             (S.GT.0. .OR. T.GT.0. .OR. U.GT.0.) ) GO TO 240
-*	      Z-clipping option 1; triangles are easy
+*	      Z-clipped triangles are easy
 	      IF (AND(FLAG(IND),CLIPPED).NE.0) THEN
-		MIND  = LIST(MLIST(FLAG(IND)/65536))
-		MOPT2 = DETAIL(MIND+8)
-		IF (MOPT2.EQ.1 .AND. ZP.GT.DETAIL(MIND+16)) GOTO 240
+		MIND = LIST(MLIST(FLAG(IND)/65536))
+		IF ( ZP.GT.DETAIL(MIND+16)) GOTO 240
 	      ENDIF
 *	      Use Phong shading for surface and ribbon triangles.
 	      IF (AND(FLAG(IND),OR(SURFACE,VCOLS)).NE.0) THEN
@@ -2479,11 +2552,10 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
               DZ = SQRT(R2-(DX2+DY2))
               ZP = Z+DZ
               IF (ZP.LE.ZHIGH) GO TO 240
-*	      Z-clipping option 1; spheres aren't too bad
+*	      Z-clipped spheres aren't too bad
 	      IF (AND(FLAG(IND),CLIPPED).NE.0) THEN
-		MIND  = LIST(MLIST(FLAG(IND)/65536))
-		MOPT2 = DETAIL(MIND+8)
-		IF (MOPT2.EQ.1 .AND. ZP.GT.DETAIL(MIND+16)) THEN
+		MIND = LIST(MLIST(FLAG(IND)/65536))
+		IF (ZP.GT.DETAIL(MIND+16)) THEN
 		  ZP = Z-DZ
 		  IF (ZP.LE.ZHIGH) GOTO 240
 		  IF (ZP.GT.DETAIL(MIND+16)) GOTO 240
@@ -2512,11 +2584,7 @@ C           CALL ASSERT (K.LT.NDET,'k>=ndet')
 	      R2 = R1
 *	      EAM Mar 1993 with a better understanding of how this works
 *	      add truly cheap test for cylinder entirely below current ZTOP
-c	      IF (  AND(FLAG(I),INSIDE).NE.0) THEN
-c		TEMP1 = MIN(Z1+R1,Z2+R2)
-c	      ELSE
-		TEMP1 = MAX(Z1+R1,Z2+R2)
-c	      ENDIF
+	      TEMP1 = MAX(Z1+R1,Z2+R2)
 	      IF (TEMP1 .LE. ZHIGH) GOTO 250
 *             2nd (relatively cheap) test
 *	      is to check distance to cylinder axis in projection
@@ -2535,9 +2603,26 @@ c	      ENDIF
 		IF (.NOT.ISCYL) GO TO 240
 *             skip object if z not a new high
               IF (ZP.LE.ZHIGH) GO TO 240
+*	      Z-clipped cylinders are messy
+	      IF (AND(FLAG(IND),CLIPPED).NE.0) THEN
+		MIND = LIST(MLIST(FLAG(IND)/65536))
+		IF (ZP.GT.DETAIL(MIND+16)) THEN
+		  ISCYL = CYL1( OR(FLAG(IND),INSIDE+TRANSP),
+     &			   X1,Y1,Z1, X2,Y2,Z2, XP,YP,ZP, R1, XA,YA,ZA )
+		  IF (ZP.LE.ZHIGH) GOTO 240
+		  IF (ZP.GT.DETAIL(MIND+16)) GOTO 240
+		ENDIF
+	      ENDIF
               NORMAL(1) = XP - XA
               NORMAL(2) = YP - YA
               NORMAL(3) = ZP - ZA
+*	      if explicit vertex colors, need to keep fractional position
+*	      NB: was already calculated in CYL1, so this is CPU waste :(
+	      IF (AND(FLAG(IND),VCOLS).NE.0) THEN
+		DETAIL(K+8) = ((XA-X1)**2 + (YA-Y1)**2 + (ZA-Z1)**2)
+     &		            / ((X2-X1)**2 + (Y2-Y1)**2 + (Z2-Z1)**2)
+		DETAIL(K+8) = SQRT(DETAIL(K+8))
+	      ENDIF
 *             update values for object having highest z here yet
 	      IF (NTRANSP.GT.0) THEN
 		ZHIGH = RANK( IND, ZP, NORMAL, FLAG )
@@ -2579,8 +2664,6 @@ c	      ENDIF
      &                          XP, YP, ZP, QNORM, .FALSE., .FALSE. )
 		IF (.NOT.ISQUAD) GO TO 240
 		IF (ZP.LE.ZHIGH) GO TO 240
-CDEBUG
-CDEBUG 15-Oct-1998
 C	      Z-clipping of quadric surfaces is encountered more frequently
 C	      than for other object types, as the limiting sphere can also 
 C	      cause clipping.
@@ -2589,10 +2672,8 @@ C	      Check against limiting sphere in 3D
 		DZ2 = (ZP-Z)**2
 		IF (DX2+DY2+DZ2 .GT. R2) MAYCLIP = .TRUE.
 		IF (AND(FLAG(IND),CLIPPED).NE.0) THEN
-		  MIND    = LIST(MLIST(FLAG(IND)/65536))
-		  MOPT2 = DETAIL(MIND+8)
-		  IF (MOPT2.EQ.1 .AND. ZP.GT.DETAIL(MIND+16)) 
-     &		    MAYCLIP = .TRUE.
+		  MIND = LIST(MLIST(FLAG(IND)/65536))
+		  IF (ZP.GT.DETAIL(MIND+16)) MAYCLIP = .TRUE.
 		ENDIF
 		IF (MAYCLIP) THEN
 		    ISQUAD = QTEST( DETAIL(K+1), DETAIL(K+8), 
@@ -2602,8 +2683,6 @@ C	      Check against limiting sphere in 3D
 		    DZ2 = (ZP-Z)**2
  		    IF (DX2+DY2+DZ2 .GT. R2) GO TO 240
 		ENDIF
-CDEBUG 15-Oct-1998
-CDEBUG
 		NORMAL(1) = QNORM(1)
 		NORMAL(2) = QNORM(2)
 		NORMAL(3) = QNORM(3)
@@ -2673,9 +2752,10 @@ C           CALL ASSERT (JSTILE.LE.NSY,'jstile>nsy')
 	      GOTO 270
 	    END IF
 *           starting value of "highest shadow space z so far"
+*           and the index of the object that has it
             ZSTOP = 2.0*BACKCLIP
-*           the index of the object that has it
             INDSTP = 0
+*
             DO 260 IK = MSTART(ISTILE,JSTILE), MSTOP(ISTILE,JSTILE)
               IND = MSHORT(IK)
 C             CALL ASSERT (IND.GE.1,'shadow ind<1')
@@ -2755,7 +2835,7 @@ C 		EAM Mar 97 - maybe should allow ZSLOP here also?
 *	        Now find Z coord (ZTEST) in pixel space of point on
 *	        surface of cylinder with these X and Y coords
 		ISCYL = CYL1( FLAG(IND),
-     &			   X1,Y1,Z1, X2,Y2,Z2, XS,YS,ZTEST, R1, XA,YA,ZA )
+     &		   	X1,Y1,Z1, X2,Y2,Z2, XS,YS,ZTEST, R1, XA,YA,ZA )
 		IF (.NOT.ISCYL) GO TO 260
 *               skip object if z not a new high
                 IF (ZTEST.LE.ZSTOP) GO TO 260
@@ -2777,12 +2857,28 @@ C 		EAM Mar 97 - maybe should allow ZSLOP here also?
 *	        surface with these X and Y coords
 		ISQUAD = QTEST( SDTAIL(K+1), SDTAIL(K+5), 
      &                          XS, YS, ZTEST, QNORM, .TRUE., .FALSE. )
+CDEBUG                          XS, YS, ZTEST, QNORM, .TRUE., .TRUE. )
+CDEBUG		16-Dec-1998 I inverted the BACKSIDE = TRUE/FALSE flags from
+CDEBUG		what they "ought" to be to remove buggy shadows from a test
+CDEBUG		case parabolic hyperboloid.  I don't understand why this would be
+CDEBUG		necessary, and worry a bit that it breaks something else.
+CDEBUG
 		IF (.NOT.ISQUAD) GO TO 260
 *               skip object if z not a new high
                 IF (ZTEST.LE.ZSTOP) GO TO 260
+*
 *		Test against bounding sphere in 3D
+*		and if surface nearest to light is clipped, check back also
 		DZ = ZTEST-Z
-		IF (DX**2 + DY**2 + DZ**2 .GE. R2) GO TO 260
+		IF (DX**2 + DY**2 + DZ**2 .GE. R2) THEN
+		    ISQUAD = QTEST( SDTAIL(K+1), SDTAIL(K+5),
+     &                          XS, YS, ZTEST, QNORM, .TRUE., .TRUE. )
+CDEBUG                          XS, YS, ZTEST, QNORM, .TRUE., .FALSE. )
+		    IF (.NOT.ISQUAD) GO TO 260
+		    IF (ZTEST.LE.ZSTOP) GO TO 260
+		    DZ = ZTEST - Z
+		    IF (DX**2 + DY**2 + DZ**2 .GE. R2) GO TO 260
+		ENDIF
 *               update values for object having highest z here yet
                 ZSTOP = ZTEST
                 INDSTP = IND
@@ -2805,7 +2901,9 @@ C 		EAM Mar 97 - maybe should allow ZSLOP here also?
             ZSTOP = 0.
             INDSTP = INDTOP
           ENDIF
-*         pick up colours of object to be shaded
+*
+*         Pick up colours of object to be shaded
+*
 C         CALL ASSERT (INDTOP.GT.0,'indtop<=0')
           K = LIST(INDTOP)
 C         CALL ASSERT (K.GE.0,'k<0')
@@ -2817,7 +2915,7 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
 	      INEXT = INDTOP + 1
 	      IF (TYPE(INEXT).EQ.NORMS) INEXT = INEXT + 1
 	      K = LIST(INEXT)
-	      CALL ASSERT (TYPE(INEXT).EQ.VERTEXRGB,'lost vertex colors')
+	      CALL ASSERT(TYPE(INEXT).EQ.VERTEXRGB,'lost vertex colors')
 	      RGBCUR(1) = DETAIL(K+1) 
      &			+ ALPHA*(DETAIL(K+4)-DETAIL(K+1))     
      &			+  BETA*(DETAIL(K+7)-DETAIL(K+1))     
@@ -2837,9 +2935,19 @@ C         CALL ASSERT (K.LT.NDET,'k>=ndet')
             RGBCUR(2) = DETAIL(K+6)
             RGBCUR(3) = DETAIL(K+7)
 	  ELSEIF (TYPE(INDTOP).EQ.CYLIND) THEN
-            RGBCUR(1) = DETAIL(K+9)
-            RGBCUR(2) = DETAIL(K+10)
-            RGBCUR(3) = DETAIL(K+11)
+	    IF (AND(FLAG(INDTOP),VCOLS).NE.0) THEN
+	      FRAC = DETAIL(K+8)
+	      INEXT = INDTOP + 1
+	      K = LIST(INEXT)
+	      CALL ASSERT(TYPE(INEXT).EQ.VERTEXRGB,'lost vertex colors')
+              RGBCUR(1) = FRAC*DETAIL(K+4) + (1.-FRAC)*DETAIL(K+1)
+              RGBCUR(2) = FRAC*DETAIL(K+5) + (1.-FRAC)*DETAIL(K+2)
+              RGBCUR(3) = FRAC*DETAIL(K+6) + (1.-FRAC)*DETAIL(K+3)
+	    ELSE
+              RGBCUR(1) = DETAIL(K+9)
+              RGBCUR(2) = DETAIL(K+10)
+              RGBCUR(3) = DETAIL(K+11)
+	    ENDIF
 *	  EAM Mar 1993 PLANE is shaded from full colour in foreground
 *	               to half-saturation at horizon
 	  ELSEIF (TYPE(INDTOP).EQ.PLANE) THEN
@@ -3140,7 +3248,7 @@ C	If this guy is opaque, we're done. If transparent, make a third pass.
 	    IF (FOGTYPE .GE. 0) THEN
 C 	      FOGDIM = FOGGY( (ZTOP-ZP) )
  	      FOGDIM = FOGGY( (ZTOP-ZP) / 
-     &		       ( 1.0 - (FOGLIM(2)-ZTOP) / (FOGLIM(2)-FOGLIM(1) ) ))
+     &		       (1.0 - (FOGLIM(2)-ZTOP) / (FOGLIM(2)-FOGLIM(1))))
 	      TILE(1,I,J) = (1.-FOGDIM)*TILE(1,I,J) + FOGDIM*FOGRGB(1)
 	      TILE(2,I,J) = (1.-FOGDIM)*TILE(2,I,J) + FOGDIM*FOGRGB(2)
 	      TILE(3,I,J) = (1.-FOGDIM)*TILE(3,I,J) + FOGDIM*FOGRGB(3)
@@ -3173,7 +3281,7 @@ C	transparent. Third object (or background) is always treated as opaque.
 	  IF (FOGTYPE .GE. 0) THEN
 C	    FOGDIM = FOGGY( (Z2ND-ZP) )
 	    FOGDIM = FOGGY( (Z2ND-ZP) /
-     &		          ( 1.0 - (ZTOP-Z2ND) / (FOGLIM(2)-FOGLIM(1) ) ))
+     &		          (1.0 - (ZTOP-Z2ND) / (FOGLIM(2)-FOGLIM(1))))
 	    TILE(1,I,J) = (1.-FOGDIM)*TILE(1,I,J) + FOGDIM*FOGRGB(1)
 	    TILE(2,I,J) = (1.-FOGDIM)*TILE(2,I,J) + FOGDIM*FOGRGB(2)
 	    TILE(3,I,J) = (1.-FOGDIM)*TILE(3,I,J) + FOGDIM*FOGRGB(3)
@@ -3299,7 +3407,7 @@ C
 600   CONTINUE
 *
 *     Report any soft failures
-      IF (NSXMAX.GT.0 .OR. NSYMAX.GT.0) THEN
+      IF (  (NSXMAX.GT.0 .OR. NSYMAX.GT.0) ) THEN
 	WRITE(NOISE,*)'   >>> WARNINGS <<<'
       END IF
       IF (NSXMAX.GT.0) WRITE(NOISE,*)
@@ -3433,7 +3541,7 @@ c	implicit NONE
       INTEGER	 VCOLS,     CLIPPED
       PARAMETER	(VCOLS=512, CLIPPED=1024)
       INTEGER	 TFI
-      PARAMETER (TFI = TRANSP + FLAT + INSIDE)
+      PARAMETER (TFI = TRANSP + INSIDE)
 c
 	INTEGER flag
 	REAL  	x1,y1,z1, x2,y2,z2, xb,yb,zb
@@ -3526,14 +3634,16 @@ c
 	end if
 c
 c Rounded cylinder end
-c (ugly test - need to DEBUG with material props and flat/noflat)
 	if (AND(flag,FLAT) .eq. 0) then
-		if (dx2+dy2 .ge. r2) then
-C			zb = -99999.
+		if (dx2+dy2 .gt. r2) then
 			cyl1 = .false.
 			return
 		else
+		    if (  and(flag,TFI) .eq. TFI) then
+			zb = za - sqrt(r2 - (dx2+dy2))
+		    else
 			zb = za + sqrt(r2 - (dx2+dy2))
+		    end if
 		end if
 C
 C Flat cylinder end
@@ -3590,8 +3700,8 @@ C
       PARAMETER (FLAT=2,    RIBBON=4,  SURFACE=8, PROPS=16)
       INTEGER    TRANSP,    HIDDEN,    INSIDE,    MOPT1
       PARAMETER (TRANSP=32, HIDDEN=64, INSIDE=128,MOPT1=256)
-      INTEGER    VCOLS
-      PARAMETER (VCOLS=512)
+      INTEGER    VCOLS,     CLIPPED
+      PARAMETER (VCOLS=512, CLIPPED=1024)
 *
 * V 2.3a - The MOPT1 flag signals an alternative mode of transparency
 *          processing. A [presumably transparent] material with this
@@ -3729,7 +3839,7 @@ c
 	character*128 fullname
 	character*80  R3DLIB
 c
-	call getenv("R3D_LIB",R3DLIB)
+	call getenv('R3D_LIB',R3DLIB)
 c
 	fullname = ' '
 	len = 0

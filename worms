@@ -1,0 +1,30 @@
+#!/bin/csh
+#
+# Wrapper for rods program that splits main/sidechain atoms for
+# separate treatment. The backbone is drawn as a radius 0.3 worm.
+# Sidechains are drawn as 0.15A rods
+#
+# Save temporary copy of input stream
+cat > worms.tmp.0
+#
+# Backbone first, with or without header as determined by $1 (-h)
+#
+rm -rf worms.tmp.1
+if ($1 == "-h") then
+echo "# Worms version 1.0" > worms.tmp.1
+echo "# Backbone atoms"   >> worms.tmp.1
+else
+touch worms.tmp.1
+endif
+grep -E -w '(^COLOUR.*)|(N)|(C)|(CA)' worms.tmp.0 | rods $1 -r 0.3 >> worms.tmp.1
+#
+# Now the sidechains (actually everything but the backbone carbonyl bond)
+#
+echo "# Worms version 1.0" > worms.tmp.2
+echo "# Sidechain atoms"  >> worms.tmp.2
+grep -E -v ' ((O)|(C)) ' worms.tmp.0 | rods -h -r 0.15 >> worms.tmp.2
+#
+#
+#
+cat worms.tmp.1 worms.tmp.2
+rm -f worms.tmp.0 worms.tmp.1 worms.tmp.2

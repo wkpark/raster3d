@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH AVS2PS 1 " 5 August 1994" "Raster3D"
+.TH AVS2PS 1 " 8 May 1999" "Raster3D"
 .SH NAME
 
 avs2ps - convert AVS image input on stdin to monochrome PostScript on stdout
@@ -27,11 +27,11 @@ viewtools package.
 Produce an unbordered black & white image suitable for printing on a
 300 dpi PostScript printer.
 .PP
-     render < description.r3d | avs2ps > image.ps
+     render < infile.r3d | avs2ps > image.ps
 .PP
 Add a border, and prepare image for a 400dpi printer
 .PP
-     render < description.r3d | avs2ps -b -dpi 400 > image.ps
+     render < infile.r3d | avs2ps -b -dpi 400 > image.ps
 .SH OPTIONS
 
 .B "-b"
@@ -57,23 +57,24 @@ applies an empirical algorithm for dithering and error propagation to
 produce a monochrome output image.
 
 .SH SOURCE
-.TP 5
-	anonymous ftp site:	
-                ftp.bmsc.washington.edu
-	web URL:
-		http://www.bmsc.washington.edu/raster3d/raster3d.html
-.TP 5
-	contact:		
-                Ethan A Merritt
-                Dept of Biological Structure Box 357742
-                University of Washington, Seattle WA 98195
-                merritt@u.washington.edu
+.B anonymous ftp site:	
+ 	ftp.bmsc.washington.edu
+ 
+.B web URL:
+ 	http://www.bmsc.washington.edu/raster3d/raster3d.html
+
+.B contact:		
+ 	Ethan A Merritt
+ 	Dept of Biological Structure Box 357742
+ 	University of Washington, Seattle WA 98195
+ 	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(1), Raster3D(1), avs
+render(l), Raster3D(l), avs
 .PP
 .SH AUTHORS
 
- Ethan A Merritt.  Dithering algorithm derived from code by Randy Read 
- and Albert Berghuis.
+Ethan A Merritt.  
+ Dithering algorithm derived from code by 
+Randy Read and Albert Berghuis.
 

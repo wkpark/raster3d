@@ -74,8 +74,8 @@ example illustrates the support for rendering transparent objects in Raster3D.
 Note:  It would be a more informative figure if the accessible surface
 of the protein were shown, rather than that of the bound sugar.  However
 this would have required inclusion of an absolutely huge surface
-description file so I judged it impractical.  A JPEG figure illustrating
-Raster3D rendering of a protein surface should be available on the
+description file so I judged it impractical.  You should be able to find
+a JPEG figure illustrating Raster3D rendering of a protein surface on the
 Raster3D distribution site.
 
 
@@ -84,7 +84,7 @@ Example 7
 
 Example 7 uses the ribbon utility to draw a quick picture of a
 pentamer with separate colours for each chain.  I'm sure you
-could do a better job of picking colour schemes if you tried.
+could do a better job of picking colour schemes.
 
 
 Example 8

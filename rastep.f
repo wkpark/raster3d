@@ -72,7 +72,8 @@ c
       integer	histogram(20), hislun
       real	anisi(MAXATM), sum_a, sum_a2, anis_mean, anis_sigma
       real	sum_b, sum_b2, sum_ab
-      integer	nanis, niso
+      integer	nanis, niso, nhyd, nonpos
+      logical	hwhacky
 c
       character*2 atomtype
       integer     natype
@@ -120,6 +121,7 @@ c
 	atflag   = .false.
 	comflag  = .false.
 	ellipses = .true.
+	hwhacky  = .false.
 	fancy    = 0
 	prob     = 0.50
 	radius   = 0.10
@@ -187,7 +189,7 @@ c
 		if (flags(1:1) .ne. '-') then
 		    hislun = 1
 		    open(unit=hislun,file=flags,status='UNKNOWN'
-     &			, CARRIAGECONTROL='LIST'
+     &		    , CARRIAGECONTROL='LIST'
      &              )
 		endif
 	    endif
@@ -200,7 +202,7 @@ c
 		if (flags(1:1) .ne. '-') then
 		    comlun = 2
 		    open(unit=comlun,file=flags,status='UNKNOWN'
-     &			, CARRIAGECONTROL='LIST'
+     &		    , CARRIAGECONTROL='LIST'
      &              )
 		endif
 	    endif
@@ -230,8 +232,8 @@ c Table 6.1 of the ORTEP manual
 c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
-     &                  'V2.4i'
-	write (noise,*) 'E A Merritt - 15 Oct 1998'
+     &                  'V2.4j'
+	write (noise,*) 'E A Merritt - 26 Apr 1999'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -257,7 +259,7 @@ c
 c
       if (.not. hflag) then
 	WRITE(OUTPUT,'(A,I5,A)') 
-     &     'Raster3D thermal ellipsoid program V2.4i',
+     &     'Raster3D thermal ellipsoid program V2.4j',
      &     INT(prob*100.+0.5), '% probability bounds'
 	WRITE(OUTPUT,'(A)') '80  64    tiles in x,y'
 	WRITE(OUTPUT,'(A)') ' 8   8    pixels (x,y) per tile'
@@ -276,6 +278,10 @@ c
 	NCOL = 0
 	NATM = 0
 	NANI = 0
+	nanis = 0
+	niso  = 0
+	nhyd  = 0
+	nonpos = 0
 10    CONTINUE
         READ(INPUT,'(A80)',END=50) CARD
         IF (CARD(1:4).EQ.'COLO') THEN
@@ -428,7 +434,7 @@ c	    else
       end if
       if (.not. tflag) then
 	WRITE(OUTPUT,'(A)') 
-     &	      '# Thermal ellipsoids from Rastep Version 2.4i'
+     &	      '# Thermal ellipsoids from Rastep Version 2.4j'
 	WRITE(OUTPUT,'(A,F5.2)') '# Probability level',float(iprob)/50.
       end if
 c
@@ -464,6 +470,7 @@ c
 	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
      &				atom(iatm+1)(13:27)
+		nonpos = nonpos + 1
 		goto 138
 	    endif
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
@@ -509,7 +516,10 @@ c	  as in shelxpro output
      &                  / max(Uprin(1),Uprin(2),Uprin(3))
 c
 c	  But don't count atoms which are perfectly isotropic
-	    if (anisotropy .eq. 1.0) then
+	    if (atom(iatm)(77:78).eq.' H') then
+	    	nhyd  = nhyd + 1
+		if (anisotropy .ne. 1.0) hwhacky = .true.
+	    else if (anisotropy .eq. 1.0) then
 	    	niso  = niso + 1
 	    else
 	    	anisi(iatm) = anisotropy
@@ -582,6 +592,7 @@ c	  And a table of <anis> by distance from center of mass
 	      hdist(i) = hdist(i) + 1
 	    endif
 c
+c	  End tabulation code
 	  endif
 c
 c	Draw principal axes inside bounding ellipsoid
@@ -675,6 +686,12 @@ c
 	   write (noise,*)   'No anisotropic atoms found'
 	   call exit(-1)
 	end if
+	if (hwhacky) then
+	   write(noise,*)
+     &	                 'You seem to have anisotropic hydrogens',
+     &                   ' - is this some kind of joke?'
+	end if
+
 	write (hislun,'(A)') '# Anisotropy  Fraction   Number'
 	write (hislun,'(A)') '#   range     of atoms of atoms'
 	do i = 1,20
@@ -704,10 +721,14 @@ c       Calculate mean and sigma of distribution
 	    ccoef = sum_ab / sqrt(sum_a2 * sum_b2)
 	end if
 
-	write (hislun,'(A)')         '#'
-	write (hislun,'(A,I10)')     '# number of ANISOU records:',nanis+niso
-	write (hislun,'(A,I10)')     '#      non-isotropic atoms:',nanis
-	write (hislun,'(A,I10)')     '#          isotropic atoms:',niso
+	write (hislun,'(A)')    '#'
+	write (hislun,'(A,I10)')'#  number of ANISOU records:',nani
+	write (hislun,'(A,I10)')'#       non-isotropic atoms:',nanis
+	write (hislun,'(A,I10)')'#           isotropic atoms:',niso
+	if (nonpos.gt.0)
+     &  write (hislun,'(A,I10)')'# nonpositive-definite APDs:',nonpos
+	if (nhyd.gt.0)
+     &  write (hislun,'(A,I10)')'#          ANISOU hydrogens:',nhyd
 	write (hislun,'(A)') '#'
 	write (hislun,'(A,F7.3)')
      &       '# correlation between anisotropy and B_iso:', ccoef
@@ -737,9 +758,6 @@ c
 	end do
 	goto 145
   141	continue
-	if (atomtype .eq. ' H') 
-     &	    write(noise,*) 'You seem to have anisotropic hydrogens',
-     &                     ' - is this some kind of joke?'
 
 	sum_A     = 0.0
 	sum_a2    = 0.0
@@ -948,8 +966,8 @@ c
 	if (fraction.lt.0.) fraction = 0.
 	if (fraction.gt.1.) fraction = 1.
 	h = 240. * (1.-fraction)
-	s = 0.8
-	v = 0.5 + fraction/2.
+	s = 0.95
+ 	v = 0.75 + fraction/4.
 	call hsv2rgb( h, s, v, r, g, b )
 	return
 	end

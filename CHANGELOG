@@ -1,3 +1,14 @@
+18-May-99	V2.4j
+		Re-worked label processing; new versions of r3dtops/label3d
+		Sample code r3d_label.c illustrating use of GLUT stroke font.
+		Allow explicit vertex colors (object type 17) for cylinders 
+ 8-Feb-99	Allow file indirection for [complete set of] header records
+		and ignore leading comments
+		Re-work local.c to support 
+		    -jpeg             JPEG output to stdout
+		    -out file.xxx     output piped to ImageMagick for conversion
+		Modify all Makefile versions accordingly, 
+		and make DIMAGEPIPE and DJPEG_SUPPORT the default
  8-Dec-98	V2.4h minor bug fix in render.f for overlapping cylinders
 15-Oct-98	V2.4g	
 		Improved rendering of transparent cylinders
@@ -6,7 +17,7 @@
 		Environmental variable R3D_LIB used as search path 
 			during file indirection
 		Preliminary groundwork in code for Z-clipping
-		Modifed Makefiles to reduce number of compiler warnings
+		Modified Makefiles to reduce number of compiler warnings
 		PARVATI's rastep version included with Raster3D 
 16-Aug-98	fixed format bug in normal3d MATERIAL handling 
  7-May-98	V2.4f new ungrasp.f, fix crash if shadows + VERTEXRGB
