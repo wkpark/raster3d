@@ -184,7 +184,7 @@ The Raster3D programs always use mode INMODE 3.
  type 1 = triangle
  type 2 = sphere
  type 3 = round-ended cylinder
- type 5 = float-ended cylinder
+ type 5 = flat-ended cylinder
  type 6 = plane (triangle with infinite extent)
 .TP 5 
 .B     INFMT or INFMTS

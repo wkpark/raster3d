@@ -1,3 +1,7 @@
+01-Mar-95	V2.03 onto ftp site
+24-Feb-95	Fix bug in CYL1 routine which caused pieces of cylinder ends
+		to disappear if they tipped too far toward the viewer
+20-Jan-95	Move data statements in ribbon1.f, render.f to make linux happy
 29-Nov-94	update ftp site to release V2.02
 28-Nov-94	add Elya Kurktchi's Makefile for SUNOS
 28-Nov-94	add section on Moslcript->Raster3D stereo to docs.ps

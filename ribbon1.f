@@ -61,6 +61,7 @@ c
 c
 	character*64	in_file, out_file
 	character*8	mode
+	character*32	flags
 	common /matrix/ matrix, coords
 	real*4		matrix(3,3), coords(3)
 	data		matrix / 1.,0.,0.,0.,1.,0.,0.,0.,1. /
@@ -70,7 +71,6 @@ c	-m [now obsolete because always in force] uses format
 c	   mixed object types in output file
 c	-d suppresses interactive input
 c
-	character*32	flags
 	hflag = .FALSE.
 	dflag = .FALSE.
 	mflag = .TRUE.

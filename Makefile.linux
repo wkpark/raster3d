@@ -1,0 +1,73 @@
+#
+# Raster3D makefile for linux 
+# Arno Paehler (paehler@atlas.rc.m-kasei.co.jp)
+# this one assumes that the perl script fort77 [locally called f77 - aop] 
+# is available acting as compiler
+#
+# Where to put things
+#
+prefix = /usr/local
+bindir = $(prefix)/bin
+mandir = $(prefix)/man/manl
+#
+CC       = /usr/bin/gcc
+F2       = /usr/bin/f2c
+FC      = /usr/bin/f77
+RM      = /bin/rm -f
+#
+INSTALL         = /bin/install -d -s -o root -g root
+#
+LDFLAGS  = -s -Wl,-x
+CFLAGS   = -O2 -m486 -fomit-frame-pointer -pipe
+FFLAGS   = -a -w
+#
+# If you choose to build Raster3D with support for direct output of
+# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
+# You will also need to add -ltiff to the LIBS definition.
+ LIBS    =	-ltiff
+ DEFINES =	-DTIFF_SUPPORT
+#LIBS    =
+#DEFINES =
+INCLUDES =	-I/usr/include/gr
+
+RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
+PROGS    =	setup rods ribbon render avs2ps
+
+all:	$(PROGS)
+
+clean:
+	rm -f *.o *.u
+	rm -f $(PROGS)
+
+install: $(PROGS)
+	$(INSTALL) -m 755 $(PROGS) $(bindir)
+	$(INSTALL) -m 644 doc/*.l $(mandir)
+
+tar:
+	(cd ..; tar -zcvvf raster3d.tgz raster3d)
+
+ribbon:	$(RIBOBJS)
+	$(FC) $(LDFLAGS) $(RIBOBJS) -o ribbon
+	$(RM) $(RIBOBJS)
+
+rods:
+	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods
+
+setup:
+	$(FC) $(FFLAGS) setup.f $(CFLAGS) $(LDFLAGS) -o setup
+
+local.o: local.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+
+render:	render.f local.o
+	$(FC) $(FFLAGS) render.f local.o  \
+	$(LIBS) -o render
+	$(RM) local.o
+
+avs2ps:	avs2ps.c
+	$(CC) $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm
+
+$(RIBOBJS):
+	$(F2) $(FFLAGS) $*.f
+	$(CC) $(CFLAGS) -c -o $*.o $*.c
+	$(RM) $*.c

@@ -1,6 +1,6 @@
-most recent change:	 28-Nov-1994
+most recent change:	  1-Mar-1995
 
-The file Raster3D_2.02.tar.Z contains version 2.02 of RASTER3D.
+The file Raster3D_2.03.tar.Z contains version 2.03 of RASTER3D.
 It is a unified distribution which has been tested on the following 
 machines:
 
@@ -9,9 +9,11 @@ machines:
 	SGI Indigo / Irix 4.0.5F
 	IBM RS6000 / AIX
 	SUN Sparc  / SUNOS 4.1.3_U1
+	Intel 486 / linux
 
 Changes since first official release of version 2.0:
 
+- fixed bug which caused truncation of cylinders pointing toward viewer
 - new sections in documentation
 - fixed bug in input format and accounting of PLANE objects
 - added machine-independent utility filter avs2ps to produce dithered
@@ -19,6 +21,7 @@ Changes since first official release of version 2.0:
   viewtools)
 - added patch for Molscript V1.4 so that dotted lines can be passed
   on to Raster3D
+- fixed bug which could cause end of cylinder to have a bite out of it
 
 Changes since the beta-test of version 2.0:
 

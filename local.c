@@ -301,7 +301,7 @@ for (i=0; i<size; i++) {
   scanline[j++] = buf2[i];
 }
 if (TIFFWriteScanline(fp,scanline,row,0) < 0)
-  fprintf (stderr, "\n", "Bad return code form TIFF write\n");
+  fprintf (stderr, "\n", "Bad return code from TIFF write\n");
 row++;
 }
 #endif
