@@ -1,9 +1,9 @@
 	subroutine parse
-c	Version 2.6a
+c	Version 2.6f
 c
-      COMMON /OPTIONS/ FONTSCALE, ZOOM, NSCHEME, SHADOWFLAG, 
+      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, 
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
-      REAL             FONTSCALE, ZOOM
+      REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
@@ -30,6 +30,7 @@ c
 	quality = 90
 	lflag = .false.
 	zoom = 0.
+	gamma = 1.0
 c
 c	Default font scale is 3.0 (appropriate for 300 dpi printers)
 c	This is superseded by the environmental variable FONTSCALE
@@ -91,6 +92,11 @@ c
 		call getarg( iarg, option )
 		read (option,*,err=10,end=10) fontscale
 		if (fontscale.le.0) fontscale = 3.0
+	    else if (option(1:10).eq.'-gamma') then
+	        iarg = iarg + 1
+		call getarg( iarg, option )
+		read (option,*,err=10,end=10) gamma
+		if (gamma.le.0) gamma = 1.0
 	    else if (option(1:5).eq.'-zoom') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
@@ -123,10 +129,12 @@ c
 	    invert = .true.
 	end if
 c
-	call autotile( nax, nay )
 	end
 
-	subroutine autotile( nax, nay )
+ccc
+cc
+c
+	subroutine autotile( nax, nay, modulus )
 c
 	implicit NONE
 c
@@ -141,9 +149,12 @@ c
 c
 	integer*2 nax, nay
 c
+c	Anti-aliasing requires that NPY is a multiple of modulus
+	integer   modulus
+c
 	if (nax .gt. 0) then
-	    npx = 2
-	    ntx = (nax+1) / 2
+	    npx = modulus
+	    ntx = (nax+npx-1) / npx
    21	    continue
 	    if (mod(ntx,2).eq.0) then
 	    	ntx = ntx / 2
@@ -162,13 +173,13 @@ c
      &	        .or. mod(ntx,3).eq.0 .or. mod(ntx,5).eq.0))
      &		goto 21
 	    if (npx.gt.MAXNPX) then
-		npx = MAXNPX
-		ntx = (nax + MAXNPX - 1) / MAXNPX
+		npx = (MAXNPX/modulus) * modulus
+		ntx = (nax + npx - 1) / npx
 	    endif
 	endif
 	if (nay .gt. 0) then
-	    npy = 2
-	    nty = (nay+1) / 2
+	    npy = modulus
+	    nty = (nay+npy-1) / npy
    31	    continue
 	    if (mod(nty,2).eq.0) then
 	    	nty = nty / 2
@@ -187,14 +198,15 @@ c
      &	        .or. mod(nty,3).eq.0 .or. mod(nty,5).eq.0))
      &		goto 31
 	    if (npy.gt.MAXNPY) then
-		npy = MAXNPY
-		nty = (nay + MAXNPY - 1) / MAXNPY
+		npy = (MAXNPY/modulus) * modulus
+		nty = (nay + npy - 1) / npy
 	    endif
 	endif
 	if (verbose .and. (nax.gt.0 .or. nay.gt.0)) then
-	    write(0,32) 'X',ntx,npx,ntx*npx
-	    write(0,32) 'Y',nty,npy,nty*npy
-   32	    format('Autotiling on ',A1,': ',i3,' x ',i3,' >= ',i5)
+	    write(0,32) 'X',ntx,npx,ntx*npx,nax
+	    write(0,32) 'Y',nty,npy,nty*npy,nay
+   32	    format('Autotiling on ',A1,': ',i3,' x ',i3,' = ',i5,
+     &		   ' >= ',i5)
 	end if
 c
 	end

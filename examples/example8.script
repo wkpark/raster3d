@@ -3,29 +3,27 @@
 # Demonstrate stereo3d script by making stereo pair of
 # view down pore of LT B-pentamer
 #
+if (! $?TMPDIR) setenv TMPDIR /tmp ; endif
+#
 # First we make a VDW model of the B-pentamer itself
 #
-grep ' [DEFGH] ' LT.pdb > temp.r3d
-cat chaincolours.pdb temp.r3d | balls -h > balls.r3d
+grep ' [DEFGH] ' LT.pdb > $TMPDIR/$$_temp.r3d
+cat chaincolours.pdb $TMPDIR/$$_temp.r3d | balls -h > $TMPDIR/$$_balls.r3d
 #
 # Now we make a simple ribbon for the A2 domain
 #
-grep ' C ' LT.pdb | ribbon -h -d1 > ribbon.r3d
+grep ' C ' LT.pdb | ribbon -h -d1 > $TMPDIR/$$_ribbon.r3d
 #
 # put 'em together with a view matrix
 #
-cat header8.r3d balls.r3d ribbon.r3d > example8.r3d
+cat header8.r3d $TMPDIR/$$_balls.r3d $TMPDIR/$$_ribbon.r3d > $TMPDIR/$$_example8.r3d
 #
 # Now render it as a stereo pair
-#
-stereo3d example8.r3d
-#
 # Add a gamma correction before displaying
 #
-mogrify -gamma 1.2 stereo.tiff
-display stereo.tiff
+stereo3d -tiff < $TMPDIR/$$_example8.r3d | display -gamma 1.2 tiff:-
+#
 #
 # Clean up
 #
-rm -f stereo.tiff 
-rm -f example8.r3d balls.r3d ribbon.r3d temp.r3d
+rm -f $TMPDIR/$$_temp.r3d $TMPDIR/$$_balls.r3d $TMPDIR/$$_ribbon.r3d $TMPDIR/$$_example8.r3d

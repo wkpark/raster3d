@@ -218,6 +218,10 @@ c	    pfac = 1./(1.-zq/eyepos)
 	detail(6) = grn
 	detail(7) = blu
 *
+* This is a terrible kludge, but necessary if called from normal3d -size BIGxBIG
+* Thes test should really be if we are called from normal3d but no flag for that
+	if (ntx.gt.MAXNTX .or. nty.gt.MAXNTY) goto 101
+*
 * Tally for tiles the object might impinge on
 * Again we are relying on the correctness of the center coordinates
 *

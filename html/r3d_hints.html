@@ -75,11 +75,11 @@ If you need to convert your image to PostScript so that you can send it to a
 PostScript printer (the <i>only</i> time you should ever convert to PostScript!)
 then read the section on <a href="#PostScript">PostScript conversion</a> below.
 You should also be aware that color balance and particularly the appropriate
-``gamma correction'' varies from one device to another. Raster3D itself applies
-no gamma correction; if you need one you will have to apply it to the generated
-image files afterwards. This is a standard image processing procedure, and may
-be a selectable print option for your output device. If you will be using a
-particular output device regularly, it is worth an initial round of
+``gamma correction'' varies from one device to another. The Raster3D render
+program can apply a gamma correction or you can apply one afterwards to the generated
+image files using a general purpose image processing program (e.g. the ImageMagick
+"mogrify" command).
+If you will be using a particular output device regularly, it is worth an initial round of
 experimentation to determine the best gamma value for future runs. The
 appropriate gamma correction can then be applied to each rendered picture
 before sending it for printing.
@@ -178,10 +178,8 @@ molscript -r &lt; image.mol &gt; image.r3d
 render -tiff mono.tiff &lt; image.r3d
 #
 # Render it again, this time as a stereo pair
-# Note: the output file is always called stereo.tiff
 #
-stereo3d image.r3d
-display stereo.tiff
+stereo3d -tiff stereo.tiff &lt; image.r3d
 </pre>
 </p>
 
@@ -229,6 +227,7 @@ FRONTCLIP 2.
 <h4>Bounding planes</h4> </a>
 <p>
 Bounding planes are a more general case of Z-clipping planes. They differ from Z-clipping planes as follows:<br>
+<img align=right src="../examples/slice.gif">
 <ul>
 <li>A bounding plane is specified by giving the coordinates of some point 
     in the plane and the normal to the plane. The front Z-clipping plane 
@@ -246,7 +245,44 @@ Bounding planes are a more general case of Z-clipping planes. They differ from Z
     object or surface is cut by a bounding plane, you will see the flat surface 
     resulting from this `slice'.
 </ul>
+</p>
 <p>
+The current implementation allows two slightly different variations in how 
+multiple bounding planes interact with each other. One variant is used to 
+draw ortep-like thermal ellipsoids in which one octant is cut away.
+In this case a given volume is excluded from rendering only if it is `above' all 
+bounding planes associated with its material definition; exclusion requires 
+a logical AND of three bounding planes. Here is the specification for one 
+such ortep-like ellipsoid. Note that all three bounding planes pass through 
+the center of the ellipsoid, and a single color specification is given for 
+all three bounding surfaces 
+(<a href="rastep_options.gif"><i>-fancy6</i> option to rastep</a>).
+If no BOUNDING_COLOR is specified, then the 
+exposed surface is rendered using the base color of the materiall; 
+if you like, you can specify a new BOUNDING_COLOR for each plane.
+
+<pre>
+# Thermal ellipsoids from Rastep Version V2.6d   
+# Probability level 0.50
+ 8
+ -1.0 -1.0  -1.0 -1.0 -1.0  0.0  0 0 0 5
+ORTEP_LIKE
+BOUNDING_COLOR  0.500 0.500 0.500
+BOUNDING_PLANE  0   24.274 47.792 19.835   0.8259  0.5467  0.1376
+BOUNDING_PLANE  0   24.274 47.792 19.835  -0.4475  0.7843 -0.4297
+BOUNDING_PLANE  0   24.274 47.792 19.835  -0.3428  0.2934  0.8924
+14
+  24.274  47.792 19.835     0.893   0.7 0.7 0.7
+      8.6581 6.0432 5.0725 2.9042 0.8405 0.3715 0.0 0.0 0.0 -2.3661
+</pre>
+
+<p>
+In the absence of the ORTEP_LIKE restriction, multiple bounding planes are 
+combined using a logical OR. A given volume is exluded from rendering if 
+it is clipped by one or more of the associated bounding planes. This 
+could be used, for example, to render a central slice from an extended 
+structure or a single wedge from a sphere.
+
 
 <a name="colours">
 <h4>Creating your own colour descriptions</h4> </a>

@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.6c (31 Jul 2001)
+*     Version 2.6f (15 May 2002)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -74,12 +74,10 @@
 * EAM Jul 2001	- V2.6b first release
 * EAM Aug 2001	- V2.6c bug-fix for MOPT1 processing
 *		  PNG output format ( -DPNG_SUPPORT )
+* EAM Feb 2002	- allow a little RIBBONSLOP in testing for ribbon triangles
+*		  fix up complicated corner cases in bounded surface algorithm
+* EAM Apr 2002	- clean up auto-tiling, and allow zero NPX or NPY to trigger it
 *		  
-*
-*     This version does output through calls to an auxilliary routine
-*     local(), which is in the accompanying source file local.c 
-*
-*
 *     General organization:
 *
 *     - read in control parameters and initial output image file
@@ -368,9 +366,9 @@
 *
 *
 *     Command line options (Aug 1999) NB: nax,nay,quality MUST be integer*2
-      COMMON /OPTIONS/ FONTSCALE, ZOOM, NSCHEME, SHADOWFLAG, 
+      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, 
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
-      REAL             FONTSCALE, ZOOM
+      REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
@@ -381,8 +379,13 @@
 *     Number of tiles, pixels per tile
       COMMON /RASTER/ NTX,NTY,NPX,NPY
       INTEGER         NTX,NTY,NPX,NPY
-*     Total image size in pixels (MUST BE INTEGER*2!)
-      INTEGER*2 NX, NY
+*
+*     Pixels per tile after anti-aliasing, output buffer line length
+      INTEGER         NOX, NOY, NX
+*
+*     Actual image size in pixels (may include partial tiling at the edges)
+*     (MUST BE INTEGER*2 for call to local()!!!)
+C     INTEGER*2 NAX, NAY
 *
 *     One lonely tile
       REAL TILE(3,MAXNPX,MAXNPY)
@@ -544,6 +547,7 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
       PARAMETER (ORTEP=1)
       EXTERNAL INBOUNDS
       LOGICAL  INBOUNDS
+      REAL     TEMPNORM(3)
 *
 *     Output buffer
       INTEGER*2 OUTBUF(OUTSIZ,4)
@@ -557,6 +561,11 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
 *     For label processing
       COMMON /LABELS/ LABOUT
       INTEGER         LABOUT
+*
+*     Gamma correction
+      INTEGER GAMMA_MAP(256)
+      PARAMETER (MAXRGB=255.0)
+      LOGICAL GAMMACORRECTION
 *
 *     Keep track of actual coordinate limits
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
@@ -677,9 +686,7 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
   103 FORMAT('title="',A,'"')
 *
 *     Get number of tiles
-      READ (INPUT,*,ERR=104,END=104) ITX,ITY
-      IF (NTX.LE.0) NTX = ITX
-      IF (NTY.LE.0) NTY = ITY
+      READ (INPUT,*,ERR=104,END=104) NTX,NTY
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
       GOTO 105
@@ -687,71 +694,85 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
      &           '>>> This doesnt look like a Raster3D input file! <<<')
 105   CONTINUE
 *
-*     Get number of pixels per tile
-      READ (INPUT,*,ERR=104) IPX,IPY
-      IF (NPX.LE.0) NPX = IPX
-      IF (NPY.LE.0) NPY = IPY
-      CALL ASSERT (NPX.GT.0, 'npx.le.0')
-      CALL ASSERT (NPY.GT.0, 'npy.le.0')
-      ZSLOP = SLOP * MAX(NPX,NPY)
+*     Get number of pixels per tile - 0 means autotile from values in NTX, NTY
+      READ (INPUT,*,ERR=104) NPX,NPY
+      if (npx.eq.0 .and. nax.le.0) nax = ntx
+      if (npy.eq.0 .and. nay.le.0) nay = nty
 *
 *     Get pixel averaging scheme
       READ (INPUT,*,ERR=104) SCHEME
       if (nscheme.ge.0) scheme = nscheme
       CALL ASSERT (SCHEME.GE.0 .AND. SCHEME.LE.4, 'bad scheme')
+*
+* Set up tiling and anti-aliasing.
+* If NAX, NAY are set, then use them to autotile
       IF (SCHEME.LE.1) THEN
+        call autotile( nax, nay, 2 )
         NOX = NPX
         NOY = NPY
+	if (nax.lt.0) nax = npx * ntx
+	if (nay.lt.0) nay = npy * nty
       ELSEIF (SCHEME.EQ.2) THEN
+	if (nax.gt.0) nax = nax * 2
+	if (nay.gt.0) nay = nay * 2
+	if (nax.le.0) nax = NPX * NTX
+	if (nay.le.0) nay = NPY * NTY
+        call autotile( nax, nay, 2 )
+	nax = nax / 2
+	nay = nay / 2
         NOX = NPX/2
         NOY = NPY/2
-        CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 2 requires NPX even')
-        CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 2 requires NPY even')
-      ELSEIF (SCHEME.EQ.3 .and. nscheme.ne.-4) THEN
-	nax = ((NPX * NTX) * 2 + 2) / 3.0
-	nay = ((NPY * NTY) * 2 + 2) / 3.0
-	call autotile( nax, nay )
-	NOX = NPX
-	NOY = NPY
-	NPX = NPX + (NPX+1)/2
-	NPY = NPY + (NPY+1)/2
+      ELSEIF (SCHEME.EQ.3 .and. nscheme.ne.-4 .and. nax.le.0 ) THEN
+C     Old style scheme 3 with exact tiling specified
+	nax = NPX * NTX
+	nay = NPY * NTY
+	call autotile( nax, nay, 3 )
+	nax = (nax * 2 + 2) / 3
+	nay = (nay * 2 + 2) / 3
+	NOX = (NPX * 2) / 3
+	NOY = (NPY * 2) / 3
       ELSE
-	IF (MOD(NPX,2).NE.0 .OR. MOD(NPY,2).NE.0) THEN
-	    nax = NPX * NTX
-	    nay = NPY * NTY
-	    call autotile( nax, nay )
-	ENDIF
-	NOX = NPX
-	NOY = NPY
-	NPX = NPX + (NPX+1)/2
-	NPY = NPY + (NPY+1)/2
+C     Either scheme 4 or -size and anti-aliasing selected on command line
+	if (nax.gt.0) nax = (nax + (nax+1)/2)
+	if (nay.gt.0) nay = (nay + (nay+1)/2)
+	if (nax.le.0) nax = NPX*NTX + (NPX*NTX+1)/2
+	if (nay.le.0) nay = NPY*NTY + (NPY*NTY+1)/2
+	call autotile( nax, nay, 3 )
+	nax = (nax * 2 + 2) / 3
+	nay = (nay * 2 + 2) / 3
+	NOX = (NPX * 2) / 3
+	NOY = (NPY * 2) / 3
 	SCHEME = 3
       ENDIF
 *
-      CALL ASSERT (NTX.LE.MAXNTX,'ntx>maxntx')
-      CALL ASSERT (NTY.LE.MAXNTY,'nty>maxnty')
-      CALL ASSERT (NPX.LE.MAXNPX,'npx>maxnpx')
-      CALL ASSERT (NPY.LE.MAXNPY,'npy>maxnpy')
+	call assert (nax.gt.0, 'nax <= 0')
+	call assert (nay.gt.0, 'nay <= 0')
 *
-      CALL ASSERT (OUTSIZ.GE.NOY*NOX*NTX,
-     &             'image too large for output buffer')
+      CALL ASSERT (NTX.GT.0.,'Tiling failure - ntx = 0')
+      CALL ASSERT (NTY.GT.0.,'Tiling failure - nty = 0')
+      CALL ASSERT (NPX.GT.0.,'Tiling failure - npx = 0')
+      CALL ASSERT (NPY.GT.0.,'Tiling failure - npy = 0')
+      CALL ASSERT (NTX.LE.MAXNTX,'Tiling failure - ntx>maxntx')
+      CALL ASSERT (NTY.LE.MAXNTY,'Tiling failure - nty>maxnty')
+      CALL ASSERT (NPX.LE.MAXNPX,'Tiling failure - npx>maxnpx')
+      CALL ASSERT (NPY.LE.MAXNPY,'Tiling failure - npy>maxnpy')
 *
-      NX = NOX*NTX
-      NY = NOY*NTY
-C
       IF (VERBOSE) THEN
 	WRITE (NOISE,*) 'ntx=',NTX,' nty=',NTY
 	WRITE (NOISE,*) 'npx=',NPX,' npy=',NPY
 	WRITE (NOISE,*) 'scheme=',SCHEME
 	WRITE (NOISE,*) 'nox=',NOX,' noy=',NOY
-	WRITE (NOISE,*) 'nx= ',NX,' ny= ',NY
       END IF
-      if (nax.lt.0) nax = nx
-      if (nay.lt.0) nay = ny
+      if (nax.lt.0) nax = nox*ntx
+      if (nay.lt.0) nay = noy*nty
+      NX = nox*ntx
       LINOUT = 0
       WRITE (NOISE,1105) 'Rendered raster size =',NPX*NTX,NPY*NTY
       WRITE (NOISE,1105) '  Output raster size =',NAX,NAY
 1105  FORMAT(A,I6,' x',I6)
+C
+      CALL ASSERT (OUTSIZ.GE.NOY*NOX*NTX,
+     &             'image too large for output buffer')
 C
 C	Header records and picture title
       IF (SCHEME.EQ.0) OTMODE = OR(OTMODE,ALPHACHANNEL)
@@ -819,7 +840,7 @@ C	Header records and picture title
       CALL ASSERT (SPECLR.LE.1., 'speclr > 1')
 *
       IF (VERBOSE) THEN
-     	WRITE (NOISE,1104) 'iphong=',IPHONG,'strait=',STRAIT,
+     	WRITE (NOISE,1104) 'iphong=',float(IPHONG),'strait=',STRAIT,
      &                'ambien=',AMBIEN,'speclr=',SPECLR
 1104  FORMAT(2(4X,A,F10.4))
       END IF
@@ -1025,6 +1046,16 @@ c     End of header processing
       ENDIF
       WRITE (NOISE,'(1X)')
 *
+*     Initialize gamma correction table
+      GAMMACORRECTION = .FALSE.
+      IF (GAMMA.LT.0.99 .OR. GAMMA.GT.1.01) GAMMACORRECTION = .TRUE.
+      IF (GAMMACORRECTION) THEN
+      	DO I=0,MAXRGB
+	     G = I
+	     GAMMA_MAP(I+1) = (G/MAXRGB) ** (1.0/GAMMA) * MAXRGB + 0.5
+	ENDDO
+      ENDIF
+*
 *
 *     Initialize counters
       DO 5 J=1,NTY
@@ -1095,7 +1126,7 @@ c	    ungz will uncompress into a temporary file, which ought to
 c	    be deleted later.  Unfortunately, that's hard to do in g77 
 c	    since it doesn't support dispose='DELETE'.
 	    line(k+1:k+1) = char(0)
-	    if (0 .gt. ungz( line(j:k+1), fullname )) goto 74
+	    if (0 .gt. ungz( line(j:k+1), fullname )) goto 73
 	    j = 1
 	    k = 132
 	    do i=132,2,-1
@@ -1104,7 +1135,7 @@ c	    since it doesn't support dispose='DELETE'.
 	    enddo
 	    if (verbose) 
      &		write(noise,*) 'Creating temporary file: ',fullname(j:k)
-	    open (unit=input+1,err=74,status='OLD',
+	    open (unit=input+1,err=73,status='OLD',
      &            DISPOSE='DELETE',
      &		  file=fullname(j:k))
 	    fullname = line(2:132)
@@ -1122,7 +1153,7 @@ c	    since it doesn't support dispose='DELETE'.
 	    GOTO 70
 	ENDIF
    	CALL LIBLOOKUP( LINE(J:K), FULLNAME )
-	OPEN (UNIT=INPUT+1,ERR=74,STATUS='OLD',FILE=FULLNAME)
+	OPEN (UNIT=INPUT+1,ERR=73,STATUS='OLD',FILE=FULLNAME)
    72	CONTINUE
 	DO I=132,2,-1
 	  IF (FULLNAME(I:I).EQ.' ') J = I
@@ -1132,10 +1163,14 @@ c	    since it doesn't support dispose='DELETE'.
 	CALL ASSERT(INPUT-INPUT0.LE.MAXLEV, 
      &	            'Too many levels of indirection')
 	GOTO 7
-   74	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
+   73	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
 	GOTO 7
       ELSE
-	READ (LINE,*,END=50) INTYPE
+	READ (LINE,*,END=50,ERR=74) INTYPE
+	GOTO 76
+   74	WRITE (NOISE,'(A,A)') ' >> Unrecognized line: ',LINE
+	GOTO 7
+   76	CONTINUE
       ENDIF
       IF (INTYPE.EQ.0) GO TO 50
       IF (INTYPE .EQ. CYLFLAT) THEN
@@ -2341,6 +2376,7 @@ c		  if input line is not recognized
       ENDIF
       WRITE (NOISE,*) LINE(2:57)
       IF (VERBOSE) WRITE (NOISE,*) 'Scale: ', SCALE
+      IF (VERBOSE.AND.GAMMACORRECTION) WRITE (NOISE,*) 'Gamma: ', Gamma
       IF (FOGTYPE .GE. 0) THEN
         IF (FOGBACK .EQ. 0) THEN
 	    FOGLIM(1) = ZLIM(1)
@@ -2397,14 +2433,18 @@ CDEBUG	  "I+1" should be replaced by INEXT processing
 	  L = LIST(INEXT)
 	  DO II = 1, 3
 	    KK = K+II
-	    IF   (DETAIL(KK).NE.DETAIL(J+II+3)
-     &      .AND. DETAIL(KK).NE.DETAIL(J+II+6)) GOTO 54
+	    if (  abs(detail(kk)-detail(j+ii+3)).gt.RIBBONSLOP
+     &	    .and. abs(detail(kk)-detail(j+ii+6)).gt.RIBBONSLOP) goto 54
+C	    IF   (DETAIL(KK).NE.DETAIL(J+II+3)
+C    &      .AND. DETAIL(KK).NE.DETAIL(J+II+6)) GOTO 54
 	  END DO
 *         leading vertex must match one in following triangle
 	  DO II = 7, 9
 	    KK = K+II
-	    IF   (DETAIL(KK).NE.DETAIL(L+II-3)
-     &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
+	    IF   (abs(DETAIL(KK)-DETAIL(L+II-3)).gt.RIBBONSLOP
+     &      .AND. abs(DETAIL(KK)-DETAIL(L+II-6)).gt.RIBBONSLOP) GOTO 54
+C	    IF   (DETAIL(KK).NE.DETAIL(L+II-3)
+C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
 	  END DO
 	  FLAG(I) = OR(FLAG(I),RIBBON)
 54	  CONTINUE
@@ -2447,6 +2487,7 @@ CDEBUG	  "I+1" should be replaced by INEXT processing
       ENDIF
 57    FORMAT(2X,A,I8)
 *
+      ZSLOP = SLOP * MAX(NPX,NPY)
       IF (VERBOSE) THEN
         WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
         IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',MAXSDT
@@ -2880,9 +2921,9 @@ C		CALL ASSERT(TYPE(IND+1).EQ.NORMS,'lost normals')
 		A3 = DETAIL(7 + LIST(IND+1))
 		B3 = DETAIL(8 + LIST(IND+1))
 		C3 = DETAIL(9 + LIST(IND+1))
-		NORMAL(1) = A1 + ALPHA*(A2-A1) + BETA*(A3-A1)
-		NORMAL(2) = B1 + ALPHA*(B2-B1) + BETA*(B3-B1)
-		NORMAL(3) = C1 + ALPHA*(C2-C1) + BETA*(C3-C1)
+		TEMPNORM(1) = A1 + ALPHA*(A2-A1) + BETA*(A3-A1)
+		TEMPNORM(2) = B1 + ALPHA*(B2-B1) + BETA*(B3-B1)
+		TEMPNORM(3) = C1 + ALPHA*(C2-C1) + BETA*(C3-C1)
 *	      For ribbon triangles we take this normal for "middle" vertex,
 *	      normal of previous triangle for "trailing" vertex normal,
 *	      normal of next triangle for "leading" vertex normal.
@@ -2900,13 +2941,13 @@ C		CALL ASSERT(TYPE(INEXT).EQ.TRIANG,'lost triangle')
 		BT = DETAIL(11 + LIST(IPREV))
 		AL = DETAIL(10 + LIST(INEXT))
 		BL = DETAIL(11 + LIST(INEXT))
-		NORMAL(1) = -AT -ALPHA*(A-AT) -BETA*(AL-AT)
-		NORMAL(2) = -BT -ALPHA*(B-BT) -BETA*(BL-BT)
-		NORMAL(3) = 1.
+		TEMPNORM(1) = -AT -ALPHA*(A-AT) -BETA*(AL-AT)
+		TEMPNORM(2) = -BT -ALPHA*(B-BT) -BETA*(BL-BT)
+		TEMPNORM(3) = 1.
 	      ELSE
-              	NORMAL(1) = -A
-              	NORMAL(2) = -B
-              	NORMAL(3) = 1.
+              	TEMPNORM(1) = -A
+              	TEMPNORM(2) = -B
+              	TEMPNORM(3) = 1.
 	      END IF
 *	      Check bounding planes.
 *	      This is different for triangles than for other shapes, as we assume
@@ -2926,9 +2967,10 @@ c		If this surface was above bounding plane, track parity
 		IF (BPIND.NE.0) THEN
 		    IF (MPARITY(MAT).EQ.0) THEN
 			MPARITY(MAT) = 1
-	            	NORMAL(1) = DX
-	            	NORMAL(2) = DY
-	            	NORMAL(3) = DZ
+			IF (ZP.LE.ZHIGH) GO TO 240
+	            	TEMPNORM(1) = DX
+	            	TEMPNORM(2) = DY
+	            	TEMPNORM(3) = DZ
 CORTEP		      Very ugly code to force bounding plane colors to be used
 CORTEP		      but only if they are present.
 			IF ( (BPIND.GT.0)
@@ -2964,6 +3006,10 @@ CORTEP		      but only if they are present.
 		ENDIF
 	      ENDIF
 *             update values for object having highest z here yet
+*	      19-Feb-2002 Must wait til here to set NORMAL
+		NORMAL(1) = TEMPNORM(1)
+		NORMAL(2) = TEMPNORM(2)
+		NORMAL(3) = TEMPNORM(3)
 	      IF (NTRANSP.GT.0) THEN
 		CALL RANK( IND, ZP, NORMAL, FLAG )
 	      ELSE
@@ -3839,6 +3885,7 @@ C
             ICK = 256. * SQRT(TILE(IC,I,J))
             IF (ICK.LT.0) ICK = 0
             IF (ICK.GT.255) ICK = 255
+	    IF (GAMMACORRECTION) ICK = GAMMA_MAP(ICK+1)
             OUTBUF(K,IC) = ICK
   410     CONTINUE
 C
@@ -3867,6 +3914,7 @@ C
             ICK = 256. * SQRT(TMP)
             IF (ICK.LT.0) ICK = 0
             IF (ICK.GT.255) ICK = 255
+	    IF (GAMMACORRECTION) ICK = GAMMA_MAP(ICK+1)
             OUTBUF(K,IC)   = ICK
 430       CONTINUE
 435       CONTINUE
@@ -3900,10 +3948,16 @@ C
             ICK2 = MIN(MAX(INT(256.*SQRT(TMP2)),0),255)
             ICK3 = MIN(MAX(INT(256.*SQRT(TMP3)),0),255)
             ICK4 = MIN(MAX(INT(256.*SQRT(TMP4)),0),255)
-                OUTBUF(   K+1,IC) = ICK1
-                OUTBUF(   K+2,IC) = ICK2
-                OUTBUF(NX+K+1,IC) = ICK3
-                OUTBUF(NX+K+2,IC) = ICK4
+	    IF (GAMMACORRECTION) THEN
+	    	ICK1 = GAMMA_MAP(ICK1+1)
+	    	ICK2 = GAMMA_MAP(ICK2+1)
+	    	ICK3 = GAMMA_MAP(ICK3+1)
+	    	ICK4 = GAMMA_MAP(ICK4+1)
+	    ENDIF
+            OUTBUF(   K+1,IC) = ICK1
+            OUTBUF(   K+2,IC) = ICK2
+            OUTBUF(NX+K+1,IC) = ICK3
+            OUTBUF(NX+K+2,IC) = ICK4
 450       CONTINUE
           K = K + 2
 455       CONTINUE
@@ -3984,9 +4038,9 @@ C       CALL ASSERT (K.LE.OUTSIZ,'k>outsiz')
 
       SUBROUTINE ISOLATE( X, Y )
 *     Expand X and Y coordinates to fill image regardless of aspect ratio
-      COMMON /OPTIONS/ FONTSCALE, ZOOM, NSCHEME, SHADOWFLAG, 
+      COMMON /OPTIONS/ FONTSCALE, GAMMA, ZOOM, NSCHEME, SHADOWFLAG, 
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
-      REAL             FONTSCALE, ZOOM
+      REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG
       INTEGER*2        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG

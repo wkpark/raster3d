@@ -1,13 +1,13 @@
 #
 # Raster3D makefile for Windows using gnu GCC/G77 compiler environment
-# contributed by Suhaib Siddiqi
+# contributed by Suhaib Siddiqi for version 2.6c
 # See also the notes in the INSTALL file.
 # 
 
 #
 # Where to put things
 #
-prefix = /gnu/mingw32/local
+prefix = G:/cygwn/mingw32/local
 bindir = $(prefix)/bin
 mandir = $(prefix)/man/manl
 #
@@ -39,12 +39,12 @@ FFLAGS   = -O1
 #     add -ljpeg to the LIBS definition.
 #
 
-LIBS    =	-Lc:/gnu/mingw32/lib -ltiff -ljpeg -lz
+LIBS    =	-LG:/cygwin/mingw32/lib -ltiff -ljpeg -lz
 DEFINES	=	-DTIFF_SUPPORT -DJPEG_SUPPORT -DIMAGEPIPE -DLINUX -DWIN32 -D__MSVCRT__
 INCLUDES =	-Ic:/gnu/mingw32/include
 
 RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
-PROGS    =	balls normal3d rastep rods ribbon render avs2ps rings3d
+PROGS    =	balls normal3d rastep rods ribbon render avs2ps rings3d 
 
 all:	$(PROGS)
 
@@ -64,49 +64,50 @@ install: $(PROGS)
 	@echo "	*******************************************"
 
 tar:
-	(cd ..; tar -zcvvf raster3d.tgz raster3d)
+	(cd ..; tar -czvf Raster3D_$(VERSION).tar.gz raster3d)
+
+ribbon:	$(RIBOBJS)
+	$(FC) $(LDFLAGS) $(RIBOBJS) -o ribbon
+
+rods:
+	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods
+
+balls:
+	$(FC) $(FFLAGS) balls.f $(CFLAGS) $(LDFLAGS) -o balls
+
+local.o: local.c
+	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+
+ungz.o:	ungz.c
+	$(CC) $(CFLAGS) -DGUNZIP -c ungz.c
+
+quadric.o: quadric.f
+
+render.f.bak:
+	mv render.f render.f.bak
+	egrep -v '(CARRIAGECONTROL|DISPOSE)' render.f.bak > render.f
+
+render:	render.f.bak local.o quadric.o parse.o r3dtops.o ungz.o
+	$(FC) $(FFLAGS) render.f local.o quadric.o parse.o r3dtops.o ungz.o \
+	$(LIBS) -o render
 
 normal3d: normal3d.f.bak normal3d.f quadric.o ungz.o
-	$(FC) $(FFLAGS) normal3d.f quadric.o ungz.o -o normal3d -lmsvcrt
+	$(FC) $(FFLAGS) normal3d.f quadric.o ungz.o -o normal3d
 
 normal3d.f.bak:
 	mv normal3d.f normal3d.f.bak
 	egrep -v '(CARRIAGECONTROL|DISPOSE)' normal3d.f.bak > normal3d.f
 
-rastep:	rastep.o quadric.o suv.o
-	$(FC) $(FFLAGS) rastep.o quadric.o suv.o -o rastep -lmsvcrt
+avs2ps:	avs2ps.c
+	$(CC) $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm
+
+
+rastep: rastep.f.bak rastep.f quadric.o suv.o
+	$(FC) $(FFLAGS) rastep.f quadric.o suv.o -o rastep
 
 rastep.f.bak:
 	mv rastep.f rastep.f.bak
 	grep -v CARRIAGECONTROL rastep.f.bak > rastep.f
 
 
-ribbon:	$(RIBOBJS)
-	$(FC) $(LDFLAGS) $(RIBOBJS) $(INCLUDES) -o ribbon -lmsvcrt
-	$(RM) $(RIBOBJS)
 
-rods:
-	$(FC) $(FFLAGS) rods.f $(CFLAGS) $(LDFLAGS) -o rods -lmsvcrt
-
-balls:
-	$(FC) $(FFLAGS) balls.f $(CFLAGS) $(LDFLAGS) -o balls -lmsvcrt
-
-local.o: local.c
-	$(CC) $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c 
-
-unga.o: unga.c
-	$(CC) $(CFLAGS) $(INCLUDES) -DGUNZIP -c unga.c 
-
-render:	render.f local.o quadric.o parse.o r3dtops.o ungz.o
-	$(FC) $(FFLAGS) render.f quadric.o local.o parse.o r3dtops.o ungz.o -o render \
-	$(LIBS) -lmsvcrt
-	$(RM) local.o parse.o r3dtops.o
-
-
-avs2ps:	avs2ps.c
-	$(CC) -D__WIN32__ $(CFLAGS) $(LDFLAGS) avs2ps.c -o avs2ps -lm -lmsvcrt
-
-$(RIBOBJS):
-	$(F2) $(FFLAGS) $*.f
-	$(CC) $(CFLAGS) -c -o $*.o $*.c
-	$(RM) $*.c

@@ -53,6 +53,11 @@ labels that are at the correct nominal fint size when printed
 at 300 dpi.
 
 .TP 5
+.B "-gamma GG"
+
+Apply gamma correction to output image.
+
+.TP 5
 .B "-help"
 
 Prints a short summary of command line options.

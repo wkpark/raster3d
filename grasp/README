@@ -1,3 +1,6 @@
+ungrasp - a filter for importing GRASP surface files into Raster3D
+	  Fortran source distributed as part of Raster3D
+
 This directory contains a utility program "ungrasp" which will convert a
 simple GRASP V1.1 surface file into a list of Raster3D objects.  
 Similar conversion routines could of course be written for other surface

@@ -14,7 +14,7 @@ any coordinate manipulations specified in the header, and writes the
 modified file to <i>stdout</i>.  <br>
 
 <pre>
-normal3d [-h] [-expand] [-stereo] &lt; infile.r3d &gt; normalized.r3d
+normal3d [options] &lt; infile.r3d &gt; normalized.r3d
 </pre>
 
 The output file from <b>normal3d</b> describes exactly the same image as the
@@ -24,11 +24,12 @@ format specifiers (which are set to *). <p>
 
 <h4>OPTIONS</h4>
 <dl>
-<dt><i>-h</i></dt>
-<dd>The <i>-h</i> flag suppresses all header
-    records in the output file.  All objects in the input file
-    are also in the output file, but their coordinate descriptions have been
-    normalized (i.e. the original transformation matrix has been applied).</dd>
+<dt><i>-ang AA</i></dt>
+<dd>Only meaningful in conjunction with the <i>-stereo</i> option. Normally 
+    stereo separation is introduced by adding a shear operator to the 
+    left and right images. The <i>-ang</i> option instead creates stereo separation
+    by rotation the left and right images +/-AA&deg; from the original view
+    angle.
 <dt><i>-expand</i></dt>
 <dd>The <i>-expand</i> flag causes the program to
     In-line and normalize all instances of file indirection in the input stream.
@@ -36,12 +37,22 @@ format specifiers (which are set to *). <p>
     The default is to simply copy file indirection lines (those begining
     with @) to the new input file without opening them or normalizing their
     contents.</dd>
-<dt><i>-stereo</i></dt>
+<dt><i>-h</i></dt>
+<dd>The <i>-h</i> flag suppresses all header
+    records in the output file.  All objects in the input file
+    are also in the output file, but their coordinate descriptions have been
+    normalized (i.e. the original transformation matrix has been applied).</dd>
+<dt><i>-size HHHxVVV</i></dt>
+<dd>Force the output image size to HHH pixels horizontal and VVV pixels vertical.</dd>
+<dt><i>-stereo [scratch]</i></dt>
 <dd>The <i>-stereo</i> flag causes the program to produce two additional files,
     <i>left.r3d</i> and <i>right.r3d</i>, containing header records suitable
     for rendering the normalized object description file as a side-by-side
-    stereo pair (see <a href="stereo3d.html">stereo3d</a>).</dd>
+    stereo pair (see <a href="stereo3d.html">stereo3d</a>).
+    If a scratch directory string is given, it is prepended to the filenames
+    {scratch}_left.r3d and {scratch}_right.r3d</dd>
 </dl>
+</p>
 
 <b>normal3d</b> also reports the total number of objects in the input file by
 object type, and gives the array sizes which would be required for the

@@ -42,13 +42,14 @@ Options:
     -debug                verbose output while running
     -draft                no anti-aliasing (SCHEME 1)
     -fontscale FF         multiplier for PostScript label fonts
+    -gamma GG             apply gamma correction GG to output image
     -invert               invert y axis
     -labels [outfile.ps]  write labels to PostScript file [default: label3d.ps]
     -quality QQ           0 < QQ < 100   jpeg compression parameter (default 90)
     -[no]shadow	          enable or disable shadowing
     -size HHHxVVV         specify size of output image in pixels
     -transparent          same as -alpha (SCHEME 0)
-    -ZZ[%]                rescale image by a factor of ZZ
+    -zoom ZZ[%]           rescale image by a factor of ZZ
 </pre>
 
 
@@ -145,6 +146,9 @@ can be modified to produce a TIFF file without conversion:
 	approximately the nominal font size when printed at 300 dpi.
     <dt><i> -help</i>
     <dd>Print summary of options.
+    <dt><i> -gamma GG</i>
+    <dd>Apply gamma correction to output image. Gamma &gt; 1 makes it lighter;
+        gamma &lt; 1 makes it darker.
     <dt><i> -invert</i>
     <dd>Invert the image top-to-bottom. This could be necessary
 	if you are using some odd viewing program.
@@ -181,6 +185,11 @@ can be modified to produce a TIFF file without conversion:
     <dd>(same as <i>-alpha</i>) Force output of transparency information (SCHEME 0).
     	This only works if the output format supports an alpha channel (AVS, TIFF, 
 	but <i>not</i> JPEG).
+    <dt><i>-zoom ZZ[%]</i>
+    <dd>Modifies the scale factor TMAT(4,4) in the header records. This does not change
+    	the overall dimensions of the image, just the size of the objects within the image.
+	ZZ > 1 will make the objects appear larger, ZZ < 1 will shrink them.  If the ZZ is
+	is given as a percentage, then ZZ > 100% enlarges and ZZ < 100% shrinks.
 </dl>
 </p>
 

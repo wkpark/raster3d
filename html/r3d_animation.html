@@ -85,7 +85,7 @@ rotation of a scene described by Molscript and rendered in Raster3D.
 
 	$outfile = sprintf( "frame_%3.3d.jpeg", $i ) ;
 	$molscript = '/usr/local/bin/molscript -r' ;
-	$render = '/usr/local/bin/renderjpeg' ;
+	$render = '/usr/local/bin/render -jpeg' ;
 
 	$command = "$molscript < animate.mol | $render > $outfile" ;
 	system '/bin/echo', $command ;

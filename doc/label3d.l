@@ -1,33 +1,28 @@
 .ad l
 .nh
-.TH LABEL3D 1 " 8 May 1999" "Raster3D"
+.TH LABEL3D 1 " 9 Feb 2002" "Raster3D"
 .SH NAME
 
 label3d - process a Raster3D scene containing labels
 
 .SH SYNOPSIS
 
-   label3d render_input_file
-   display label3d.tiff
+   label3d [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff
+   label3d  -png  [outfile.png ]  < infile.r3d > outfile.png 
 
 .PP
 \fIlabel3d\fP is a shell script that processes a Raster3D input 
 file containing label descriptors (object types 10, 11, 12)
-into a TIFF image label3d.tiff containing both the molecular
+into a TIFF or PNG image containing both the molecular
 graphics image and the associated labels.
 
 label3d uses the Raster3D utilities \fIr3dtops\fP and \fIrender\fP, 
 and requires that both ghostscript and ImageMagick be installed.
-Three intermediate files are produced by normal3d: 
- 	label3d.tmp - temporary copy of input stream
-	label3d.ps  - PostScript description of labels created by r3dtops
- 	render.tiff - TIFF image produced by render
- 
-Any existing files by these names will be destroyed.
 
 .SH ENVIRONMENT
-This script requires TIFF support in render, the unix utility sed,
-the ImageMagick image processing package, and ghostscript. 
+Scratch files are created in directory TMPDIR, if defined, 
+otherwise in /usr/tmp.  Font sizes are scaled by the value of the
+environmental parameter FONTSCALE.  FONTSCALE defaults to 3.
 
 .SH BUGS
 The whole nature of label handling in Raster3D is not yet settled.
@@ -41,8 +36,6 @@ Labels always appear on top of the molecular graphics image,
 even labels which should be occluded by a foreground object.
 
 .SH SOURCE
-.B anonymous ftp site:	
- 	ftp.bmsc.washington.edu
  
 .B web URL:
  	http://www.bmsc.washington.edu/raster3d/raster3d.html

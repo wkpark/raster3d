@@ -6,6 +6,7 @@
 *           [-tabulate histogram.file] [-by_atomtype] [-suv_check]
 *
 *
+*	-auto		auto-orientation of viewpoint
 *	-h		suppresses header records in output
 *	-iso		forces isotropic B values (spheres rather than
 *			ellipsoids) even if ANISOU cards present
@@ -24,20 +25,20 @@
 *			fancy4  longest principle axis only
 *			fancy5	for ORTEP lovers - one octant missing
 *			fancy6  same as fancy5, with missing octant colored grey
-*			========================================================
+*
+*===============================================================================
+* The following options are used by parvati scripts
+*
 *	-tabulate [file]instead of creating a Raster3D input file, 
 *			list all atoms with principle axes and anisotropy.
 *			Optionally write a histogram of anisotropy to speficied 
 *			output file; otherwise output is to stderr 
 *
-*                       V2.4l output from -tabulate:
+*                       output from -tabulate for this version of rastep
 *			ATOM RESNAME RESNUM  EIGEN1 EIGEN2 EIGEN3 ANISOTROPY Uiso
-*			========================================================
 *
-* The following options are under development
 *	-com [file]	find <anisotropy> in shells from center of mass
 *	-nohydrogens	don't plot hydrogens even if present
-*	-auto		auto-orientation
 *	-mini		small size plot (176x208) with auto-orientation
 *	-suv_check	use Suv to validate similarity of bonded ellipsoids
 *
@@ -65,6 +66,11 @@
 * EAM Apr 2001	- V2.6 
 *		  ORTEP_LIKE ellipsoids (one octant missing)
 *		  error count
+* EAM Feb 2002	- rework ANISOU and Suv processing to gain back some speed
+*		  maybe I should have an array of iso/aniso flags to save
+*		  time during testing?
+*		  the rest of CARD() array can go too?
+*		  all the tests on IF ATOM(I)(1:).eq.'ATOM' are now unneeded
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -75,6 +81,7 @@
       PARAMETER (MAXCOL=5000, MAXATM=300000)
       REAL RGB(3,MAXCOL), VDW(MAXCOL)
       REAL SPAM(5,MAXATM)
+      REAL UIJ(6,MAXATM)
       real center(3)
       CHARACTER*24 MASK(MAXCOL),TEST
       CHARACTER*80 ATOM(MAXATM),CARD
@@ -320,7 +327,7 @@ c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
      &                  VERSION
-	write (noise,*) 'E A Merritt -  6 Jun 2001'
+	write (noise,*) 'E A Merritt -  2 Feb 2002'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -394,10 +401,15 @@ c
           ENDIF
           READ(CARD,'(6X,A24,3F8.3,F6.2)') MASK(NCOL),
      &          (RGB(I,NCOL),I=1,3), VDW(NCOL)
+        ELSEIF (nohydro .AND. CARD(77:78).EQ.' H') THEN
+	  goto 10
 	ELSEIF (CARD(1:6).EQ.'ANISOU') THEN
-	  NATM = NATM + 1
-	  NANI = NANI + 1
-	  ATOM(NATM) = CARD
+	  nani = nani + 1
+	  if (card(13:27).ne.atom(natm)(13:27)) goto 14
+	  read (card(29:70),*,err=12,end=12) (uij(i,natm),i=1,6)
+	  do i=1,6
+	  	uij(i,natm) = uij(i,natm) * 0.0001
+	  enddo
         ELSEIF (CARD(1:4).EQ.'ATOM'.OR.CARD(1:4).EQ.'HETA') THEN
           NATM = NATM + 1
           IF (NATM.GT.MAXATM) THEN
@@ -406,10 +418,17 @@ c
             STOP 20
           ENDIF
           ATOM(NATM) = CARD
+	  uij(1,natm) = -1.0
         ELSEIF (CARD(1:3).EQ.'END') THEN
           GO TO 50
         ENDIF
         GO TO 10
+12	write(noise,*) '*** Format problem - ', card(13:70)
+	nerrors = nerrors + 1
+	goto 10
+14	write(noise,*) '*** ANISOU record out of order - ', card(13:70)
+	nerrors = nerrors + 1
+	goto 10
 *     Come here when EOF or 'END' record is reached
 50    CONTINUE
       IF (NATM.EQ.0) THEN
@@ -437,8 +456,6 @@ c
       ZMIN =  1E20
       DO 100 IATM=1,NATM
         CARD = ATOM(IATM)
-	IF (CARD(1:4).NE.'ATOM' .AND. CARD(1:4).NE.'HETA') 
-     &     GOTO 100
 c
 c	Do a little pre-processing to make later bookkeeping easier
 c	At least screen out non-conformant PDB files that contain
@@ -477,7 +494,7 @@ c
 	    IF (Biso(IATM).LE.0.0) THEN
 	    	nerrors = nerrors + 1
 	    	write(noise,*) '*** Illegal Biso ',Biso(IATM),' - ',
-     &				atom(iatm+1)(13:27)
+     &				atom(iatm)(13:27)
 		Biso(IATM) = 0.0
 	    ENDIF
             Uiso = Biso(IATM) / (8. * 3.14159*3.14159)
@@ -693,25 +710,19 @@ c
 	    GREEN = RGB(2,ICOL)
 	    BLUE  = RGB(3,ICOL)
 	endif
-	IF (ellipses .and.(ATOM(IATM+1)(1:6).EQ.'ANISOU')) THEN
-	    read (atom(iatm+1)(29:70),*,err=131,end=131) 
-     &           (anisou(i),i=1,6)
+	IF (ellipses .and. uij(1,iatm).ge.0.) THEN
 	    do i=1,6
-		anisou(i) = anisou(i) * 0.0001
+		anisou(i) = uij(i,iatm)
 	    enddo
 	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
-     &				atom(iatm+1)(13:27)
+     &				atom(iatm)(13:27)
 		nonpos = nonpos + 1
 	    	nerrors = nerrors + 1
      		Biso(iatm) = 0.0
 		goto 138
 	    endif
 	    goto 132
-  131	    write(noise,*) '*** Format problem - ',
-     &				atom(iatm+1)(13:70)
-	    nerrors = nerrors + 1
-     	    goto 138
   132	    continue
 	    radlim = pradius * max( eigens(1),eigens(2),eigens(3) )
 	    radlim = radlim * MARGIN
@@ -1099,15 +1110,13 @@ c
 	IF (.not. ellipses) THEN
 	    RAD  = sqrt(SPAM(4,IATM)) * PRADIUS
             WRITE(OUTPUT,151) 2, X,Y,Z,RAD,RED,GREEN,BLUE
-	ELSE IF (ATOM(IATM+1)(1:6).EQ.'ANISOU') THEN
-	    read (atom(iatm+1)(31:80),*,err=153,end=153) 
-     &           (anisou(i),i=1,6)
+	ELSE IF (uij(1,iatm).gt.0.) THEN
 	    do i=1,6
-		anisou(i) = anisou(i) * 0.0001
+		anisou(i) = uij(i,iatm)
 	    enddo
 	    if (anitoquad(anisou,pradius,quadric,eigens,evecs).lt.0)then
 	        write(noise,*) '*** Non-positive definite ellipsoid - ',
-     &				atom(iatm+1)(13:26)
+     &				atom(iatm)(13:26)
      		nerrors = nerrors + 1
      		Biso(iatm) = 0.0
 		red   = 1.0
@@ -1145,11 +1154,6 @@ c
   152	FORMAT(10F12.4)
 	ENDIF
       goto 154
-  153 continue
-      if (fancy.eq.0) then
-      	write(noise,*) '*** Format problem - ',atom(iatm+1)(13:70)
-     	nerrors = nerrors + 1
-      endif
       ENDIF
   154 continue
       IATM = IATM + 1
@@ -1178,36 +1182,39 @@ C
       endif
 c
       DO 202 IATM=1,NATM
-	IF (ATOM(IATM)(1:4).NE.'ATOM'.AND.ATOM(IATM)(1:4).NE.'HETA') 
-     &      GOTO 202
      	IF (nohydro .AND. ATOM(IATM)(77:78).EQ.' H') GOTO 202
+	if (suvflag) then
+	  if (Biso(IATM).eq.0.0) goto 202
+	  if (uij(1,IATM).lt.0.) goto 202
+	endif
+	XI = SPAM(1,IATM)
+	YI = SPAM(2,IATM)
+	ZI = SPAM(3,IATM)
+	ICOL = SPAM(5,IATM)
+	VDWI = VDW(ICOL)
       DO 201 JATM=IATM+1,NATM
-	IF (ATOM(JATM)(1:4).NE.'ATOM'.AND.ATOM(JATM)(1:4).NE.'HETA') 
-     &      GOTO 201
-     	IF (nohydro .AND. ATOM(JATM)(77:78).EQ.' H') GOTO 201
-	DX = SPAM(1,IATM) - SPAM(1,JATM)
-	DY = SPAM(2,IATM) - SPAM(2,JATM)
-	DZ = SPAM(3,IATM) - SPAM(3,JATM)
-	ICOL  = SPAM(5,IATM)
-	JCOL  = SPAM(5,JATM)
-	CLOSE = 0.6 * (VDW(ICOL) + VDW(JCOL))
-	DIST  = DX*DX + DY*DY + DZ*DZ
-	IF (DIST .GT. CLOSE**2) GOTO 201
-cdebug
+	CLOSE2 = 4.537
+	DX2 = (XI - SPAM(1,JATM))**2
+	if (dx2 .gt. close2) goto 201
+	DY2 = (YI - SPAM(2,JATM))**2
+	DZ2 = (ZI - SPAM(3,JATM))**2
+	DIST2 = DX2 + DY2 + DZ2
+c
 c	  Checking for bonded atoms with dissimilar Uij
 	  if (suvflag) then
-	    IF (Biso(IATM).eq.0.0 .or. Biso(JATM).eq.0.0) goto 201
-	    IF (ATOM(IATM+1)(1:6).NE.'ANISOU') goto 201
-	    IF (ATOM(JATM+1)(1:6).NE.'ANISOU') goto 201
-	    read (atom(iatm+1)(29:70),*,err=201,end=201) 
-     &           (anisou(i),i=1,6)
-	    read (atom(jatm+1)(29:70),*,err=201,end=201) 
-     &           (anisov(i),i=1,6)
-	    do i=1,6
-		anisou(i) = anisou(i) * 0.0001
-		anisov(i) = anisov(i) * 0.0001
-	    enddo
-	    similarity = Suv(anisou,anisov)
+	    IF (DIST2 .GT. CLOSE2) GOTO 201
+	    IF (Biso(JATM).eq.0.0) goto 201
+	    if (uij(1,jatm).lt.0.) goto 201
+CDEBUG Version 2.6c used explicit test on 0.6*VdW distance
+CDEBUG but this is very slow so I have fixed CLOSE2 at the C-S bond length
+CDEBUG It might be worth doing a first cut using, say, 2.25A (>S-S bond)
+CDEBUG and then only check the actual VdW distance for pairs making the cut
+C	    JCOL = SPAM(5,JATM)
+C	    VDWJ = VDW(JCOL)
+C	    CLOSE2 = (0.6 * (VDWI + VDWJ)) **2
+C	    IF (DIST2 .GT. CLOSE2) GOTO 201
+CDEBUG Add this section back to see if results match V2.6c numbers
+	    similarity = Suv( uij(1,iatm), uij(1,jatm) )
 	    if (similarity .lt. suvlimit) then
 		write (suvlun,161) 
      &		    ATOM(IATM)(13:17),ATOM(IATM)(18:27),
@@ -1218,6 +1225,13 @@ c	  Checking for bonded atoms with dissimilar Uij
 	    endif
 	    if (tflag) goto 201
 	  endif
+
+c	More stringent distance test when drawing bonds
+     	  IF (nohydro .AND. ATOM(JATM)(77:78).EQ.' H') GOTO 201
+	  JCOL = SPAM(5,JATM)
+	  VDWJ = VDW(JCOL)
+	  CLOSE2 = (0.6 * (VDWI + VDWJ)) **2
+	  IF (DIST2  .GT. CLOSE2) GOTO 201
 
 c	  Don't draw bonds between alternate conformers of same residue
 	  IF (ATOM(IATM)(17:17).ne.' '.and.ATOM(JATM)(17:17).ne.' '

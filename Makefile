@@ -34,7 +34,7 @@ help:
 	else \
 	echo "" ; \
 	echo "Please start by typing '"make OS"', where OS is one of" ; \
-	echo "	linux linux-pgf77 dec sun irix5 irix6 cygwin aix hpux" ; \
+	echo "	linux linux-pgf77 linux-ppc dec sun irix5 irix6 cygwin aix hpux" ; \
 	echo "If your OS is not shown but you have g77/gcc installed, try" ; \
 	echo "	make linux" ; \
 	echo "" ; \
@@ -50,7 +50,7 @@ linux:	strip-for-g77
 	@cp Makefile.template Makefile.incl
 	@echo OS = linux                      >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
-	@echo CFLAGS = -g -m486               >> Makefile.incl
+	@echo CFLAGS = -g -m486 -w            >> Makefile.incl
 	@echo FC = g77                        >> Makefile.incl
 	@echo FFLAGS = -g -O -w -malign-double>> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
@@ -59,13 +59,24 @@ linux:	strip-for-g77
 
 linux-pgf77:
 	@cp Makefile.template Makefile.incl
-	@echo OS = linux                      >> Makefile.incl
+	@echo OS = linux-pgf77                >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
-	@echo CFLAGS = -g -m486               >> Makefile.incl
+	@echo CFLAGS = -g -m486 -w            >> Makefile.incl
 	@echo FC = pgf77                      >> Makefile.incl
 	@echo FFLAGS = -O -Munroll            >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo OSDEFS = -DLINUX -DNETWORKBYTEORDER        >> Makefile.incl
+	@echo include Makefile.package        >> Makefile.incl
+
+linux-ppc:     strip-for-g77
+	@cp Makefile.template Makefile.incl
+	@echo OS = linux-ppc                  >> Makefile.incl
+	@echo CC = gcc                        >> Makefile.incl
+	@echo CFLAGS = -g -O2 -fsigned-char   >> Makefile.incl
+	@echo FC = g77                        >> Makefile.incl
+	@echo FFLAGS = -g -O2 -fsigned-char   >> Makefile.incl
+	@echo RM = /bin/rm -f                 >> Makefile.incl
+	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl
 
 irix5:	
@@ -173,7 +184,7 @@ rastep:	rastep.f quadric.o suv.o
 render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o
 	$(FC) $(FFLAGS) \
 	render.o local.o quadric.o parse.o r3dtops.o ungz.o \
-	$(LDFLAGS) $(LIBS) \
+	$(LIBS) $(LDFLAGS) \
 	-o render
 
 normal3d:	normal3d.o quadric.o ungz.o parameters.incl

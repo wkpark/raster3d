@@ -1,102 +1,164 @@
-#!/bin/csh -f
+#!/bin/sh
 #
-#	Raster3D utility script "stereo3d" V2.5 (labels version)
+#	Raster3D utility script "stereo3d" V2.6e
+#       ========================================
+#
+# Ethan A Merritt - April 2002
 #
 # Renders a single Raster3D scene description as a side-by-side stereo pair.
+# By default this version of the stereo3d script uses a shear operation to 
+# make the left/right images.  The -angsep option causes it to use angular 
+# separation instead. In this case the angular separation is pre-set to 
+# +/- 2.5 degrees.  If you want some other value you can edit the script.
+# Neither shear nor rotation is perfect; relative weak points are shown
+# in this table:
+#                               shear           rotation
+#                               -----           --------
+#    Z-clipping                 OK              serious problem
+#    specular highlights        OK              minor problem
+#    Bounding planes            bad             OK
+#    shadows                    bad (fixable?)  OK
 #
-# This version will attempt label processing by calling the label3d script.
-# If you have not installed the label3d script, then don't use this version 
-# of stereo3d.
 #
 # Requires:
+#	Raster3D label3d script
 #	ImageMagick utilities identify, mogrify, and montage.
 #	Ghostscript (if labels are present).
-# 	requires TIFF support, although this could be changed.
-# 	requires sed (previous versions used awk/nawk).
+# 	TIFF support, although this could be changed.
+# 	sed (previous versions used awk/nawk).
 # This script was tested using ImageMagick version 4.9.2
 #
-# Ethan A Merritt November 1999
-#
 # Usage:
-#		stereo3d render_input_file
-# Output:
-#		stereo.tiff	composite side-by-side stereo pair
+#	stereo3d [-angsep] [-border] [-tiff [out.tiff]] < infile.r3d > outfile.tiff
+#	stereo3d [-angsep] [-border]  -png  [out.png]   < infile.r3d > outfile.png
 #
 # Temporary files:
-# 		left.r3d	header records for left eye view
-#		right.r3d	header records for right eye view
-#		stereo3d.tmp	normalization of render_input_file
-#		left.tiff	rendered image for left eye
-#		right.tiff	rendered image for right eye
-#		label3d.tiff	intermediate output from label3d
-#		label3d.tmp 	intermediate output from label3d
-#		label3d.ps  	intermediate output from label3d
+#	Scratch files are put in $TMPDIR, if it exists, else in /tmp
 #
+
 #
-if ($#argv < 1) then
-   echo "Usage:"
-   echo "	stereo3d [-border] render_input_file"
-   exit
-endif
+# Construct base name for scratch files
 #
-if ("ARG$1" == "ARG-border") then
-   setenv STEREOBORDER
-   if ("ARG$2" == "ARG-") then
-      normal3d -stereo -expand > stereo3d.tmp
-   else
-      normal3d -stereo -expand < $2 > stereo3d.tmp
-   endif
+if [ "$TMPDIR" ]; then
+    tmp=$TMPDIR/$$
 else
-   unsetenv STEREOBORDER
-   if ("ARG$1" == "ARG-") then
-      normal3d -stereo -expand > stereo3d.tmp
-   else
-      normal3d -stereo -expand < $1 > stereo3d.tmp
-   endif
-endif
+    tmp=/usr/tmp/$$
+fi
+# echo "DEBUG scratch files to $tmp"  1>&2
+
 #
-echo "@stereo3d.tmp" >> left.r3d
-echo "@stereo3d.tmp" >> right.r3d
+# Parse command line options
+#
+unset STEREOBORDER
+unset outfile
+unset img
+mode=
+previous=
+more_options=
+
+for option in $*
+do
+if   [ "$option" = "-border" ]; then STEREOBORDER=1; 
+elif [ "$option" = "-png"    ]; then img=png; 
+elif [ "$option" = "-tiff"   ]; then img=tiff; 
+elif [ "$option" = "-angsep" ]; then mode="-ang 2.5"; 
+elif [ "$option" = "-size"   ]; then passthru= ;
+else
+    if [ "$previous" = "-tiff" ] || [ "$previous" = "-png" ] ; then
+    	outfile="$option"
+	if [ `echo "$option" | sed -e 's/\(.\).*/\1/'` != "-" ]; then
+	    outfile="$option"
+	fi
+    elif [ "$previous" = "-size" ] ; then
+    	more_options="-size $option"
+    else
+	echo "stereo3d version 2.6e" 1>&2
+	echo "unrecognized option: $option" 1>&2
+	echo "Usage:" 1>&2
+	echo "	stereo3d [-border] [-angsep] [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff" 1>&2
+	echo "	stereo3d [-border] [-angsep]  -png  [outfile.png ]  < infile.r3d > outfile.png " 1>&2
+	exit -1
+    fi
+fi
+previous="$option"
+done
+
+if [ "$img" != "png" ]; then
+    img=tiff
+fi
+
+if [ "$outfile" ]; then
+    echo "stereo3d: $img output to $outfile" 1>&2
+else
+    echo "stereo3d: $img output to stdout" 1>&2
+fi
+
+#
+# Call normal3d to create left/right pair of input descriptions
+# Default is to use a shear operation to create stereo effect
+# -angsep selects angular separation instead
+
+if normal3d -stereo ${tmp} -expand $mode $more_options > ${tmp}_stereo3d.tmp 
+then
+    echo "stereo3d: normal3d seems to be OK" 1>&2
+else
+    echo "stereo3d: normal3d failed" 1>&2
+    exit -1
+fi
+
+echo "@${tmp}_stereo3d.tmp" >> ${tmp}_left.r3d
+echo "@${tmp}_stereo3d.tmp" >> ${tmp}_right.r3d
+
 #
 # Render left and right panels separately
 # Old code (without label processing) was
 #    render -tiff left.tiff  < left.r3d
 #    render -tiff right.tiff < right.r3d
-rm -f label3d.tiff
-label3d left.r3d  || mv render.tiff left.tiff  
-if (-e label3d.tiff) mv label3d.tiff left.tiff
-label3d right.r3d || mv render.tiff right.tiff
-if (-e label3d.tiff) mv label3d.tiff right.tiff
+#
+echo "stereo3d: rendering left eye view" 1>&2
+label3d -${img} < ${tmp}_left.r3d  > ${tmp}_left.${img} 2> /dev/null  \
+         || mv ${tmp}_render.${img}  ${tmp}_left.${img}  
+echo "stereo3d: rendering right eye view" 1>&2
+label3d -${img} < ${tmp}_right.r3d > ${tmp}_right.${img} 2> /dev/null \
+         || mv ${tmp}_render.${img}  ${tmp}_right.${img}
 #
 # Find image size
-setenv IMAGESIZE `identify left.tiff | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
-setenv WIDTH  `echo $IMAGESIZE | sed -e 's/x.*//'`
-setenv HEIGHT `echo $IMAGESIZE | sed -e 's/.*x//'`
-setenv IMAGESIZE `echo "$WIDTH x $HEIGHT" | sed -e 's/ //g'`
-printenv IMAGESIZE
+IMAGESIZE=`identify ${tmp}_left.${img} | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
+WIDTH=`echo $IMAGESIZE | sed -e 's/x.*//'`
+HEIGHT=`echo $IMAGESIZE | sed -e 's/.*x//'`
+IMAGESIZE=`echo "$WIDTH x $HEIGHT" | sed -e 's/ //g'`
+
 #
-if ($?STEREOBORDER) then
-   montage +frame +label -background black -geometry $IMAGESIZE+2+0! -scene 0 left.tiff right.tiff stereo.tiff
+echo "stereo3d: joining left and right images" 1>&2
+if [ "$STEREOBORDER" ]; then
+   montage +frame +label -background black -geometry $IMAGESIZE+2+0! -scene 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
 else
-   montage +frame +label -background white -geometry $IMAGESIZE+0+0! -scene 0 left.tiff right.tiff stereo.tiff
-endif
+   montage +frame +label -background white -geometry $IMAGESIZE+0+0! -scene 0 ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}
+fi
 #
 # This next bit is only necessary because ImageMagick _always_ writes a label
 # field at the bottom of the picture. Even with a font size of 0, you still get
 # two extra rows of pixels at the bottom. So we crop back to the original height.
 #
-if ($?STEREOBORDER) then
-   setenv NEWWIDTH `identify stereo.tiff | sed -e 's/.* \([0-9]*\)x[0-9]* .*/\1/'`
-   setenv IMAGESIZE `echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
-   mogrify -crop $IMAGESIZE+0+0 -bordercolor black -border 2x4 stereo.tiff
-#else
-#   setenv NEWWIDTH `identify stereo.tiff | sed -e 's/.* \([0-9]*\)x[0-9]* .*/\1/'`
-#   setenv IMAGESIZE `echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
-#   mogrify -crop $IMAGESIZE+0+0 stereo.tiff
-endif
+if [ "$STEREOBORDER" ]; then
+   echo "stereo3d: adding border" 1>&2
+   NEWWIDTH=`identify ${tmp}_stereo3d.${img} | sed -e 's/.* \([0-9]*\)x[0-9]* .*/\1/'`
+   IMAGESIZE=`echo "$NEWWIDTH x $HEIGHT" | sed -e 's/ //g'`
+   mogrify -crop $IMAGESIZE+0+0 -bordercolor black -border 2x4 ${tmp}_stereo3d.${img}
+fi
+echo "Stereo image size $IMAGESIZE" 1>&2
+
+#
+# output to explicit file or to stdout
+#
+if [ "$outfile" ]; then
+   mv  ${tmp}_stereo3d.${img} $outfile
+else
+   cat ${tmp}_stereo3d.${img}
+fi
+
 #
 # clean up
 #
-rm -f left.r3d right.r3d stereo3d.tmp
-rm -f left.tiff right.tiff
-rm -f label3d.tmp label3d.ps
+rm -f ${tmp}_left.r3d ${tmp}_right.r3d ${tmp}_stereo3d.tmp
+rm -f ${tmp}_left.${img} ${tmp}_right.${img} ${tmp}_stereo3d.${img}

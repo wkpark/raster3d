@@ -113,7 +113,7 @@ option "make linux-pgf77" that can be used with the Portland Group compiler.
 It produces faster code, and correctly supports the auto-delete option for
 scratch files. Do yourself a favor and buy a Portland compiler license.
 
-Mandrake 8.0 contains a version of libtiff.so with no support for LZW
+Mandrake 8.x contains a version of libtiff.so with no support for LZW
 compression.  This makes your output tiff files much larger than they ought
 to be.  Blame it all on Unisys, who are being litigious about use of LZW
 compression.  If this is a problem, you can build your own libtiff from
@@ -144,49 +144,53 @@ were so that I can fix the distribution accordingly.
 
 Uwe Baumert reports the following:
 
-I'm pleased to say that I was also able to compile your Raster3D package
-under OS/2 (Linux will follow). I used f2c 19970211. I had to modify some
-code (I got wrong iocontrols etc.).  
+>> I'm pleased to say that I was also able to compile your Raster3D package
+>> under OS/2 (Linux will follow). I used f2c 19970211. I had to modify some
+>> code (I got wrong iocontrols etc.).  
 [EAM - He means the CARRIAGECONTROL option in the normal3d.f OPEN statements;
 just delete these two lines from the source code].
-I compiled against the libtiff-library (version 4.2). I used the one that
-was included in the NETPBM-Port of Peter Meerwald (pmeerw@cosy.sbg.ac.at)
-and is available from
-ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip. 
+>> I compiled against the libtiff-library (version 4.2). I used the one that
+>> was included in the NETPBM-Port of Peter Meerwald (pmeerw@cosy.sbg.ac.at)
+>> and is available from
+>>    ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip. 
 
 
 === Windows ===
 
-Many thanks to Suhaib Siddiqi, who offers the following recipe for 
-building Raster3D under Windows:
+Suhaib Siddiqi has kindly provided a pre-built set of Raster3D executables
+for version 2.6c, which is available from the Raster3D web site.
 
-I have successfully compiled Raster3D 2.4g on Windows NT/95/98.  It is a
-direct port of your source code without any modifications or deletions.
+If you want to build Raster3D from source under Windows, I can't help you.
+But here is a recipe that Suhaib provided earlier for builing with the
+cygwin environment. (I gather that he used a different procedure 
+altogether when building 2.6c but I do not know any details).
 
-1) Go to http://sourceware.cygnus.com/cygwin
-2) Download G77 and ObjectC in addition to Cygwin-B20
-3) Unmount C drive (umount -a /) and remonut as binary (mount -b c: /).  It
-is very important.
-4) Install Cygwin-b20 in C:\usr, instead of default directories.
-5) Download Cygwin-B20
-6) Download Jpeg, PNG and TIFF libraries from ftp.uu.net
-7) Compile Jpeg,PNG and TIFF with Cygwin-B20 and install
-8) Install all the jpeg and tiff libraries in /usr/local
-9) download Raster3D source code and etxract using tar utility supplied with
-   Cygwin-b20. Download Raster3D_xxx.gz (rather than .Z) as
-   Cygwin-B20 only handles gzip compression.
-(Note: Don't use WinZip or any other Windows programs to extract archive of 
-Raster3D and JPEG etc libraries otherwise you will get parse errors during 
-compilation). 
-
-Please let your users know that they will also need to download compiled
-binaries of Image Formate Libraries from http://www.sgi.com - Go to OpenGL
-web pages and look for OpenGL Optimizer Version 1.1 download site.  You will
-find Image Formate Libraries for Windows there.  I used these libraries
-together with libjepg.a and libtiff.a for linking.  They produced better
-results - that is images were of better quality.
-
-To use Raster3D from /usr/H-i586-cygwin32/bin copy cygwin1.dll to Raster3D
-directory and include Raster3D to your Windows enviroment.  That is it.
-
-
+>>  I have successfully compiled Raster3D 2.4g on Windows NT/95/98.  It is a
+>>  direct port of your source code without any modifications or deletions.
+>>  
+>>  1) Go to http://sourceware.cygnus.com/cygwin
+>>  2) Download G77 and ObjectC in addition to Cygwin-B20
+>>  3) Unmount C drive (umount -a /) and remonut as binary (mount -b c: /).  It
+>>  is very important.
+>>  4) Install Cygwin-b20 in C:\usr, instead of default directories.
+>>  5) Download Cygwin-B20
+>>  6) Download Jpeg, PNG and TIFF libraries from ftp.uu.net
+>>  7) Compile Jpeg,PNG and TIFF with Cygwin-B20 and install
+>>  8) Install all the jpeg and tiff libraries in /usr/local
+>>  9) download Raster3D source code and etxract using tar utility supplied with
+>>     Cygwin-b20. Download Raster3D_xxx.gz (rather than .Z) as
+>>     Cygwin-B20 only handles gzip compression.
+>>  (Note: Don't use WinZip or any other Windows programs to extract archive of 
+>>  Raster3D and JPEG etc libraries otherwise you will get parse errors during 
+>>  compilation). 
+>>  
+>>  Please let your users know that they will also need to download compiled
+>>  binaries of Image Formate Libraries from http://www.sgi.com - Go to OpenGL
+>>  web pages and look for OpenGL Optimizer Version 1.1 download site.  You will
+>>  find Image Formate Libraries for Windows there.  I used these libraries
+>>  together with libjepg.a and libtiff.a for linking.  They produced better
+>>  results - that is images were of better quality.
+>>  
+>>  To use Raster3D from /usr/H-i586-cygwin32/bin copy cygwin1.dll to Raster3D
+>>  directory and include Raster3D to your Windows enviroment.  That is it.
+>>  

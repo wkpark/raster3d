@@ -14,20 +14,21 @@ msms -if surf.dat -of surf -probe_radius 1.4 -density 5.0
 #
 # Use rastep to make an auto-centered ball+stick view of the molecule
 #
-rastep -rad 0.20 -prob 0.10 < protein.pdb > protein.r3d
+rastep -auto -rad 0.20 -prob 0.10 < protein.pdb > protein.r3d
 #
 # Combine the ball+stick figure with a transparent material 
 # description from the Raster3D library 
 # applied to the molecular surface generated in MSMS
 # Save the combined picture as a TIFF file
 #
-render -size 300x300 -zoom 75% -tiff picture.tiff << EOF
+render -size 800x800 -zoom 75% -transparent -tiff picture.tiff << EOF
 @protein.r3d
-@translucent
+@translucent_60
 @surf.r3d
 EOF
 #
 rm -f protein.pdb msms_surf.dat.log
 rm -f surf.dat surf.face surf.vert
 rm -f surf.r3d
-display picture.tiff&
+rm -f protein.r3d
+display -geometry 50% picture.tiff&

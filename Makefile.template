@@ -39,7 +39,7 @@ LIBDIRS  =	-L/usr/local/lib
 # PNG support (enabled by default)
 #     add -DPNG_SUPPORT to the DEFINES statement
 #     add -lpng to the LIBS definition (may need -lz also)
-  PLIBS =	-lpng
+  PLIBS =	-lpng -lz
   PDEFS =	-DPNG_SUPPORT
 
 #

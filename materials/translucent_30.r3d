@@ -1,0 +1,8 @@
+# Material description for coloured translucent surface.
+#
+# The -1.0 values mean that specular highlights will get the base color
+# of the object.
+#
+# The material will be 30% transparent.
+8
+ 17.  0.6       -1.0 -1.0 -1.0     0.30  0 0 0 0

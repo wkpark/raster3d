@@ -281,6 +281,7 @@ if (*option == 0)
 	fprintf(stderr,"\n    -debug                verbose output while running");
 	fprintf(stderr,"\n    -draft                no anti-aliasing (SCHEME 1)");
 	fprintf(stderr,"\n    -fontscale FF         multiplier for PostScript font size");
+	fprintf(stderr,"\n    -gamma GG             gamma correction applied to output image");
 	fprintf(stderr,"\n    -invert               invert y axis");
 	fprintf(stderr,"\n    -labels               write labels to PostScript file label3d.ps");
 	fprintf(stderr,"\n    -quality QQ           0 < QQ < 95  jpeg compression [default 90]");

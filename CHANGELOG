@@ -1,3 +1,24 @@
+      		Release 2.6e
+15-May-2002	Add -gamma option to render
+ 3-May-2002	Won-kyu Park <wkpark@kldp.org> more complete spec file for rpm
+ 		Matsuura Takanori <matsu@gsc.riken.go.jp> Makefile for linux-ppc
+19-Apr-2002	normal3d - force EYEPOS=0 for stereo; exit(-1) on syntax error
+		stereo3d - add -angsep and -size options; trap normal3d failure
+10-Apr-2002	Tweak autotile code to be aware of antialiasing options
+ 6-Apr-2002	NPX,NPY = 0 forces autotiling equivalent to -size NTXxNTY
+ 		that lets normal3d handle -size by just passing it on to render
+ 5-Apr-2002	Modify example scripts so they don't need write access to 'pwd'
+19-Feb-2002	Fix complicated bug involving non-transparent bounded surfaces
+15-Feb-2002	rewrite label3d and stereo3d as /bin/sh scripts
+ 		syntax now matches render; scratch files in $TMPDIR (or /tmp)
+ 		normal3d modified to go with new stereo3d: 
+			[-stereo [scratchname]] [-angle AA]
+14-Feb-2002	Release 2.6d (local release only)
+ 2-Feb-2002	rework S(u,v) code in rastep -> 30x speed increase!
+16-Jan-2002	#define random rand    for WIN32 in avs2ps.c (Suhaib Siddiqi)
+14-Dec-2001	Trap, report, and forgive garbage starting input line to render
+13-Oct-2001	Add more possible locations of ImageMagick delegates file to RPM
+11-Oct-2001	Add -zoom to render html documentation
  5-Oct-2001	Add info about PNG library to installation instructions
 11-Sep-2001	Release 2.6c
 29-Aug-2001	Add rings3d to Makefile and rpm package list 
@@ -6,7 +27,6 @@
 		-png and -jpeg default to stdout but allow explicit filename
 		fix local.c bug in code for timing calls
 30-Jul-2001	fix glitch in processing interleaved MOPT1 transparent objs
-... since V2.6b ...
 10-Jul-2001	Modify Makefile to work around Irix make inadequacies
  9-Jul-2001	Release 2.6b
  8-Jul-2001	Start checkout tests for version 2.6b

@@ -1,49 +1,153 @@
-#!/bin/csh -f
+#!/bin/sh
 #
-#	Raster3D labeling script label3d V2.6
+#	Raster3D labeling script label3d V2.6e
+#       ======================================
 #
-# Notes:
-#	- This version uses sed to find image size 
-#	  (previous versions used awk/nawk).
+# Ethan A Merritt  April 2002
+#
+# Usage
+#	label3d [-tiff [outfile.tiff]] < inputfile.r3d > file_with_labels.tiff
+#	label3d  -png  [outfile.png]   < inputfile.r3d > file_with_labels.png
+#
+# Environmental variables
+#	FONTSCALE controls mapping of nominal font size to height in pixels
+#	TMPDIR controls where scratch files will be written
+#
+# Changes 
+#	- 2.6d is a fairly major change; the older version is label3d_old
+#	- output to stdout, rather than always to a file ./label3d.tiff
+#	- temporary files are placed in $TMPDIR if defined, else /usr//tmp
+#	- together these changes mean you can run label3d from a directory
+#	  for which you do not have write access
+#	- add -png option (tiff is still the default)
+#
+# Requirements
 #	- Requires ghostscript and ImageMagick.
 #	  ImageMagick behavior is version-dependent (fooey on them!)
 #	    so you may have to edit this script if you update ImageMagick
 #	    currently known to work for V2.4.9 and V5.3.2
 #	- Depending on what size images you typically produce, 
-#	  you might want to change the FONTSCALE definition below
+#	  you might want to change the default FONTSCALE definition below
 #
-if ${?FONTSCALE} == '0' setenv FONTSCALE "3.0"
+if [ ! "$FONTSCALE" ]; then FONTSCALE=3.0; fi
+
 #
-if ($1 == ''-'') then
-   cat > label3d.tmp
+# Construct base name for scratch files
+#
+#echo "DEBUG TMPDIR is $TMPDIR"  1>&2
+if [ "$TMPDIR" ]; then
+    tmp=$TMPDIR/$$
 else
-   cp $1 label3d.tmp
-endif
+    tmp=/usr/tmp/$$
+fi
+#echo "DEBUG scratch files to $tmp"  1>&2
+
 #
-rm -f render.tiff label3d.ps label3d.ppm
-render -labels -fontscale $FONTSCALE -tiff render.tiff < label3d.tmp
-if (! -e render.tiff) exit(-1)
-if (! -e label3d.ps) then
-   mv render.tiff label3d.tiff
-   exit(0)
-endif
-setenv IMAGESIZE `identify render.tiff | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
-alias gs3d gs -sDEVICE=png256 -dNOPAUSE -q -sOutputFile=label3d.png
-gs3d -g$IMAGESIZE label3d.ps -c quit || echo "GhostScript error" && goto cleanup 
+# Parse command line options (currently only -png)
+#
+unset outfile
+unset img
+previous=
+
+for option in $*
+do
+if   [ "$option" = "-png"    ]; then img=png;
+elif [ "$option" = "-tiff"   ]; then img=tiff;
+else
+    if [ "$previous" = "-tiff" ] || [ "$previous" = "-png" ] ; then
+        if [ `echo "$option" | sed -e 's/\(.\).*/\1/'` != "-" ]; then
+            outfile="$option"
+        fi
+    else
+	echo "label3d version 2.6e"
+        echo "unrecognized option: $option" 1>&2
+	echo "Usage:  label3d [-tiff [out.tiff]] [-png [out.png]] < in.r3d > outfile" 
+	exit -1 
+    fi
+fi
+previous="$option"
+done
+
+if [ "$img" != "png" ]; then
+    img=tiff
+fi
+
+
+#DEBUG
+#  if [ "$outfile" ]; then 
+#	echo "DEBUG label3d: $img output to $outfile"  1>&2
+#  else
+#	echo "DEBUG label3d: $img output to stdout"  1>&2
+#  fi
+#DEBUG
+
+#
+# Buffer input to scratch file
+#
+cat > ${tmp}_label3d.tmp
+
+#
+#
+rm -f ${tmp}_render.${img} ${tmp}_label3d.ps
+render -labels ${tmp}_label3d.ps -fontscale $FONTSCALE -${img} ${tmp}_render.${img} < ${tmp}_label3d.tmp
+if [ ! -e ${tmp}_render.${img} ]; then 
+   echo "label3d: could not find output  ${tmp}_render.${img} from render" 1>&2
+   rm -f ${tmp}_*
+   exit -1 
+fi 
+if [ ! -e ${tmp}_label3d.ps ]; then
+   cat ${tmp}_render.${img}
+   echo "label3d: no labels found" 1>&2
+   rm -f ${tmp}_*
+   exit 0
+fi
+
+#
+IMAGESIZE=`identify ${tmp}_render.${img} | sed -e 's/.* \([0-9]*x[0-9]*\) .*/\1/'`
+
+if ( gs -sDEVICE=png256 -dNOPAUSE -q -sOutputFile=${tmp}_label3d.png \
+   -g$IMAGESIZE ${tmp}_label3d.ps -c quit ) 
+then
+   echo "label3d: labels written to ${tmp}_label3d.png" 1>&2
+else
+   echo "label3d: GhostScript error" 1>&2
+   rm -f ${tmp}_*
+   exit -1
+fi
+
+#
+# Insure that the labels are on a transparent background
+#
+   convert -draw "matte 0,0 replace" ${tmp}_label3d.png ${tmp}_label3d.miff
 #
 # This works with ImageMagick 4.2.9 and many (most?) other older versions
-if (-x "`which combine`") then
-   convert -draw "matte 0,0 replace" label3d.png label3d.miff
-   combine -compose over render.tiff label3d.miff label3d.tiff
+#
+if ( combine -compose over \
+        ${tmp}_render.${img} ${tmp}_label3d.miff ${tmp}_label3d.${img} 2>/dev/null)
+then
+   echo "label3d: using combine" 1>&2
 #
 # This works with ImageMagick 5.3.2
+#
 else
-   echo "using composite instead of compose"
-   convert -draw "matte 0,0 replace" label3d.png label3d.miff
-   composite -compose over label3d.miff render.tiff label3d.tiff
-endif
+   echo "label3d: using composite instead of combine" 1>&2
+   composite -compose over ${tmp}_label3d.miff ${tmp}_render.${img} ${tmp}_label3d.${img}
+fi
+
 #
-cleanup:
-rm -f label3d.ps 
-rm -f label3d.tmp label3d.png label3d.miff render.tiff
+# output to explicit file or to stdout
 #
+if [ "$outfile" ]; then
+   mv  ${tmp}_label3d.${img} $outfile
+else
+   cat ${tmp}_label3d.${img}
+fi
+
+#
+# Cleanup
+#
+# echo "label3d: cleanup" 1>&2
+rm -f ${tmp}_label3d.ps ${tmp}_label3d.${img}
+rm -f ${tmp}_label3d.tmp ${tmp}_label3d.png ${tmp}_label3d.miff ${tmp}_render.${img}
+
+exit 0

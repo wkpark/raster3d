@@ -1,96 +1,90 @@
-- Dec 1996: First idea for labels that I'm actually excited about!
-  Define new object types for labels; these are ignored by render.
-  New utility program labels3d, however, reads same render input file,
-  interprets and applies header records, translates the label records
-  (only) to PostScript, and writes out a PostScript file of labels
-  + a short script to merge the render image and the PostScript.
-  Example:
-    10
-	Times-Roman 12. Left-align   (or Center or Relative or ???)
-    11
-	0. 0. 0.    1. 1. 0.
-	This is a yellow label at the origin
-    11
-	.7 .7 0.    0. 0. 1.
-	This is a blue label at the upper right
+=> label3d and stereo3d 
+   ====================
+  ** Normal3d should count ZCLIP and BOUNDING_PLANE objects and warn about
+     incompatibility with stereo
+   * should pass unrecognized parameters through to render
 
-  render -tiff render.tiff < render.r3d
-  labels3d < render.r3d > labels.ps
-  gs -sDevice=ppm -OutputFile=labels.ppm -g1024x768  labels.ps
-  combine -compose atop labels.ppm render.tiff  composite.tiff
+=> ImageMagick delegate file format has switched to XML
+   And at least under Mandrake it now lives in /usr/lib/ImageMagick
+   The installation script will have to detect this and behave accordingly
 
-  Question: How would one specify "place after previous character"?
-	    I like the idea of allowing delta values for coords;
-	    e.g. +.01 -.01 +.0  1. 1. 1. would mean a white label
-	    just slightly down and to the right of the previous one.
-	    But that will break a Fortran read statement.
-	    Maybe allow a placement mode "Relative-to-last-character"
-	    and just interpret the [x y z] as delta values.
+    <delegate decode="r3d" command='render -png "%o" < "%i" ' />
 
-  Don't forget that normal3d has to do something reasonable with labels
-	    also.  I.e. absolute coords must be modified by TMAT, but
-	    relative coords not?
+=> Newer (g95) Fortran compilers may not like the LOGICAL*2 type
+  + change COMMON /OPTIONS/ .... INVERT, LFLAG to LOGICAL INVERT, LFLAG
+    render.f r3dtops.f parse.f
+
+- Makefile
+  + the initial "make" help message should be expanded to describe the
+    entire installation process
+
+- Organization
+  + break out routines TRANS, ASSERT, CHKRGB, PERSP, etc into separate file
+    so that both render and rastep can use the same copies.
+  + break out separate modules for processing of each object type (parallel
+    to quadric and r3dtops).  will need to push current material and some
+    other data values into /common/.
+  + glowlights are a special case of this, since the cost is in the lighting 
+    model code rather than the object processing.
+  + Move to all keyworded input?
+
+- Shadows of transparent objects
+
+- rastep
+  + Add an Suv matrix similar to the one shown by Martyn Winn
+    (maybe better as a separate program)
+  + option to comment each atom's ellipsoid in the output file?
+
+- Header records
+  + only 1 level of indirection possible; does anyone care?
+
+- Go for donuts!
+
+- FRONTCLIP/BACKCLIP
+  + should I clip glowlights, or not?
+
+- Labels
+  + move r3dtops code to local.c or some other way to pipe
+    the PostScript through "convert -page +0+0 ps:- labels.tiff"
+  + -border option in label3d (or maybe in render itself?)
+
+- Better error-recovery if input stream contains unrecognized lines
+  + keep track of input lines so can report which one failed
+  + skip problem line and keep going
+  + if first line of indirect file is not a valid object type,
+    assume there are header records present and try to skip them
+
+- RAFTER/TAFTER in normal3d
+  + option to apply vs pass through (right now it always applies)
+  + documentation / example
+
+- Documentation
+  + FAQ - how to make movies?
+  + better/more examples of animation
+  + mention msms-to-r3d conversion filters
+  + bounding planes (give an illustration)
+    figure comparing bounding plane and Z-clipped objects for r3d_hints.html
 
 - More examples
   Worms:  demonstrate use of -radius option in rods
-  Library of material definitions
+  FOG
+  bounding planes
+  animation - add an MPEG or animated GIF image to the on-line manual
+  	      and to the examples
 
-- Clipping plane
-  Where to specify in header?
-  No big deal for triangles, but would have to modify sphere/cylinder code
-  to check against back surface if front surface is clipped.
+- Additional global options (command line?)
+  + Autocenter/translate coordinates on completion of input
 
 - Texture maps
 
+- New Object types
+	round-ended quadrics (color bounding sphere during truncation)
+	NURBS
+
 - Benchmark example 6 in POVray or some other popular ray-tracing code.
 
-- JPEG output?  PNG?  Can you pipe either of these? (if so could replace AVS)
-
-- Debug the new helix code for Molscript.  Fixed edges?  Both sides?
-- Find pristine copy of Molscript V1.4 and confirm that patch instructions
-  work.
-
-- Add more intelligible error message if 2nd line of render input file
-  doesn't look like a header record
-
-- Use INMODE to signal processing options; all values >=3 use explicit object
-  types.
-
-- Command line option to render specifying anti-aliasing scheme; would override
-  SCHEME parameter in header.
-
-- Force formats to * in normal3d, rods
-
-- Add code to Molscript to make it emit comments at the start of each
-  new object.  Could also add label support now that render can handle it.
-
-- Could render "rough" objects just by tweaking surface normal?
-  Key may be to use fractional coords, rather than absolute pixel number.
-  E.g. xnorm += bump * cos( 25. * pi * I/(NPX*NTX) )
-       ynorm += bump * cos( 25. * pi * J/(NPY*NTY) )
-
-- not certain about feasibility of "solid shadow" option for alpha channel, 
-  maybe make the SHADOW parameter take a 3rd value, as in TRUE/FALSE/SOLID?
-
-- variable resolution oversampling for better anti-aliasing.
-  render with 2x oversampling, but before averaging check to see if
-  certain pixels would benefit from further expansion of the neighborhood.
-
-Jan 1996
-========
-Thoughts on transparency (yeah, I know, I tried this before and gave up on it).
-A) Shadows get tricky. For now I have made transparent objects cast no shadows,
-   but other possibilities exist (make it part of the material spec?)
-   E.g., for a shadow which falls on a solid object
-   1)	If this is SHDTOP object, no shadowing
-   2)	If this is SHD2ND object and SHDTOP is transparent, gets a partial
-	shadow colored by color of SHDTOP
-   3)	Otherwise full shadowing
-   I tried this, and it works, but the whole approach falls apart if there are
-   multiple transparent objects shadowing the solid one.  It might be worth it
-   anyway, maybe under the control of a new value for shadowing flag (F/T/P)?
-B) Questions:
-	- Could offer option to render using object-buffer rather than
-	  Z-buffer?  That would handle arbitrary #'s of transparency overlaps,
-	  but the shading code would probably have to be rewritten from
-	  scratch.  How slow would this be?
+- Add cylinder-generation mode also.
+  DNA/RNA options:  simple helix (end-to-end cylinders) through backbone
+		    ribbon through backbone with normal facing ribose
+		    ladder rungs to represent base pairs
+		    solid purine/pyrimidine idealized bricks

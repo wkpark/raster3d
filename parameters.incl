@@ -19,7 +19,7 @@
 *     Maximum number of objects
 ***   PARAMETER (MAXOBJ =   7500)
       INTEGER    MAXOBJ
-      PARAMETER (MAXOBJ = 275000)
+      PARAMETER (MAXOBJ = 300000)
 *
 *     Array elements available for object details 
 *     Should be roughly 10*MAXOBJ
@@ -66,3 +66,7 @@
 *     normals describe wrapping around from front-facing to back-facing.
       REAL       EDGESLOP
       PARAMETER (EDGESLOP = 0.25)
+*     Ribbonslop is a kludge so that distortion due to perspective doesn't 
+*     prevent us from identifying ribbon triangles
+      REAL	 RIBBONSLOP
+      PARAMETER (RIBBONSLOP = 0.001)

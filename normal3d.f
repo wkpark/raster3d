@@ -1,6 +1,6 @@
       PROGRAM NORMAL3D
 *
-*     Version 2.5g 26-Feb-2001
+*     Version 2.6e 19-Apr-2002
 *
 * EAM Jan 1996	- Initial release as part of version 2.2
 * EAM Aug 1996	- Add -expand option to deal with file indirection
@@ -19,17 +19,19 @@
 * EAM Feb 2000	- compatible with new object type VERTRANSP
 * EAM Sep 2000	- V2.5e uncompress files ending in .Z or .gz
 * EAM Feb 2001	- BOUNDING_PLANEs
+* EAM Feb 2002	- [-stereo [TMPNAM]] [-angle AA]
+*		  stereo defaults to shear (as before); force EYEPOS = 0
+*		  but specifying -angle AA switches to +/- AA separation instead
+*		  You can't win:  shear breaks bounding planes, AA breaks Z-clip
 *
 *	This program is part of the Raster3D package.
-*	It is simply a stripped down version of the input section of 
-*	render.  It reads in a render input file, applies
-*	the transformation matrix specified in the header, and writes
-*	out a modified render input file describing the same image
-*	using a unitary transformation matrix and normalized object
-*	coordinates. All header records are basically passed through
-*	without interpretation except for the transformation matrix
-*	(which changes to the identity matrix) and the format lines
-*	(which are set to *).
+*	It is simply a stripped down version of the input section of render.
+*	It reads in a render input file, applies the transformation matrix in 
+*	the header, and writes out a modified render input file describing the 
+*	same image using a unitary transformation matrix and normalized object
+*	coordinates. All header records are basically passed through without
+*	interpretation except for the transformation matrix (which changes to the 
+*	identity matrix) and the format lines (which are set to *).
 *
 *     Input (line by line except where noted):
 *
@@ -222,9 +224,6 @@ c     REAL SPECOL(3)
 *     Input buffer for details
       REAL   BUF(100)
 *
-*     Intermediate storage for output header
-      INTEGER*2 NX,NY
-*
 *     Copy of NOISE for ASSERT to see
       INTEGER ASSOUT
       LOGICAL VERBOSE
@@ -237,8 +236,10 @@ c     REAL SPECOL(3)
 *
 c
 c
-      LOGICAL      HFLAG, XFLAG, SFLAG
+      LOGICAL      HFLAG, XFLAG, SFLAG, SKIP
       CHARACTER*80 FLAGS
+      CHARACTER*80 TMPNAM
+      INTEGER      LENTMP
 *
 *     Stuff for labels
       CHARACTER*80  FONTNAME, FONTALIGN
@@ -307,41 +308,91 @@ c	-noexpand (the default) simply copies file indirection commands
 c		to output file
 c	-stereo will create parallel files left.r3d and right.r3d
 c	-debug  requests additional output information
+c	-angle  specifies angular offset of left/right views from the original
+c		e.g. -angle 3.0  sets left eye view to +3 degress, right eye to -3 degrees
 c
       HFLAG = .FALSE.
       XFLAG = .FALSE.
       SFLAG = .FALSE.
+      skip  = .false.
+      nax   = -1
+      nay   = -1
+      sepang = 0.0
+      TMPNAM = '_'
+c
+      i     = 1
       NARG  = IARGC()
-      DO i = 1, NARG
+   10 continue
+      if (i .gt. narg) goto 11
 	CALL GETARG(I,FLAGS)
-	IF (FLAGS(1:2) .EQ. '-h') THEN
+	IF (FLAGS(1:2) .EQ. '-h' .AND. FLAGS(1:5) .NE. '-help') THEN
 		HFLAG   = .TRUE.
 	ELSE IF (FLAGS(1:4) .EQ. '-exp') THEN
 		XFLAG   = .TRUE.
-	ELSE IF (FLAGS(1:2) .EQ. '-s') THEN
+	else if (flags(1:5).eq.'-size') then
+                i    = i + 1
+                call getarg( i, flags)
+                kbrk = 2
+                do k = 15,2,-1
+                    if (flags(k:k).eq.'x') kbrk = k
+                    if (flags(k:k).eq.'X') kbrk = k
+                end do
+                read (flags(1:kbrk-1),*,err=10,end=10) nax
+                read (flags(kbrk+1:15),*,err=10,end=10) nay
+	ELSE IF (FLAGS(1:7) .EQ. '-stereo') THEN
 		SFLAG   = .TRUE.
+		IF (I.LT.NARG) THEN
+		    CALL GETARG(I+1, FLAGS)
+		    IF (FLAGS(1:1).NE.'-') THEN
+			do j=1,80
+			    if (flags(j:j).lt.'!') goto 88 
+			enddo
+   88			lentmp = j
+			TMPNAM = FLAGS(1:lentmp-1)//'_'
+			skip = .true.
+		    ENDIF
+		ENDIF
+		write(0,'(A,A)') 'tmpdir = ',TMPNAM(1:lentmp)
 	ELSE IF (FLAGS(1:6) .EQ. '-debug') THEN
 		VERBOSE = .TRUE.
+	else if (flags(1:4) .eq. '-ang') then
+		if (i.lt.narg) then
+		    call getarg(i+1, flags)
+		    read(flags,'(1f6.0)',end=89,err=89) sepang
+		    skip = .true.
+		endif
+	else if (skip) then
+		skip = .false.
 	ELSE
-	    WRITE (NOISE,*) 'Raster3D Normalization Program ',
-     &				VERSION
-	    WRITE (NOISE,'(/,A)') 'syntax:'
-	    WRITE (NOISE,'(A,A)')
-     &		'  normal3d [-h] [-expand] [-stereo] ',
-     &		'< infile.r3d > outfile.r3d'
-     	    WRITE (NOISE,'(4X,A)')
-     &		'-h        suppress header records in output',
-     &		'-expand   expand and in-line all file indirection',
-     &		'-stereo   create parallel files left.r3d and right.r3d'
-     	    CALL EXIT(0)
+		goto 89
 	ENDIF
-      ENDDO
+      i = i + 1
+      goto 10
+   89	    continue
+	    WRITE (NOISE,'(/,A,A)') 
+     &		'Raster3D Normalization Program ', VERSION
+	    WRITE (NOISE,'(A)') 'syntax:'
+	    WRITE (NOISE,'(A,A)')
+     &		'  normal3d [options] < infile.r3d > outfile.r3d'
+     	    WRITE (NOISE,'(4X,A,1X,A)')
+     &		'-h              ',      
+     &			'suppress header records in output',
+     &		'-expand         ', 
+     &			'expand and in-line all file indirection',
+     &		'-size HHHxVVV   ', 
+     &			'set output image size',
+     &		'-stereo [tmpdir]',
+     &		       'create $$_left.r3d and $$_right.r3d in tmpdir'
+     	    CALL EXIT(-1)
+c
+   11 continue
+c
       IF (SFLAG) THEN
 	HFLAG = .TRUE.
-	OPEN(UNIT=LEFT,FILE='left.r3d',
+	OPEN(UNIT=LEFT,FILE=TMPNAM(1:lentmp)//'left.r3d',
      &       CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
-	OPEN(UNIT=RIGHT,FILE='right.r3d',
+	OPEN(UNIT=RIGHT,FILE=TMPNAM(1:lentmp)//'right.r3d',
      &       CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
       ENDIF
@@ -407,63 +458,47 @@ c
 *     Get number of tiles
       READ (INPUT,1,END=104) LINE
       READ (LINE,*,ERR=104) NTX,NTY
-      IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
-      IF (SFLAG) WRITE (LEFT,1)  LINE
-      IF (SFLAG) WRITE (RIGHT,1) LINE
       CALL ASSERT (NTX.GT.0, 'ntx.le.0')
       CALL ASSERT (NTY.GT.0, 'nty.le.0')
+*     Get number of pixels per tile
+      READ (INPUT,1,END=104) LINE
+      READ (LINE,*,ERR=104) NPX,NPY
+*     Get pixel averaging scheme
+      READ (INPUT,1,END=104) LINE
+      READ (LINE,*,ERR=104) SCHEME
+      CALL ASSERT (SCHEME.GE.0 .AND. SCHEME.LE.4, 'bad scheme')
       GOTO 105
 104   CALL ASSERT(.FALSE.,
      &           '>>> This doesnt look like a Raster3D input file! <<<')
 105   CONTINUE
 *
-*     Get number of pixels per tile
-      READ (INPUT,1) LINE
-      READ (LINE,*) NPX,NPY
-      IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
-      IF (SFLAG) WRITE (LEFT,1)  LINE
-      IF (SFLAG) WRITE (RIGHT,1) LINE
-      CALL ASSERT (NPX.GT.0, 'npx.le.0')
-      CALL ASSERT (NPY.GT.0, 'npy.le.0')
+*     Let render autotile it if npx=0 or -size on command line
+      if (nax.gt.0 .or. nay.gt.0) then
+        if (scheme.eq.3) scheme = 4
+      	ntx = nax
+	nty = nay
+	npx = 0
+	npy = 0
+      endif
 *
-*     Get pixel averaging scheme
-C     Mar 2000 - 
-C       Now that render does auto-tiling, we can relax the checks done here
-      READ (INPUT,1) LINE
-      READ (LINE,*) SCHEME
-      IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
-      IF (SFLAG) WRITE (LEFT,1)  LINE
-      IF (SFLAG) WRITE (RIGHT,1) LINE
-      CALL ASSERT (SCHEME.GE.0 .AND. SCHEME.LE.4, 'bad scheme')
-      IF (SCHEME.LE.1) THEN
-        NOX = NPX
-        NOY = NPY
-      ELSEIF (SCHEME.EQ.2) THEN
-        NOX = NPX/2
-        NOY = NPY/2
-        CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 2 requires NPX even')
-        CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 2 requires NPY even')
-      ELSEIF (SCHEME.EQ.3) THEN
-        NOX = 2*(NPX/3)
-        NOY = 2*(NPY/3)
-C       CALL ASSERT (MOD(NPX,3).EQ.0,'scheme 3 requires mod(NPX,3)=0')
-C       CALL ASSERT (MOD(NPY,3).EQ.0,'scheme 3 requires mod(NPY,3)=0')
-      ELSEIF (SCHEME.EQ.4) THEN
-	NOX = NPX
-	NOY = NPY
-C	CALL ASSERT (MOD(NPX,2).EQ.0,'scheme 4 requires NPX even')
-C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
-	NPX = NPX + NPX/2
-	NPY = NPY + NPY/2
-	SCHEME = 3
-      ELSE
-        CALL ASSERT (.FALSE.,'crash 2')
-      ENDIF
-*
-      NX = NOX*NTX
-      NY = NOY*NTY
+22    format(2I6)
+      if (.not.hflag) then
+      	write (output,22) ntx, nty
+	write (output,22) npx, npy
+	write (output,22) scheme
+      endif
+      if (sflag) then
+      	write (left,22)   ntx, nty
+	write (left,22)   npx, npy
+	write (left,22)   scheme
+      	write (right,22)  ntx, nty
+	write (right,22)  npx, npy
+	write (right,22)  scheme
+      endif
 *
 *     Some derived parameters
+      if (npx.eq.0) npx = 1
+      if (npy.eq.0) npy = 1
       XCENT = NTX*NPX/2.
       YCENT = NTY*NPY/2.
       SCALE = 2.*MIN(XCENT,YCENT)
@@ -532,11 +567,14 @@ C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
       DIFFUS = 1. - (AMBIEN+SPECLR)
 *
 *     Note distance of viewing eye, but don't apply it here
+*     Force it to 0 (no perspective) for stereo
       READ (INPUT,1) LINE
       READ (LINE,*) EYEPOS
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
-      IF (SFLAG) WRITE (LEFT,1)  LINE
-      IF (SFLAG) WRITE (RIGHT,1) LINE
+      IF (SFLAG) THEN
+ 	WRITE (LEFT,1)  '0.0	Stereo is better with no perspective'
+	WRITE (RIGHT,1) '0.0	Stereo is better with no perspective'
+      ENDIF
       CALL ASSERT (EYEPOS.GE.0., 'eyepos.lt.0')
       EYEPOS = 0.0
 *
@@ -544,8 +582,6 @@ C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
       READ (INPUT,1) LINE
       READ (LINE,*) SOURCE
       IF (.NOT.HFLAG) WRITE (OUTPUT,1) LINE
-      IF (SFLAG) WRITE (LEFT,1)  LINE
-      IF (SFLAG) WRITE (RIGHT,1) LINE
       SMAG = SQRT(SOURCE(1)**2 + SOURCE(2)**2 + SOURCE(3)**2)
       SOURCE(1) = SOURCE(1) / SMAG
       SOURCE(2) = SOURCE(2) / SMAG
@@ -553,10 +589,10 @@ C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
 *
 *     Get input transformation
       IF (VERBOSE) WRITE (NOISE,*) 'tmat (v'' = v * tmat):'
-      DO 11 I=1,4
+      DO I=1,4
         READ (INPUT,*) (TMAT(I,J),J=1,4)
         IF (VERBOSE) WRITE (NOISE,*) (TMAT(I,J),J=1,4)
-11    CONTINUE
+      END DO
       IF (.NOT.HFLAG) THEN
 	WRITE (OUTPUT,*) ' 1. 0. 0.   0.'
       	WRITE (OUTPUT,*) ' 0. 1. 0.   0.'
@@ -564,14 +600,44 @@ C	CALL ASSERT (MOD(NPY,2).EQ.0,'scheme 4 requires NPY even')
       	WRITE (OUTPUT,*) ' 0. 0. 0.   1.'
       ENDIF
       IF (SFLAG) THEN
-	WRITE (LEFT,*)  ' 1.   0. 0.   0.'
-      	WRITE (LEFT,*)  ' 0.   1. 0.   0.'
-      	WRITE (LEFT,*)  ' 0.03 0. 1.   0.         Left eye view'
-      	WRITE (LEFT,*)  ' 0.   0. 0.   1.'
-	WRITE (RIGHT,*) ' 1.   0. 0.   0.'
-      	WRITE (RIGHT,*) ' 0.   1. 0.   0.'
-      	WRITE (RIGHT,*) '-0.03 0. 1.   0.         Right eye view'
-      	WRITE (RIGHT,*) ' 0.   0. 0.   1.'
+c	[-angle AA] forces left/right headers with angular offset
+      	if (sepang .gt. 0) then
+	  write (noise,12) 
+     &        ' stereo separation angle +/-',sepang,' degrees'
+12	  format(a,1x,1f6.2,a)
+	  cossep = cos(sepang*0.017453293)
+	  sinsep = sin(sepang*0.017453293)
+c	  Counter-rotate light source so that both views have same illumination
+	  x = source(1)*cossep - source(3)*sinsep
+	  y = source(2)
+	  z = source(1)*sinsep + source(3)*cossep
+	  write (right,14) x,y,z,'Primary light source'
+	  x =  source(1)*cossep + source(3)*sinsep
+	  z = -source(1)*sinsep + source(3)*cossep
+	  write (left,14)  x,y,z,'Primary light source'
+13	  format(1x,f9.5,1x,f4.1,1x,f9.5,3x,f4.1,5x,a)
+14	  format(1x,3f8.4,12x,a)
+	  write (left,13)  cossep, 0., -sinsep, 0., 'left eye view'
+	  write (left,13)  0.,     1.,     0., 0. 
+	  write (left,13)  sinsep, 0.,  cossep, 0.
+	  write (left,13) 0., 0., 0., 1.0
+	  write (right,13)  cossep, 0.,  sinsep, 0., 'right eye view'
+	  write (right,13)  0.,     1.,      0., 0.
+	  write (right,13) -sinsep, 0.,  cossep, 0.
+	  write (right,13) 0., 0., 0., 1.0
+	else
+c	Otherwise left/right headers differ by a shear operation
+	  write (LEFT,14)source(1),source(2),source(3),'Primary light'
+	  WRITE (LEFT,*)  ' 1.   0. 0.   0.'
+      	  WRITE (LEFT,*)  ' 0.   1. 0.   0.'
+      	  WRITE (LEFT,*)  ' 0.03 0. 1.   0.         Left eye view'
+      	  WRITE (LEFT,*)  ' 0.   0. 0.   1.'
+	  write (RIGHT,14)source(1),source(2),source(3),'Primary light'
+	  WRITE (RIGHT,*) ' 1.   0. 0.   0.'
+      	  WRITE (RIGHT,*) ' 0.   1. 0.   0.'
+      	  WRITE (RIGHT,*) '-0.03 0. 1.   0.         Right eye view'
+      	  WRITE (RIGHT,*) ' 0.   0. 0.   1.'
+	endif
       ENDIF
 *
 *     By popular demand, add a post-hoc rotation/translation option

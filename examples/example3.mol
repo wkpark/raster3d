@@ -5,7 +5,7 @@
 plot
 
     area 50. 100. 575. 650. ;
-    background white ;
+    background black ;
     window 35.0 ;
 
 !

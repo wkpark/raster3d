@@ -1,13 +1,13 @@
 .ad l
 .nh
-.TH NORMAL3D 1 " 8 May 1999" "Raster3D"
+.TH NORMAL3D 1 "19 Apr 2002" "Raster3D"
 .SH NAME
 
 normal3d - apply transformation matrix in Raster3D input file
 
 .SH SYNOPSIS
 
-normal3d [-h] [-expand] [-stereo] < infile.r3d > normalized.r3d
+normal3d [options] < infile.r3d > normalized.r3d
 
 .SH DESCRIPTION
 .PP
@@ -31,11 +31,13 @@ array sizes in render should be set.
 
 .SH OPTIONS
 
-.B "-h"
+.B "-ang AA"
 .PP
-Suppress header records in output.  
-This option is useful for producing files which describe only part
-of a scene, and which are to be later combined with descriptor files
+Only relevant for generating stereo pairs. By default stereo separation
+is created using a shear operator. The -ang option instead introduces
+an angular separation by rotating the left and right eye images by +/- AA
+degrees with respect to the original view angle.
+
 
 .B "-expand"
 .PP
@@ -45,13 +47,24 @@ The default is to simply copy file indirection lines (those begining
 with @) to the new input file without opening them or normalizing their
 contents.
 
-.B "-stereo"
+.B "-h"
+.PP
+Suppress header records in output.  
+This option is useful for producing files which describe only part
+of a scene, and which are to be later combined with descriptor files
+
+.B "-size HHHxVVV"
+.PP
+Force the image size to HHH pixels horizontal and VVV pixels vertical.
+
+.B "-stereo [scratch]"
 .PP
 This option causes the program to produce two additional files,
 left.r3d and right.r3d, that contain header records suitable for
 rendering the normalized object desctiption file as a side-by-side
 stereo pair.  This option always suppresses header records in the
-primary output file.
+primary output file.  If a scratch directory name is given, it is
+prepended to give output files {scratch}_left.r3d and {scratch}_right.r3d
 
 .SH SOURCE
 .B anonymous ftp site:	

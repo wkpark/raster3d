@@ -340,7 +340,7 @@ c
 	parameter (R2D = 180./3.1415927)
 
 	open (unit=3, file='setup.matrix', status='OLD', err=100)
-		write (noise,3) ' View Matrix from file ',matrix_file
+		write (noise,3) ' View Matrix from file '
 		read (3,*) ((matrix(i,j),i=1,3),j=1,3)
 		write (noise,'(1x,3f9.5)') ((matrix(i,j),i=1,3),j=1,3)
 		close (3)
@@ -362,7 +362,7 @@ c
   100	continue
 
 	open (unit=3, file='setup.angles', status='OLD', err=200)
-		write (noise,3) ' View Angles from file ',angles_file
+		write (noise,3) ' View Angles from file '
 		read (3,*) phiZ, phiY, phiX
 		close (3)
 		write (noise,2) phiZ, phiY, phiX

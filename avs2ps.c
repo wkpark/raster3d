@@ -9,6 +9,10 @@
 #include	"time.h"
 #include	"math.h"
 
+#ifdef WIN32
+#define random rand
+#endif
+
 /*
  * I added a lookup table for warping, since calculating it on the fly
  * was taking about 20% of the CPU time on a DECstation 5000.

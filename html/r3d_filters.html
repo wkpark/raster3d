@@ -1,0 +1,97 @@
+<html>
+  <head>
+    <title>Raster3D import filters</title>
+    <!-- OWNER_NAME="Ethan A Merritt, Biological Structure" -->
+    <LINK rev=made href="mailto:merritt@u.washington.edu">
+    <!-- OWNER_INFO="University of Washington Box 357742, Seattle WA 98195" -->
+   <LINK REL=stylesheet HREF="r3d_docstyle.css" TEXT="text/css">
+  </head>
+
+<body>
+	<h1 align=center>Raster3D import filters</h1>
+
+<a name="grasp">
+<h4>grasp/ungrasp</h4></a>
+<p>
+Grasp (<a href="http://trantor.bioc.columbia.edu/grasp/">home page</a>)
+is a commercial molecular visualization tool that to the best of my
+knowledge is available only for SGI workstations. Grasp itself does
+not produce Raster3D output, but the molecular surfaces calculated 
+by grasp can be saved to a file and then converted to a Raster3D input
+description.  The filter program that does this conversion is called
+"ungrasp", and is part of the Raster3D source distribution. The 
+ungrasp source code and notes on using it are in the ./grasp/ subdirectory
+of the Raster3D source tree.
+</p>
+
+<a name="msms">
+<h4>MSMS</h4></a>
+<p>
+MSMS 
+(<a href="http://www.scripps.edu/pub/olson-web/people/sanner/html/msms_home.html">home page</a>)
+is another program that calculates molecular surfaces, and has a number of advantages over
+grasp.  It is not limited to SGI workstations; it allows you to specify how fine
+is the grid of triangles that tesselate the surface; it can be run entirely from the
+command line, or from a shell script.
+MSMS is not open source, but binaries (free, so far as I know) are available for 
+linux, SGI, Dec Alpha, HP9000, IBM PC, Sun workstations and others.
+
+Two filter programs to convert MSMS output files into Raster3D input files are
+provided in the Raster3D source distribution. One is a perl script. The other is C source
+code.  Both are in the ./examples/msms subdirectory of the source tree, and by default 
+are installed permanently in /usr/local/share/Raster3D/examples/msms/.
+</p>
+
+<p>
+<table border=1 cellpadding=0>
+
+<tr><th>A figure composed with MSMS and Raster3D</th>
+<th>The script that generated this figure</th></tr>
+
+<tr>
+<td> <img src="r3d_msms.png"> </td>
+<td align=left><pre>
+#!/bin/csh
+#
+# Calculate molecular surface of a pentasaccharide
+#
+ln -s ../sugarG.pdb protein.pdb
+cat protein.pdb | pdb_to_xyzr > surf.dat
+msms -if surf.dat -of surf -probe_radius 1.4 -density 5.0
+#
+# Convert msms output to Raster3D description of the surface
+#
+./msms2r3d.pl surf.face surf.vert > surf.r3d
+#
+# Make an auto-centered ball+stick view of the molecule
+#
+rastep -auto -rad 0.20 -prob 0.10 < protein.pdb > protein.r3d
+#
+# Combine the ball+stick figure with a transparent material 
+# description from the Raster3D library 
+# applied to the molecular surface generated in MSMS
+# Save the combined picture as a PNG file
+#
+render -size 300x400 -zoom 85% -png picture.png << EOF
+@protein.r3d
+@translucent_60
+@surf.r3d
+EOF
+#
+rm -f protein.pdb msms_surf.dat.log
+rm -f surf.dat surf.face surf.vert
+rm -f surf.r3d protein.r3d
+</pre></td>
+</tr>
+</table>
+
+</p>
+
+
+<a href="raster3d.html">
+<img src="index_button.gif" align=top> Back to top </a>
+<a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
+
+</body>
+</html>

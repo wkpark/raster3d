@@ -60,6 +60,12 @@ Raster3D can also render images composed using other programs such as
 	<li><a href="rods.html">rods</a>
 	<li><a href="stereo3d.html">stereo3d</a>
 	</ul>
+    <b>Filters</b>
+    	<ul>
+	<li>Import molecular surface descriptions from
+	    <a href="r3d_filters.html#grasp">Grasp</a> or
+	    <a href="r3d_filters.html#msms">MSMS</a>
+	</ul>
 </td>
 <td>
     <b>Hints for composing pictures</b>
@@ -229,7 +235,7 @@ xv image.tif
 The same image rendered as a side-by-side stereo pair:
 
 <pre>
-molscript -r &lt; infile.dat > input.r3d; stereo3d input.r3d; xv stereo.tiff
+molscript -r &lt; infile.dat | stereo3d -border -png stereo_pair.png
 
 </pre>
 The
