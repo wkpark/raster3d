@@ -42,6 +42,16 @@
 #include        <tiffio.h>
 #endif
 
+/* HPUX lacks Fortran intrinsic functions AND and OR for some reason, */
+/* so I put a copy here. On the other hand HPUX has an unusually sane */
+/* calling convention for Fortran subroutine names.                   */
+#ifdef __hpux
+#define local_ local
+int and(i,j) int *i,*j; {return (*i & *j);}
+int or(i,j)  int *i,*j; {return (*i | *j);}
+#endif
+
+
 local_(option,buffer1,buffer2,buffer3)
      int	*option;
      short	*buffer1, *buffer2, *buffer3;

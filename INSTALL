@@ -58,4 +58,6 @@ look.
 
 I don't have a linux machine or a SUN, so I haven't yet tested
 Version 2.2 on these systems.  If you find any problems with these or
-any other platforms please let me know.
+any other platforms please let me know.  The Makefile for HPUX 
+involves a bit more customization than most of the others; if you run
+into trouble during compilation, look carefully at the Makefile.

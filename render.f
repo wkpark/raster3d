@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.2beta Feb 1996
+*     Version 2.2c Jun 1996
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -27,6 +27,9 @@
 *		  Add code for transparency and faster MATERIAL bookkeeping
 *		  Also fix major problems with explicit surface normals
 *		  object type 8 expanded to describe transparency
+* EAM Jun 1996	- V2.2c Default is to treat surface triangles as "2-sided", 
+*		  will later add optional feature to skip rendering of backward 
+*		  facing ones.
 *
 *     This version does output through calls to an auxilliary routine
 *     local(), which is in the accompanying source file local.c 
@@ -477,7 +480,7 @@ C     INTEGER HEADER(8)
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
-      WRITE (NOISE,*) 'Raster3D rendering program V2.2beta'
+      WRITE (NOISE,*) 'Raster3D rendering program V2.2c'
 *
 * !!! N.B. If, on your system, unit-file associations are not made
 *     externally, put statements something like this in:
@@ -1299,17 +1302,18 @@ c       CALL ASSERT (INTYPE.NE.TRCONE,'sorry, no trcones yet')
 	Z3B = X3A*TMAT(1,3) + Y3A*TMAT(2,3) + Z3A*TMAT(3,3)
 C
 C	If all 3 Z components are negative, it's facing away from us.
-C	For solid objects we can proceed to ignore it, 
+C	Default treatment: assume we are to render the other face instead
+C	Optional INMODE 4: assume it is the back surface of something, and
+C			   hence is hidden; should probably be an additional
+C			   distinction between solid and transparent materials
  	IF (Z1B.GE.0 .AND. Z2B.GE.0 .AND. Z3B.GE.0) GOTO 718
 717	CONTINUE
  	IF (Z1B.LE.0 .AND. Z2B.LE.0 .AND. Z3B.LE.0) THEN
-	    IF (AND(FLAG(N-1),TRANSP).EQ.0) THEN
+	    IF (INMODE.EQ.4) THEN
  		NHIDDEN = NHIDDEN + 1
  		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
-	    ELSE IF (INMODE.EQ.4) THEN
- 		NHIDDEN = NHIDDEN + 1
- 		FLAG(N-1) = OR( FLAG(N-1), HIDDEN )
-	    ELSE IF (AND(FLAG(N-1),TRANSP).NE.0) THEN
+C	    ELSE IF (AND(FLAG(N-1),TRANSP).NE.0) THEN
+	    ELSE
  		NINSIDE = NINSIDE + 1
  		FLAG(N-1) = OR( FLAG(N-1), INSIDE )
 		X1B = -X1B
@@ -1327,11 +1331,11 @@ C	For solid objects we can proceed to ignore it,
 C
 C	Mixed + and - Z means the triangle "wrapped around" the edge.
 C	For solid objects the best we can do is pretend the edge is right here.
-C	For transparent objects we need to invert the normals also.
-C	The value of EDGESLOP is purely empirical; setting it either too low
-C	or too high makes some edges get coloured wrongly.  Setting to HIDDEN
-C	flag for this record (NB: NORMALS, not the triangle itself) essentially
-C	causes the triangle to have flat shading.
+C	For transparent objects or 2-sided surfaces we need to invert the 
+C	normals also.  The value of EDGESLOP is purely empirical; setting it 
+C	either too low or too high makes some edges get coloured wrongly.  
+C	Setting to HIDDEN flag for this record (NB: for the NORMALS, not for
+C	the triangle itself) causes the triangle to have flat shading.
 	IF (Z1B+Z2B+Z3B .LT. 0) THEN
 	    IF (Z1B .GT. EDGESLOP) FLAG(N) = HIDDEN
 	    IF (Z2B .GT. EDGESLOP) FLAG(N) = HIDDEN
@@ -1341,9 +1345,9 @@ C	causes the triangle to have flat shading.
 	    Z3B = MIN(Z3B,0.)
 	    GOTO 717
 	ELSE
-	    IF (Z1B .LT. EDGESLOP) FLAG(N) = HIDDEN
-	    IF (Z2B .LT. EDGESLOP) FLAG(N) = HIDDEN
-	    IF (Z3B .LT. EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z1B .LT. -EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z2B .LT. -EDGESLOP) FLAG(N) = HIDDEN
+	    IF (Z3B .LT. -EDGESLOP) FLAG(N) = HIDDEN
 	    Z1B = MAX(Z1B,0.)
 	    Z2B = MAX(Z2B,0.)
 	    Z3B = MAX(Z3B,0.)
@@ -1458,7 +1462,7 @@ C	DETAIL(NDET+10)= BUF(10)
 	    IF   (DETAIL(KK).NE.DETAIL(L+II-3)
      &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
 52	  CONTINUE
-	  FLAG(I) = OR ( FLAG(I), RIBBON )
+	  FLAG(I) = OR(FLAG(I),RIBBON)
 54	  CONTINUE
 	  IF (AND(FLAG(I),RIBBON).NE.0)  NRIB = NRIB + 1
 	  IF (AND(FLAG(I),SURFACE).NE.0) NSUR = NSUR + 1
@@ -2566,7 +2570,7 @@ C Also find nearest point XYZA on cylinder axis.
 C
 	subroutine cyl1( flag,
      7			 x1,y1,z1,  x2,y2,z2,  xb,yb,zb,  R,  xa,ya,za )
-	implicit NONE
+c	implicit NONE
 	INTEGER flag
 	REAL*4	x1,y1,z1, x2,y2,z2, xb,yb,zb
 	REAL*4	R
@@ -2648,7 +2652,7 @@ c
 c
 c Rounded cylinder end
 c (ugly test - need to DEBUG with material props and flat/noflat)
-	if (and(flag,2) .eq. 0) then
+	if (AND(flag,2) .eq. 0) then
 		if (dx2+dy2 .ge. r2) then
 			zb = -99999.
 		else

@@ -26,7 +26,7 @@ Topics covered:
     <li><a href="#matrix">
 	Building up a figure from Molscript and other files</a>
     <li><a href="#labels">
-	How can I keep the Moslcript labels in my Raster3D picture?</a>
+	How can I keep the Molscript labels in my Raster3D picture?</a>
     <li><a href="#black-white">
 	Black &amp White figures</a>
     <li><a href="r3d_transparent.html">
@@ -124,12 +124,13 @@ render documentation) is the one given below. This matrix describes a shear
 operation, which is more correct than a pure rotation matrix for the purpose of
 generating stereo images.
 
-<listing>
-	1&nbsp; &nbsp; &nbsp; 0&nbsp; &nbsp; &nbsp; 0&nbsp; &nbsp; &nbsp; 0
-	0&nbsp; &nbsp; &nbsp; 1&nbsp; &nbsp; &nbsp; 0&nbsp; &nbsp; &nbsp; 0
-	.05&nbsp; 0&nbsp; &nbsp; &nbsp; 1&nbsp; &nbsp; &nbsp; 1
-	0.&nbsp; &nbsp; 0.&nbsp; &nbsp; 0.&nbsp; &nbsp; 1.0
-</listing>
+<pre>
+	1    0    0    0
+	0    1    0    0
+	0.05 0    1    0
+	0.   0.   0.   1.
+</pre>
+
     <li>Run the edited input file through render. You now have the left half of
 a stereo pair.
     <li>You can either print the two images separately and mount them side by
@@ -300,7 +301,7 @@ Raster3D distribution.<p>
 <a href="raster3d.html">
 <img src="/images/index_button.gif" align=top> Back to top </a>
 <a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
-<img src="r3d_icon.gif" alt="" align=top> Raster3d homepage </a>
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
 
 <hr>
 <address>

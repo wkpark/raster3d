@@ -1,3 +1,10 @@
+29-Aug-96	Correct errors in documentation describing stereo figures 
+ 5-Jun-96	V2.2c default is to treat surface triangles as "2-sided"
+		optionally (INMODE=4) skip rendering backward-facing ones for
+		savings in speed and storage space. Will probably fine-tune this
+		with additional options later.
+20-May-96	Makefile for HPUX from Andrew Dalke, 
+		and matching conditional HPUX code in local.c 
  9-Feb-96	add utility programs normal3d and ungrasp
  8-Feb-96	V2.2beta has support for transparent materials 
  1-Feb-96	Fix major problems with explicit surface normals

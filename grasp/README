@@ -18,9 +18,9 @@ Here is a list of known problems:
   specific vertices, but they need to be used in describing Raster3D triangles.
   Since the three vertices of the triangle can have different colors, I take
   the average.  This works, but does not look nearly so nice as it would if
-  there were a machanism for colors smoothly within the triangle.  Yeah, it
-  would be possible to add yet another object type to specify per-vertex
-  color informations in render, but I'd rather not.
+  there were a machanism for interpolating colors smoothly within the triangle.
+  Yeah, it would be possible to add yet another object type to specify 
+  per-vertex color informations in render, but I'd rather not.
 
 - The ungrasp utility must be compiled and run on the same architecture machine
   as your GRASP executable.  I believe that means SGI only, but I could be

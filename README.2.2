@@ -1,15 +1,29 @@
 most recent change:	 15-Feb-1996
 
-The file Raster3D_2.2b.tar.Z contains beta test version 2.2 of RASTER3D.
+The file Raster3D_2.2c.tar.Z contains version 2.2 of RASTER3D.
 It is a unified distribution which has been tested on the following 
 machines:
 	DECstation 5000 / Ultrix 4.3
 	Alpha / OSF 3.0
-	SGI Indigo / Irix 4.0.5F
+	SGI Indigo / Irix 4.0 5.3 6.1
 	IBM RS6000 / AIX 3.2.5
+	HP
 Version 2.11 (not yet V2.2) also tested OK on:
 	SUN Sparc  / SUNOS 4.1.3_U1
 	Intel 486 / linux
+
+Version 2.2c (interim fix to reported problem):
+
+- Change default treatment of surface triangles (i.e. those with explicit
+  normals). Default is now to assume that whichever side of the triangle
+  faces the viewer is the one to be rendered. Previous (V2.2) assumption
+  was that if the normals indicated that the triangle faced away from the
+  viewer then it was the back side of a closed volume, and needn't be
+  rendered at all.  This gave a speed increase, but broke the representation
+  of non-closed surface fragments.   I'm working on a more general fix to this 
+  tradeoff.  
+  Also fixed a minor bug in shading near the edge of tmesh surfaces,
+  and added Makefile for HPUX.
 
 New in version 2.2:
 

@@ -5,7 +5,7 @@
 LDFLAGS =
 CFLAGS  = -O
 #FC	= f90
-#FFLAGS	= -O -fast -static -nowarn
+#FFLAGS	= -O -fast -tune host -static -nowarn
 FC	= f77
 FFLAGS  = -O -fast -static -w1
 #

@@ -233,41 +233,41 @@ molecular graphics tools to compose figures for Raster3D to render.
 
 <h4> <a name="RTFToC16">SAMPLE HEADER </a></h4>
 
-<listing>
+<pre>
 My picture. (describes a 1280 x 1024 pixel anti-aliased image) 
-80 64 	tiles in x,y 24 24 pixels (x,y) per tile 
-3 	anti-aliasing level 3; 3x3-&gt;2x2 
-0 0 0 	black background 
-F 	no shadows cast 
-25 	Phong power 
-0.25 	secondary light contribution 
-0.05 	ambient light contribution 
-0.25 	specular reflection component 
-4.0 	eye position 
-1 1 1 	main light source position (from over right shoulder) 
-1 0 0 0 	view matrix describing input coordinate transformation 
+80 64 	  tiles in x,y 24 24 pixels (x,y) per tile 
+3 	  anti-aliasing level 3; 3x3-&gt;2x2 
+0 0 0 	  black background 
+F 	  no shadows cast 
+25 	  Phong power 
+0.25 	  secondary light contribution 
+0.05 	  ambient light contribution 
+0.25 	  specular reflection component 
+4.0 	  eye position 
+1 1 1 	  main light source position (from over right shoulder) 
+1 0 0 0   view matrix describing input coordinate transformation 
 0 1 0 0 
 0 0 1 0 
-0 0 0 0.6 	no translation; enlarge objects in picture by 66% (1/.6)
-3 	mixed objects 
-* 	(free format triangle and plane descriptors) 
-* 	(free format sphere descriptors) 
-* 	(free format cylinder descriptors)
+0 0 0 0.6 no translation; enlarge objects in picture by 66% (1/.6)
+3 	  mixed objects 
+* 	 (free format triangle and plane descriptors) 
+* 	 (free format sphere descriptors) 
+* 	 (free format cylinder descriptors)
 
-</listing>
+</pre>
 <h4>
 <a name="RTFToC17">SAMPLE
 INPUT DATA FOLLOWING HEADER
 </a></h4>
 The following records describe a single red triangle and a single blue sphere
 
-<listing>
+<pre>
 1
--.1 0. 0.&nbsp; &nbsp;  .1 0. 0. &nbsp; &nbsp; 0. -.2 0.5 &nbsp; &nbsp; &nbsp; &nbsp; 1.0 0.0 0.0
+-.1 0. 0.     .1 0. 0.     0. -.2 0.5         1.0 0.0 0.0
 2
-0.3 0.3 0.0 &nbsp; &nbsp; &nbsp; &nbsp; 0.1 &nbsp; &nbsp; &nbsp; 0.0 0.0 1.0
+0.3 0.3 0.0         0.1                       0.0 0.0 1.0
 0
-</listing>
+</pre>
 
 <a name="arrays">
 <h4>INCREASING THE ARRAY SIZES IN RENDER:</h4>
@@ -312,7 +312,7 @@ by Ethan A Merritt.
 <a href="raster3d.html">
 <img src="/images/index_button.gif" align=top> Back to top </a>
 <a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
-<img src="r3d_icon.gif" alt="" align=top> Raster3d homepage </a>
+<img src="r3d_icon.gif" alt="" align=top> Raster3D homepage </a>
 
 </body>
 </html>

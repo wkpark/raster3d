@@ -1,0 +1,59 @@
+#
+# Raster3D makefile for HPUX
+# (Thanks to Andrew Dalke!)
+#
+# +E7 is equivalent to -static
+#
+LDFLAGS =
+CFLAGS  = -O -L/usr/local/lib -Aa
+FFLAGS  = -O +E7 +U77
+#
+# If you choose to build Raster3D with support for direct output of
+# TIFF image files, then add -DTIFF_SUPPORT to the DEFINES statement.
+# You will also need to add -ltiff to the LIBS definition.
+# The "-W,l" is needed to pass the -L option to the compiler
+#  (normally -L prints the program to standard output during compilation)
+ LIBS    =	-Wl,-L/usr/local/lib -ltiff
+ DEFINES =	-DTIFF_SUPPORT
+#LIBS    =
+#DEFINES =
+INCLUDES=	-I/usr/local/include/ -I/usr/local/include/tiff
+
+RIBOBJS =	ribbon.o ribbon1.o modsubs.o
+PROGS   =	balls normal3d rods ribbon render setup avs2ps
+
+all:	$(PROGS)
+
+clean:
+	rm -f *.o *.u
+	rm -f $(PROGS) render_hpux.f
+
+install: $(PROGS)
+	mv $(PROGS) /usr/local/bin
+	cp doc/*.l /usr/local/man/manl
+
+tar:
+	(cd ..; tar -cvvf raster3d.tar raster3d)
+	compress  ../raster3d.tar
+
+ribbon:	$(RIBOBJS)
+	f77 $(LDFLAGS) $(FFLAGS) -O $(RIBOBJS) -o ribbon
+
+local.o: local.c
+	cc $(CFLAGS) $(INCLUDES) $(DEFINES) -c local.c
+
+# HP doesn't like the intrinsic AND and OR functions -- it uses
+# IAND and IOR instead.  Watch out if you add function that end
+# in AND( or OR( !
+render:	render.f local.o
+	rm -f render_hpux.f
+#	sed -e 's/AND(/IAND(/' -e 's/OR(/IOR(/' < render.f > render_hpux.f
+	f77 $(FFLAGS) render_hpux.f local.o \
+	$(LIBS) -o render $(LDFLAGS)
+
+# HPs don't have "random" -- use drand48 instead
+avs2ps:	avs2ps.c
+	cc -O avs2ps.c -o avs2ps -lm -Drandom=drand48
+
+setup:	balls
+	ln -s balls setup

@@ -33,7 +33,7 @@ By default \fIrods\fP will produce an output file which starts with
 header records containing a default set of scaling and processing
 options.
 The \fI-h\fP flag will suppress these header records so that the output
-file contains only sphere descriptors.
+file contains only object descriptors.
 This option is useful for producing files which describe only part
 of a scene, and which are to be later combined with descriptor files
 produced by other programs.

@@ -28,10 +28,6 @@ also reports the total number of objects in the input file by object type,
 and gives the array sizes which would be required for the render program
 to process the file.  It may therefore be used to determine how large the
 array sizes in render should be set.
-.PP 
-\fInormal3d\fP converts the input stream to a grey scale image and then
-applies an empirical algorithm for dithering and error propagation to
-produce a monochrome output image.
 
 .SH OPTIONS
 
