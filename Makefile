@@ -34,7 +34,7 @@ help:
 	else \
 	echo "" ; \
 	echo "Please start by typing '"make OS"', where OS is one of" ; \
-	echo "	linux linux-pgf77 linux-ppc dec sun sun-forte irix5 irix6 cygwin aix hpux" ; \
+	echo "	linux linux-gfortran linux-pgf77 linux-ppc dec sun sun-forte irix5 irix6 cygwin aix hpux" ; \
 	echo "If your OS is not shown but you have g77/gcc installed, try" ; \
 	echo "	make linux" ; \
 	echo "" ; \
@@ -50,9 +50,20 @@ linux:	strip-for-g77
 	@cp Makefile.template Makefile.incl
 	@echo OS = linux                      >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
-	@echo CFLAGS = -g -m486 -w            >> Makefile.incl
+	@echo CFLAGS = -g -w                  >> Makefile.incl
 	@echo FC = g77                        >> Makefile.incl
 	@echo FFLAGS = -g -O -w -malign-double>> Makefile.incl
+	@echo RM = /bin/rm -f                 >> Makefile.incl
+	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
+	@echo include Makefile.package        >> Makefile.incl
+
+linux-gfortran:	strip-for-g77
+	@cp Makefile.template Makefile.incl
+	@echo OS = linux                      >> Makefile.incl
+	@echo CC = gcc                        >> Makefile.incl
+	@echo CFLAGS = -g -w -Dgfortran       >> Makefile.incl
+	@echo FC = gfortran                   >> Makefile.incl
+	@echo FFLAGS = -g -w -O -ffixed-line-length-132 >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl

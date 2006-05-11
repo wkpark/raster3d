@@ -73,6 +73,7 @@
 *		  all the tests on IF ATOM(I)(1:).eq.'ATOM' are now unneeded
 * EAM May 2003	- expand default color table to allow for off-by-one atom names
 * EAM Oct 2003	- trap and report 0 values for axial Uij components in input
+* EAM May 2006	- initial arrays to 0 for gfortran
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -129,7 +130,7 @@ c
       real*8	wsum, xsum, ysum, zsum
       real*8	xcom, ycom, zcom
       real	adist(110)
-      integer	hdist(100), comlun, dshells
+      integer	hdist(110), comlun, dshells
 c
 c     Support for validation of similarity of bonded atoms
       logical	suvflag
@@ -137,6 +138,7 @@ c     Support for validation of similarity of bonded atoms
       real	anisov(6)
 c
 c     Default to CPK colors and VDW radii
+      integer DEFCOLS
       parameter (DEFCOLS = 17)
       character*60 defcol(DEFCOLS)
       data defcol /
@@ -195,6 +197,22 @@ c
 	prob     = 0.50
 	radius   = 0.10
 	nerrors  = 0
+c
+c	Gfortran is nuts
+	wsum = 0
+	xsum = 0
+	ysum = 0
+	zsum = 0
+	sum_a = 0
+	sum_b = 0
+	do i=1,20
+	    histogram(i) = 0
+	enddo
+	do i=1,110
+	    adist(i) = 0
+	    hdist(i) = 0
+	enddo
+c
 	narg = iargc()
 	i = 1
     5	continue
@@ -1048,6 +1066,7 @@ c
   141	continue
 
 	sum_A     = 0.0
+	sum_B     = 0.0
 	sum_a2    = 0.0
 	biso_mean = 0.0
 	natype    = 0

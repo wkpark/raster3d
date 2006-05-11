@@ -152,12 +152,11 @@ from a shelx coordinate file.
   	http://www.bmsc.washington.edu/raster3d/raster3d.html
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 
 .SH SEE ALSO
-Raster3D(l), render(l)
+raster3d(l), render(l)
 .PP
 .SH AUTHORS
 	Ethan A Merritt.

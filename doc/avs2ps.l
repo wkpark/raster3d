@@ -65,16 +65,14 @@ produce a monochrome output image.
 
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(l), Raster3D(l), avs
+render(l), raster3d(l), avs
 .PP
 .SH AUTHORS
 
 Ethan A Merritt.  
- Dithering algorithm derived from code by 
-Randy Read and Albert Berghuis.
+ Dithering algorithm derived from code by Randy Read and Albert Berghuis.
 

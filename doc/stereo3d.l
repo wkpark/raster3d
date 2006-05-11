@@ -71,14 +71,13 @@ overriding whatever size is given in the header records of the input file.
  
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 
 
 
 .SH SEE ALSO
-label3d(l), normal3d(l), render(l), Raster3D(l)
+label3d(l), normal3d(l), render(l), raster3d(l)
 .PP
 .SH AUTHORS
 

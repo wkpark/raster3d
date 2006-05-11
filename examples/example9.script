@@ -4,24 +4,27 @@
 # GM1-pentasaccharide from a complex with the cholera toxin B-pentamer
 # refined with anisotropic displacement parameters at 1.25A resolution 
 #
+# Warning:  display -geometry <foo>  changed to display -resize <foo>
+#	    in an attempt to hit the ever-moving target of ImageMagick syntax
+#
 rm -rf setup.angles setup.matrix temp.tmp
 #
-rods                   < sugarG.pdb | render | display -geometry 50%x50%+0+0   -title GM1-OS png:- &
+rods                   < sugarG.pdb | render | display -resize 50%x50% -geometry +0+0   -title GM1-OS png:- &
 sleep 3
 #
-rastep                 < sugarG.pdb | render | display -geometry 50%x50%+350+0 -title "50% probability" png:- &
+rastep                 < sugarG.pdb | render | display -resize 50%x50% -geometry +350+0 -title "50% probability" png:- &
 sleep 3
 #
-rastep -fancy2 -prob 30< sugarG.pdb | render | display -geometry 50%x50%+700+0 -title "fancy2 30% probability" png:- &
+rastep -fancy2 -prob 30< sugarG.pdb | render | display -resize 50%x50% -geometry +700+0 -title "fancy2 30% probability" png:- &
 sleep 3
 #
-rastep -fancy3         < sugarG.pdb | render | display -geometry 50%x50%+0+350 -title "fancy3" png:- &
+rastep -fancy3         < sugarG.pdb | render | display -resize 50%x50% -geometry +0+350 -title "fancy3" png:- &
 sleep 3
 #
-rastep -Bcolor 6. 26. < sugarG.pdb | render | display -geometry 50%x50%+350+350 -title "colored by B value" png:- &
+rastep -Bcolor 6. 26. < sugarG.pdb | render | display -resize 50%x50% -geometry +350+350 -title "colored by B value" png:- &
 sleep 3
 #
-rastep -fancy6 -Bcolor 6. 26. < sugarG.pdb | render | display -geometry 50%x50%+700+350 -title "fancy6 for ORTEP lovers" png:- &
+rastep -fancy6 -Bcolor 6. 26. < sugarG.pdb | render | display -resize 50%x50% -geometry +700+350 -title "fancy6 for ORTEP lovers" png:- &
 sleep 3
 #
 echo ""

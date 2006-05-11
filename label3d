@@ -118,8 +118,9 @@ fi
 
 #
 # Insure that the labels are on a transparent background
+# NB: ImageMagick version 6+ syntax!
 #
-   convert -draw "matte 0,0 replace" ${tmp}_label3d.png ${tmp}_label3d.miff
+   convert  ${tmp}_label3d.png -fill none -draw "matte 0,0 replace" ${tmp}_label3d.miff
 #
 # This works with ImageMagick 4.2.9 and many (most?) other older versions
 #

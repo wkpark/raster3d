@@ -5,9 +5,12 @@
  * but I see no reason it shouldn't work with any other AVS input file.
  * Ethan A Merritt - Aug 1994
  */
-#include	"stdio.h"
-#include	"time.h"
-#include	"math.h"
+#include	<stdio.h>
+#include	<time.h>
+#include	<math.h>
+#include	<string.h>
+#include	<stdlib.h>
+#include	<netinet/in.h>
 
 #ifdef WIN32
 #define random rand
@@ -25,7 +28,7 @@
 #define	NO	(0)
 #define	YES	(1)
 
-main(argc,argv)
+int main(argc,argv)
 int  argc;
 char     *argv[];
 {

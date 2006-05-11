@@ -75,12 +75,11 @@ prepended to give output files {scratch}_left.r3d and {scratch}_right.r3d
  
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(l), Raster3D(l), stereo3d(l)
+render(l), raster3d(l), stereo3d(l)
 .PP
 .SH AUTHORS
  Ethan A Merritt.

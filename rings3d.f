@@ -15,8 +15,9 @@ c     I/O units and environmental control
 c
 	integer input, output, noise
 	parameter (input=5, output=6, noise=0)
-	integer 	iargc, narg
-	external	iargc
+	integer 	narg
+	integer 	iargc
+c	external	iargc
 	character*64	options
 	logical		bflag, pflag, sflag
 c

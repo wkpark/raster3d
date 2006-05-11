@@ -115,8 +115,8 @@ c
 	    else if (option(1:3).eq.'-bg') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
-		if (option(1:5).eq.'white') xbg = 'FFFFFFFF'X
-		if (option(1:5).eq.'black') xbg = 'FF000000'X
+		if (option(1:5).eq.'white') xbg = X'FFFFFFFF'
+		if (option(1:5).eq.'black') xbg = X'FF000000'
 		if (option(1:1).eq.'#') then
 		    read  (option(2:7),'(1Z6)') xbg
 		    write (0,'(1Z12)') xbg
@@ -133,7 +133,7 @@ c
 c
 	otmode = local(0, args(1), args(2), args(3), args(4))
 c
-	if (and(otmode,invertflag).ne.0) then
+	if (iand(otmode,invertflag).ne.0) then
 	    invert = .false.
 	else
 	    invert = .true.

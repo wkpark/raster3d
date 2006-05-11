@@ -1,6 +1,6 @@
 .l
 .nh
-.TH Raster3D object_types 1 " 8 May 1999" "Raster3D"
+.TH R3D_OBJECTS 1 " 8 May 1999" "Raster3D"
 .SH NAME
 Object types used by the Raster3D package
 

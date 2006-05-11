@@ -2,12 +2,14 @@
  * Uncompress a raster3d input file into a temporary file
  */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __hpux
 #define ungz_  ungz
 #endif
 
-ungz_( origname,  tempname )
+int ungz_( origname,  tempname )
 char  *origname, *tempname;
 {
 char   command[128];

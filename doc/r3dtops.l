@@ -53,12 +53,11 @@ care of by the render program itself.
  
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 
 .SH SEE ALSO
-label3d(l), r3d_objects(l), render(l), Raster3D(l)
+label3d(l), r3d_objects(l), render(l), raster3d(l)
 .PP
 .SH AUTHORS
 

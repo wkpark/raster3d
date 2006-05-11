@@ -4,9 +4,12 @@
 # Preparation
 #    nothing special needed (I hope)
 # To actually build the tar file, you need to do something like
-#    make distclean; cp Makefile.package Makefile.incl; make tar
+#
+#	make distclean; cp Makefile.package Makefile.incl; make tar
+#
 # After that (tar file is needed first!) to make the RPM files 
-#    make linux-pgf77; make install; make rpm
+#
+#	make linux-gfortran; make rpm
 #
 include VERSION
 

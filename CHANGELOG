@@ -1,4 +1,23 @@
+11-May-2006	rings3d.f: gfortran/irix6 compatibility tweak (INTEGER iargc)
+		Release 2.7d
+ 3-May-2006	rastep.f: gfortran requires initialization to zero!
+12-Apr-2006	label3d: ImageMagick 6+ requires different syntax to set transparency
+12-Apr-2006	r3dtops.f: gfortran requires SAVE, because it doesn't like -fno-automatic
+11-Apr-2006	In example scripts, change "display -geometry" to "display -resize"
+11-Apr-2006	change AND() and OR() to iand() and ior()
+11-Apr-2006	rings3d.f: gfortran doesn't like iargc declared external
+11-Apr-2006	avs2ps.c: additional headers (Debian patch)
+11-Apr-2006	ungz.c: additional headers (Debian patch)
+11-Apr-2006	local.c: additional headers (Debian patch)
+15-Dec-2005	rastep.f: declare DEFCOLS as integer
+15-Dec-2005	parse.f: and -> iand
+15-Dec-2005	parse.f: hexadecimal syntax change
+15-Dec-2005	render.f: and -> iand
+15-Dec-2005	render.f: hexadecimal syntax change
+15-Dec-2005	local.c: provide substitute or, and for gfortran
+15-Dec-2005	Update Makefile for gfortran		
 		Release 2.7c
+12-Feb-2004	rastep.f: g77 doesn't like logical test against noerr
  6-Feb-2004	modify label3d and stereo3d scripts to deal with changes to recent
  		versions of ImageMagick and ghostscript
 17-Oct-2003	rastep now checks input for illegal (=0) axial Uij terms

@@ -1,7 +1,7 @@
 *******************************************************************************
 *               Support routines for PostScript labels                        *
 *******************************************************************************
-*     Version 2.5g
+*     Version 2.7d
 *
 * EAM Dec 1996	- Initial version (called labels3d, later changed)
 * EAM May 1999	- Updated to match V 2.4j as stand-alone program
@@ -12,6 +12,7 @@
 * EAM Sep 2000	- tweak RED values in work-around for ImageMagick bug
 * EAM Jun 2001	- Tru64 f90 compiler barfs on '\\' as meaning a single \
 *		  re-work pathway through ghostscript + ImageMagick 5.3.2
+* EAM Apr 2006	- Tweak for gfortran compatibility
 *******************************************************************************
 *
 * These routines are called from render.f to handle object types 10, 11 and 12.
@@ -89,6 +90,7 @@
       PARAMETER   (FONT = 10, LABEL = 11)
       REAL         XA, YA, ZA, RED, GRN, BLU
       REAL         FONTSIZE
+      SAVE         FONTSIZE
       REAL         PSSCALE
       SAVE         PSSCALE
 *

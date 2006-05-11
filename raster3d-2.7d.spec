@@ -1,15 +1,15 @@
 Summary: Raster3D photorealistic molecular graphics package
 Name: Raster3D
-Version: 2.7c
-Release: 3
+Version: 2.7d
+Release: 4
 %define  r3dver %{name}_%{version}
-Copyright: Source freely available, redistribution restricted
+License: Source freely available, redistribution restricted
 Source: http://www.bmsc.washington.edu/raster3d/%{name}_%{version}.tar.gz
 URL: http://www.bmsc.washington.edu/raster3d
 Packager: Ethan A Merritt
 Group: Graphics
 BuildRoot:%{_tmppath}/%{name}-%{version}-buildroot
-BuildRequires: libpng-devel zlib-devel libjpeg-devel libtiff-devel
+#BuildRequires: libpng-devel zlib-devel libjpeg-devel libtiff-devel
 #
 # You may or may not want the following definitions
 %define _prefix /usr/local
@@ -39,6 +39,9 @@ make clean
 if [ -x $PGI/linux86/bin/pgf77 ]; then
   make linux-pgf77
   make all FFLAGS='-O -Munroll -tp px' PLIBS='/usr/lib/libpng.a'
+elif [ -x /usr/bin/gfortran ]; then
+  make linux-gfortran
+  make all FFLAGS="-g -w -O -ffixed-line-length-132" CFLAGS="-Dgfortran $RPM_OPT_FLAGS"
 else
   make linux
   make all FFLAGS="$RPM_OPT_FLAGS" CFLAGS="$RPM_OPT_FLAGS"
@@ -98,8 +101,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %post
 MGK=
-if   [ -a /usr/lib/ImageMagick/modules/coders/delegates.mgk ]; then
-  MGK="/usr/lib/ImageMagick/modules/coders/delegates.mgk"
+if   [ -a /usr/lib/ImageMagick/config/delegates.mgk ]; then
+  MGK="/usr/lib/ImageMagick/config/delegates.mgk"
 elif [ -a /usr/X11R6/share/ImageMagick/delegates.mgk ]; then
   MGK="/usr/X11R6/share/ImageMagick/delegates.mgk"
 elif [ -a /usr/lib/ImageMagick/delegates.mgk ]; then
@@ -108,7 +111,7 @@ fi
 
 OLD="# Raster3D 2.6 \nr3d=> \nrender -tiff %o < %i"
 XML="  <delegate decode=\"r3d\" command='render -png \"%o\"<\"%i\"' />"
-if [ -a $MGK ]; then
+if [ -n "$MGK" ]; then
   if grep -q "xml" $MGK; then
     if ! grep -q "r3d" $MGK; then
       cp -f $MGK /tmp/delegates.bak.$$
@@ -125,15 +128,15 @@ fi
 
 %postun
 MGK=
-if   [ -a /usr/lib/ImageMagick/modules/coders/delegates.mgk ]; then
-  MGK="/usr/lib/ImageMagick/modules/coders/delegates.mgk"
+if   [ -a /usr/lib/ImageMagick/config/delegates.mgk ]; then
+  MGK="/usr/lib/ImageMagick/config/delegates.mgk"
 elif [ -a /usr/X11R6/share/ImageMagick/delegates.mgk ]; then
   MGK="/usr/X11R6/share/ImageMagick/delegates.mgk"
 elif [ -a /usr/lib/ImageMagick/delegates.mgk ]; then
   MGK="/usr/lib/ImageMagick/delegates.mgk"
 fi
 
-if [ -a $MGK ]; then
+if [ -n "$MGK" ]; then
   grep -v r3d $MGK > /tmp/delegates.mgk.$$
   cp -f /tmp/delegates.mgk.$$ $MGK
   rm -f /tmp/delegates.mgk.$$  
@@ -141,6 +144,10 @@ fi
 
 
 %changelog
+* Wed May  3 2006 EAM
+- rastep was suffering from gfortran + uninitialized arrays
+* Tue Apr 12 2006 EAM
+- Update for 2.7d (gfortran, ImageMagick 6+)
 * Thu Feb 12 2004 EAM
 - rastep logical test of noerr fails in g77
 * Fri Feb  6 2004 EAM

@@ -123,7 +123,6 @@ header records produced by \fIballs\fP.
  
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 

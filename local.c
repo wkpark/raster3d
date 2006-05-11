@@ -46,6 +46,8 @@
 #include	<fcntl.h>
 #include	<string.h>
 #include	<time.h>
+#include	<stdlib.h>
+#include	<netinet/in.h>
 
 #ifdef LIBIMAGE_SUPPORT
 #include	<gl/image.h>
@@ -56,8 +58,8 @@
 #include        <tiffio.h>
 #ifdef LINUX
 #include	<signal.h>
-#endif LINUX
-#endif TIFF_SUPPORT
+#endif /* LINUX */
+#endif /* TIFF_SUPPORT */
 
 #ifdef JPEG_SUPPORT
 #include	<jpeglib.h>
@@ -101,14 +103,19 @@ int		alpha_channel = 0;
 /* HPUX lacks Fortran intrinsic functions AND and OR for some reason, */
 /* so I put a copy here. On the other hand HPUX has an unusually sane */
 /* calling convention for Fortran subroutine names.                   */
-#ifdef __hpux
+#if defined(__hpux)
 #define local_ local
 int and(i,j) int *i,*j; {return (*i & *j);}
 int or(i,j)  int *i,*j; {return (*i | *j);}
 #endif
 
+#if defined(gfortran)
+int and_(i,j) int *i,*j; {return (*i & *j);}
+int or_(i,j)  int *i,*j; {return (*i | *j);}
+#endif
 
-local_(option,buffer1,buffer2,buffer3,buffer4)
+
+int local_(option,buffer1,buffer2,buffer3,buffer4)
      int	*option;
      short	*buffer1, *buffer2, *buffer3, *buffer4;
 {
@@ -689,7 +696,7 @@ else if (*option == 3)
 	(void) TIFFFlushData(tfile);
 #ifdef LINUX
 	signal( SIGSEGV, SIG_IGN );
-#endif LINUX
+#endif /* LINUX */
 	(void) TIFFClose(tfile);
 	}
     else
@@ -806,7 +813,7 @@ int j = 0;
     }
 
   if (TIFFWriteScanline(fp,scanline,row,0) < 0)
-    fprintf (stderr, "\n", "Bad return code from TIFF write\n");
+    fprintf (stderr, "\nBad return code from TIFF write\n");
 
 row++;
 }

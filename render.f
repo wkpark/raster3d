@@ -77,6 +77,9 @@
 * EAM Feb 2002	- allow a little RIBBONSLOP in testing for ribbon triangles
 *		  fix up complicated corner cases in bounded surface algorithm
 * EAM Apr 2002	- clean up auto-tiling, and allow zero NPX or NPY to trigger it
+* EAM Apr 2006  - V2.6d gfortran accommodations
+*               - Change AND() to iand() everywhere
+*               - Change  OR() to  ior() everywhere
 *		  
 *     General organization:
 *
@@ -775,7 +778,7 @@ C
      &             'image too large for output buffer')
 C
 C	Header records and picture title
-      IF (SCHEME.EQ.0) OTMODE = OR(OTMODE,ALPHACHANNEL)
+      IF (SCHEME.EQ.0) OTMODE = ior(OTMODE,ALPHACHANNEL)
       IERR = LOCAL(1, NAX, NAY, OTMODE, QUALITY)
       IERR = LOCAL(4, TITLE)
 *
@@ -792,9 +795,12 @@ C	Header records and picture title
 *     Get background colour
       READ (INPUT,*,ERR=104) BKGND
       if (XBG.NE.0) then
-	BKGND(3) = FLOAT(iand(XBG,'00FF'X)) / 255.
-	BKGND(2) = FLOAT(iand(XBG,'FF00'X)/256) / 255.
-	BKGND(1) = FLOAT(iand(XBG,'FF0000'X)/65536) / 255.
+	BKGND(3) = iand(XBG,X'00FF')
+	BKGND(2) = iand(XBG,X'FF00')/256
+	BKGND(1) = iand(XBG,X'FF0000')/65536
+	BKGND(3) = BKGND(3) / 255.
+	BKGND(2) = BKGND(2) / 255.
+	BKGND(1) = BKGND(1) / 255.
 	BKGND(3) = BKGND(3)**2
 	BKGND(2) = BKGND(2)**2
 	BKGND(1) = BKGND(1)**2
@@ -1183,7 +1189,7 @@ c	    since it doesn't support dispose='DELETE'.
       IF (INTYPE.EQ.0) GO TO 50
       IF (INTYPE .EQ. CYLFLAT) THEN
 	INTYPE = CYLIND
-	FLAG(N+1) = OR( FLAG(N+1), FLAT )
+	FLAG(N+1) = ior( FLAG(N+1), FLAT )
       ELSEIF (INTYPE .EQ. MATEND) THEN
 	MSTATE    = 0
 	CLRITY    = 0
@@ -1338,18 +1344,18 @@ C     20-Feb-1997 Save both object type and material type
 	CALL CHKRGB( RED,GRN,BLU,'invalid triangle color' )
         CALL ASSERT (IDET(INTYPE).EQ.12,'idet(1).ne.12')
 	IF (MSTATE.EQ.MATERIAL) THEN
-	  FLAG(N) = OR(FLAG(N),PROPS)
+	  FLAG(N) = ior(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
 	  IF (CLRITY.GT.0) THEN
-	    FLAG(N) = OR(FLAG(N),TRANSP)
-	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
+	    FLAG(N) = ior(FLAG(N),TRANSP)
+	    IF (CLROPT.EQ.1) FLAG(N) = ior(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
 	    ISTRANS = 1
 	  ENDIF
 	  IF (CLIPPING) THEN
-	    FLAG(N) = OR(FLAG(N),CLIPPED)
+	    FLAG(N) = ior(FLAG(N),CLIPPED)
 	  ENDIF
-	  IF (NBOUNDS.GT.0) FLAG(N) = OR(FLAG(N),BOUNDED)
+	  IF (NBOUNDS.GT.0) FLAG(N) = ior(FLAG(N),BOUNDED)
 	  IF (MATCOL) THEN
 	    RED = RGBMAT(1)
 	    GRN = RGBMAT(2)
@@ -1561,18 +1567,18 @@ C     20-Feb-1997 Save both object type and material type
 	CALL CHKRGB (RED,GRN,BLU,'invalid sphere color')
         CALL ASSERT (IDET(INTYPE).EQ.7,'idet(2).ne.7')
 	IF (MSTATE.EQ.MATERIAL) THEN
-	  FLAG(N) = OR(FLAG(N),PROPS)
+	  FLAG(N) = ior(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
 	  IF (CLRITY.GT.0) THEN
-	    FLAG(N) = OR(FLAG(N),TRANSP)
-	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
+	    FLAG(N) = ior(FLAG(N),TRANSP)
+	    IF (CLROPT.EQ.1) FLAG(N) = ior(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
 	    ISTRANS = 1
 	  ENDIF
 	  IF (CLIPPING) THEN
-	    FLAG(N) = OR(FLAG(N),CLIPPED)
+	    FLAG(N) = ior(FLAG(N),CLIPPED)
 	  ENDIF
-	  IF (NBOUNDS.GT.0) FLAG(N) = OR(FLAG(N),BOUNDED)
+	  IF (NBOUNDS.GT.0) FLAG(N) = ior(FLAG(N),BOUNDED)
 	  IF (MATCOL) THEN
 	    RED = RGBMAT(1)
 	    GRN = RGBMAT(2)
@@ -1687,8 +1693,8 @@ C     20-Feb-1997 Save both object type and material type
 c	30-Dec-99 duplicate transparent spheres, if requested, so that
 c	the inside surface can be rendered also. BUF() is still loaded
 c	with specs for the current object; we just need to set flags.
-	IF (  AND(FLAG(N),TRANSP).NE.0 .AND. CLROPT.EQ.2
-     &  .AND. AND(FLAG(N),INSIDE).EQ.0) THEN
+	IF (  iand(FLAG(N),TRANSP).NE.0 .AND. CLROPT.EQ.2
+     &  .AND. iand(FLAG(N),INSIDE).EQ.0) THEN
 	    FLAG(N+1) = INSIDE
 	    NINSIDE   = NINSIDE + 1
 	    GOTO 9
@@ -1711,7 +1717,7 @@ c	with specs for the current object; we just need to set flags.
         CALL ASSERT (IDET(INTYPE).EQ.11,'idet(1).ne.11')
 *	Zero length cylinder is better treated as sphere
 *	EAM 22-Nov-96
-	IF ((AND(FLAG(N),FLAT).EQ.0) .AND.
+	IF ((iand(FLAG(N),FLAT).EQ.0) .AND.
      &	    (X1A.EQ.X2A).AND.(Y1A.EQ.Y2A).AND.(Z1A.EQ.Z2A)) THEN
 		BUF(5) = BUF(9)
 		BUF(6) = BUF(10)
@@ -1721,18 +1727,18 @@ c	with specs for the current object; we just need to set flags.
 		GOTO 9
 	ENDIF
 	IF (MSTATE.EQ.MATERIAL) THEN
-	  FLAG(N) = OR(FLAG(N),PROPS)
+	  FLAG(N) = ior(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
 	  IF (CLRITY.GT.0) THEN
-	    FLAG(N) = OR(FLAG(N),TRANSP)
-	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
+	    FLAG(N) = ior(FLAG(N),TRANSP)
+	    IF (CLROPT.EQ.1) FLAG(N) = ior(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
 	    ISTRANS = 1
 	  ENDIF
 	  IF (CLIPPING) THEN
-	    FLAG(N) = OR(FLAG(N),CLIPPED)
+	    FLAG(N) = ior(FLAG(N),CLIPPED)
 	  ENDIF
-	  IF (NBOUNDS.GT.0) FLAG(N) = OR(FLAG(N),BOUNDED)
+	  IF (NBOUNDS.GT.0) FLAG(N) = ior(FLAG(N),BOUNDED)
 	  IF (MATCOL) THEN
 	    RED = RGBMAT(1)
 	    GRN = RGBMAT(2)
@@ -1878,8 +1884,8 @@ c
 c	20-Aug-98 duplicate any transparent flat-ended cylinders so that
 c	the inside surface can be rendered also. BUF() is still loaded
 c	with specs for the current object; we just need to set flags.
-	IF (  AND(FLAG(N),TRANSP).NE.0 .AND. AND(FLAG(N),FLAT).NE.0
-     &  .AND. AND(FLAG(N),INSIDE).EQ.0) THEN
+	IF (  iand(FLAG(N),TRANSP).NE.0 .AND. iand(FLAG(N),FLAT).NE.0
+     &  .AND. iand(FLAG(N),INSIDE).EQ.0) THEN
 	    FLAG(N+1) = FLAT + INSIDE
 	    NINSIDE   = NINSIDE + 1
 	    GOTO 9
@@ -1953,14 +1959,14 @@ C
  	IF (Z1C.LT.-.01 .AND. Z2C.LT.-.01 .AND. Z3C.LT.-.01) THEN
 	    IF (CLROPT.EQ.2) THEN
 		NINSIDE = NINSIDE + 1
-		FLAG(IPREV) = OR( FLAG(IPREV), INSIDE )
-	    ELSE IF ((AND(FLAG(IPREV),BOUNDED).EQ.0) 
+		FLAG(IPREV) = ior( FLAG(IPREV), INSIDE )
+	    ELSE IF ((iand(FLAG(IPREV),BOUNDED).EQ.0) 
      &          .AND.(CLRITY.EQ.0 .OR. CLROPT.EQ.1)) THEN
 		NHIDDEN = NHIDDEN + 1
-		FLAG(IPREV) = OR( FLAG(IPREV), HIDDEN )
+		FLAG(IPREV) = ior( FLAG(IPREV), HIDDEN )
 	    ELSE
 		NINSIDE = NINSIDE + 1
-		FLAG(IPREV) = OR( FLAG(IPREV), INSIDE )
+		FLAG(IPREV) = ior( FLAG(IPREV), INSIDE )
 	    ENDIF
 	    GOTO 718
 	ENDIF
@@ -2027,7 +2033,7 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	ENDIF
 	CALL ASSERT (TYPE(IPREV).EQ.TRIANG .OR. TYPE(IPREV).EQ.CYLIND,
      &		'orphan vertex colours')
-	FLAG(IPREV) = OR( FLAG(IPREV), VCOLS )
+	FLAG(IPREV) = ior( FLAG(IPREV), VCOLS )
 	DETAIL(NDET+1) = BUF(1)
 	DETAIL(NDET+2) = BUF(2)
 	DETAIL(NDET+3) = BUF(3)
@@ -2057,9 +2063,9 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
      &           .OR.TYPE(IPREV).EQ.SPHERE,
      &		'orphan vertex transparency')
 	NVTRANS = NVTRANS + 1
-	IF (AND(FLAG(IPREV),TRANSP).EQ.0) NTRANSP = NTRANSP + 1
-	FLAG(IPREV) = OR( FLAG(IPREV), TRANSP )
-	FLAG(IPREV) = OR( FLAG(IPREV), VTRANS )
+	IF (iand(FLAG(IPREV),TRANSP).EQ.0) NTRANSP = NTRANSP + 1
+	FLAG(IPREV) = ior( FLAG(IPREV), TRANSP )
+	FLAG(IPREV) = ior( FLAG(IPREV), VTRANS )
 	DETAIL(NDET+1) = BUF(1)
 	DETAIL(NDET+2) = BUF(2)
 	DETAIL(NDET+3) = BUF(3)
@@ -2123,7 +2129,7 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	    MATCOL = .TRUE.
 	    READ (LINE(L+6:132),*,END=720) RGBMAT(1),RGBMAT(2),RGBMAT(3)
 	  ELSE IF (LINE(L:L+7).EQ.'BACKFACE') THEN
-	    FLAG(N) = OR(FLAG(N),INSIDE)
+	    FLAG(N) = ior(FLAG(N),INSIDE)
 	    READ (LINE(L+9:132),*,END=720) RED, GRN, BLU, PHONGM, SPECM
 	    MPHONG = PHONGM
 	    IF (PHONGM.LT.0) MPHONG = IPHONG
@@ -2162,10 +2168,10 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 c	    OK, we've established there's room to store this bound;
 c	    Flag all properties belonging to the parent material
 	      TYPE(NB) = INTERNAL
-	      FLAG(NB) = OR(FLAG(N),PROPS)
+	      FLAG(NB) = ior(FLAG(N),PROPS)
 	      IF(CLRITY.GT.0.0)THEN
-		FLAG(NB)=OR(FLAG(NB),TRANSP)
-		IF(CLROPT.EQ.1)FLAG(NB)=OR(FLAG(NB),MOPT1)
+		FLAG(NB) = ior(FLAG(NB),TRANSP)
+		IF (CLROPT.EQ.1) FLAG(NB) = ior(FLAG(NB),MOPT1)
 	      ENDIF
 	      NBDET = KDET(MATERIAL) + (NBOUNDS-1)*KDET(INTERNAL)
 	      LIST(NB) = NDET + NBDET
@@ -2293,18 +2299,18 @@ c		Most of the time BPRGB(1) is -1 to signal no special color
       ELSEIF (INTYPE.EQ.QUADRIC) THEN
 	NQUADS = NQUADS + 1
 	IF (MSTATE.EQ.MATERIAL) THEN
-	  FLAG(N) = OR(FLAG(N),PROPS)
+	  FLAG(N) = ior(FLAG(N),PROPS)
 	  NPROPS  = NPROPS + 1
 	  IF (CLRITY.GT.0) THEN
-	    FLAG(N) = OR(FLAG(N),TRANSP)
-	    IF (CLROPT.EQ.1) FLAG(N) = OR(FLAG(N),MOPT1)
+	    FLAG(N) = ior(FLAG(N),TRANSP)
+	    IF (CLROPT.EQ.1) FLAG(N) = ior(FLAG(N),MOPT1)
 	    NTRANSP = NTRANSP + 1
   	    ISTRANS = 1
 	  ENDIF
 	  IF (CLIPPING) THEN
-	    FLAG(N) = OR(FLAG(N),CLIPPED)
+	    FLAG(N) = ior(FLAG(N),CLIPPED)
 	  ENDIF
-	  IF (NBOUNDS.GT.0) FLAG(N) = OR(FLAG(N),BOUNDED)
+	  IF (NBOUNDS.GT.0) FLAG(N) = ior(FLAG(N),BOUNDED)
 	  IF (MATCOL) THEN
 	    BUF(5) = RGBMAT(1)
 	    BUF(6) = RGBMAT(2)
@@ -2422,8 +2428,8 @@ c		  if input line is not recognized
 	  IF (IPHONG.EQ.0) GOTO 54
 *	  Check for surface triangle (explicit normals in next record)
 CDEBUG	  "I+1" should be replaced by INEXT processing
-	  IF (TYPE(I+1).EQ.NORMS.AND.AND(FLAG(I+1),HIDDEN).EQ.0) THEN
-            FLAG(I) = OR( FLAG(I), SURFACE )
+	  IF (TYPE(I+1).EQ.NORMS.AND.iand(FLAG(I+1),HIDDEN).EQ.0) THEN
+            FLAG(I) = ior( FLAG(I), SURFACE )
 	    GOTO 54
 	  END IF
 	  IF (I.EQ.1) GOTO 54
@@ -2432,7 +2438,7 @@ CDEBUG	  "I+1" should be replaced by INEXT processing
 	  IPREV = I - 1
 	  INEXT = I + 1
 	  IF (TYPE(IPREV).NE.TRIANG .OR. TYPE(INEXT).NE.TRIANG) THEN
-	    FLAG(I) = AND( FLAG(I), NOT(RIBBON) )
+	    FLAG(I) = iand( FLAG(I), NOT(RIBBON) )
 	    GOTO 54
 	  END IF
 *         trailing vertex must match one in previous triangle
@@ -2454,10 +2460,10 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(J+II+6)) GOTO 54
 C	    IF   (DETAIL(KK).NE.DETAIL(L+II-3)
 C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
 	  END DO
-	  FLAG(I) = OR(FLAG(I),RIBBON)
+	  FLAG(I) = ior(FLAG(I),RIBBON)
 54	  CONTINUE
-	  IF (AND(FLAG(I),RIBBON).NE.0)  NRIB = NRIB + 1
-	  IF (AND(FLAG(I),SURFACE).NE.0) NSUR = NSUR + 1
+	  IF (iand(FLAG(I),RIBBON).NE.0)  NRIB = NRIB + 1
+	  IF (iand(FLAG(I),SURFACE).NE.0) NSUR = NSUR + 1
 	END IF
 55    CONTINUE
       IF (TYPE(N).EQ.TRIANG) NTRI = NTRI + 1
@@ -2869,7 +2875,7 @@ C         DO 240 IK = KSTART(ITILE,JTILE), KSTOP(ITILE,JTILE)
             K     = LIST(IND)
 	    IFLAG = FLAG(IND)
 *           skip if hidden surface
-	    IF (NHIDDEN.GT.0 .AND. AND(IFLAG,HIDDEN).NE.0) goto 240
+	    IF (NHIDDEN.GT.0 .AND. iand(IFLAG,HIDDEN).NE.0) goto 240
 *	    further tests depend on object type
             IF (TYPE(IND).EQ.TRIANG) THEN
               X1 = DETAIL(K+1)
@@ -2902,23 +2908,23 @@ C         DO 240 IK = KSTART(ITILE,JTILE), KSTOP(ITILE,JTILE)
               IF ( (S.LT.0. .OR. T.LT.0. .OR. U.LT.0.) .AND.
      &             (S.GT.0. .OR. T.GT.0. .OR. U.GT.0.) ) GO TO 240
 *	      Z-clipped triangles are easy
-	      IF (AND(IFLAG,CLIPPED).NE.0) THEN
+	      IF (iand(IFLAG,CLIPPED).NE.0) THEN
 		MIND = LIST(MLIST(IFLAG/65536))
 		IF ( ZP.GT.DETAIL(MIND+16)) GOTO 240
 		IF ( ZP.LT.DETAIL(MIND+17)) GOTO 240
 	      ENDIF
 *	      Use Phong shading for surface and ribbon triangles.
-	      IF (AND(IFLAG,SURFACE+VCOLS+VTRANS).NE.0) THEN
+	      IF (iand(IFLAG,SURFACE+VCOLS+VTRANS).NE.0) THEN
 		V = (Y3-Y1)*(X2-X1) - (X3-X1)*(Y2-Y1)
 		W = (XP-X1)*(Y3-Y1) - (YP-Y1)*(X3-X1)
 		ALPHA = W / V
 		BETA  = S / V
 	      ENDIF
-	      IF (AND(IFLAG,VCOLS+VTRANS).NE.0) THEN
+	      IF (iand(IFLAG,VCOLS+VTRANS).NE.0) THEN
 		DETAIL(14 + LIST(IND)) = ALPHA
 		DETAIL(15 + LIST(IND)) = BETA
 	      ENDIF
-	      IF (AND(IFLAG,SURFACE).NE.0) THEN
+	      IF (iand(IFLAG,SURFACE).NE.0) THEN
 C		CALL ASSERT(TYPE(IND+1).EQ.NORMS,'lost normals')
 		A1 = DETAIL(1 + LIST(IND+1))
 		B1 = DETAIL(2 + LIST(IND+1))
@@ -2936,7 +2942,7 @@ C		CALL ASSERT(TYPE(IND+1).EQ.NORMS,'lost normals')
 *	      normal of previous triangle for "trailing" vertex normal,
 *	      normal of next triangle for "leading" vertex normal.
 *	      Then we use linear interpolation of vertex normals.
-	      ELSE IF (AND(IFLAG,RIBBON).NE.0) THEN
+	      ELSE IF (iand(IFLAG,RIBBON).NE.0) THEN
 		IPREV = IND - 1
 		INEXT = IND + 1
 C		CALL ASSERT(TYPE(IPREV).EQ.TRIANG,'lost triangle')
@@ -2963,7 +2969,7 @@ C		CALL ASSERT(TYPE(INEXT).EQ.TRIANG,'lost triangle')
 *	      the 'object' being bounded. This means that rather than checking top
 *	      and bottom surfaces of the current object, we have to search for 
 *	      them in other triangle/facets of the same bounded material.
-	      IF (AND(IFLAG,BOUNDED).NE.0) THEN
+	      IF (iand(IFLAG,BOUNDED).NE.0) THEN
 	        MAT = IFLAG/65536
 		M = MLIST(MAT)+1
 		IF (.NOT.INBOUNDS( M, TYPE, LIST, DETAIL,
@@ -2987,7 +2993,7 @@ CORTEP		      but only if they are present.
 		    ELSE
 			MPARITY(MAT) = 0
 			IF (FLAG(INDTOP)/65536.EQ.MAT) THEN
-			  IF (AND(IFLAG,TRANSP).EQ.0) THEN
+			  IF (iand(IFLAG,TRANSP).EQ.0) THEN
      			    INDTOP = 0
 			    ZHIGH  = BACKCLIP
 			    ZTOP   = BACKCLIP
@@ -3041,12 +3047,12 @@ CORTEP		      but only if they are present.
 *             skip object if z not a new high
               DZ = SQRT(R2-(DX2+DY2))
 C	      Triggered by CLROPT=2
-	      IF (AND(IFLAG,TRANSP).NE.0 .AND.
-     &	          AND(IFLAG,INSIDE).NE.0)       DZ = -DZ
+	      IF (iand(IFLAG,TRANSP).NE.0 .AND.
+     &	          iand(IFLAG,INSIDE).NE.0)       DZ = -DZ
               ZP = Z+DZ
               IF (ZP.LE.ZHIGH) GO TO 240
 *	      Check bounding planes.
-	      IF (AND(IFLAG,BOUNDED).NE.0) THEN
+	      IF (iand(IFLAG,BOUNDED).NE.0) THEN
 	        ZBACK = Z-DZ
 		M = MLIST(IFLAG/65536)+1
 		IF (.NOT.INBOUNDS( M, TYPE, LIST, DETAIL,
@@ -3054,7 +3060,7 @@ C	      Triggered by CLROPT=2
      &		   GOTO 240
 	      ENDIF
 *	      Z-clipped spheres aren't too bad
-	      IF (AND(IFLAG,CLIPPED).NE.0) THEN
+	      IF (iand(IFLAG,CLIPPED).NE.0) THEN
 		MIND = LIST(MLIST(IFLAG/65536))
 		IF (ZP.GT.DETAIL(MIND+16)) THEN
 		  ZP = Z-DZ
@@ -3110,9 +3116,9 @@ C	      Triggered by CLROPT=2
               DZ = ZP - ZA
 *	      Check bounding planes. Unfortunately we have to get the
 *	      back surface first which means dummying up a call to CYLTEST
-	      IF (AND(IFLAG,BOUNDED).NE.0) THEN
+	      IF (iand(IFLAG,BOUNDED).NE.0) THEN
 	        ZBACK = ZP
-		ISCYL = CYLTEST( OR(IFLAG,INSIDE+TRANSP), AXFRAC,
+		ISCYL = CYLTEST( ior(IFLAG,INSIDE+TRANSP), AXFRAC,
      &		        X1,Y1,Z1, X2,Y2,Z2, XP,YP,ZBACK, R1, XA,YA,ZA)
 		M = MLIST(IFLAG/65536)+1
 		IF (.NOT.INBOUNDS( M, TYPE, LIST, DETAIL,
@@ -3120,10 +3126,10 @@ C	      Triggered by CLROPT=2
      &		   GOTO 240
 	      ENDIF
 *	      Z-clipped cylinders are messy
-	      IF (AND(IFLAG,CLIPPED).NE.0) THEN
+	      IF (iand(IFLAG,CLIPPED).NE.0) THEN
 		MIND = LIST(MLIST(IFLAG/65536))
 		IF (ZP.GT.DETAIL(MIND+16)) THEN
-		  ISCYL = CYLTEST( OR(IFLAG,INSIDE+TRANSP), AXFRAC,
+		  ISCYL = CYLTEST( ior(IFLAG,INSIDE+TRANSP), AXFRAC,
      &			   X1,Y1,Z1, X2,Y2,Z2, XP,YP,ZP, R1, XA,YA,ZA )
 		  IF (ZP.LE.ZHIGH) GOTO 240
 		  IF (ZP.GT.DETAIL(MIND+16)) GOTO 240
@@ -3137,7 +3143,7 @@ C	      Triggered by CLROPT=2
               NORMAL(2) = DY
               NORMAL(3) = DZ
 *	      if explicit vertex colors, need to keep fractional position
-	      IF (AND(IFLAG,OR(VCOLS,VTRANS)).NE.0) DETAIL(K+8) = AXFRAC
+	      IF (iand(IFLAG,ior(VCOLS,VTRANS)).NE.0) DETAIL(K+8) = AXFRAC
 *             update values for object having highest z here yet
 	      IF (NTRANSP.GT.0) THEN
 		CALL RANK( IND, ZP, NORMAL, FLAG )
@@ -3180,7 +3186,7 @@ C	      Triggered by CLROPT=2
 		IF (.NOT.ISQUAD) GO TO 240
 		IF (ZP.LE.ZHIGH) GO TO 240
 *	      Check bounding planes.
-	        IF (AND(IFLAG,BOUNDED).NE.0) THEN
+	        IF (iand(IFLAG,BOUNDED).NE.0) THEN
 		  M = MLIST(IFLAG/65536)
 		  IF (DETAIL(LIST(M+1)+1) .EQ. ORTEP) THEN
 		    CALL ORTEPBOUNDS( M+1, TYPE, LIST, DETAIL, XP,YP,ZP,
@@ -3209,7 +3215,7 @@ C	      Check against limiting sphere in 3D
 		MAYCLIP = .FALSE.
 		DZ2 = (ZP-Z)**2
 		IF (DX2+DY2+DZ2 .GT. R2) MAYCLIP = .TRUE.
-		IF (AND(IFLAG,CLIPPED).NE.0) THEN
+		IF (iand(IFLAG,CLIPPED).NE.0) THEN
 		  MIND = LIST(MLIST(IFLAG/65536))
 		  IF (ZP.GT.DETAIL(MIND+16)) MAYCLIP = .TRUE.
 		ENDIF
@@ -3220,7 +3226,7 @@ C	      Check against limiting sphere in 3D
 		    IF (ZP.LE.ZHIGH) GO TO 240
 		    DZ2 = (ZP-Z)**2
  		    IF (DX2+DY2+DZ2 .GT. R2) GO TO 240
-		    IF (AND(IFLAG,CLIPPED).NE.0) THEN
+		    IF (iand(IFLAG,CLIPPED).NE.0) THEN
 			IF (ZP.GT.DETAIL(MIND+16)) GO TO 240
 			IF (ZP.LT.DETAIL(MIND+17)) GO TO 240
 		    ENDIF
@@ -3304,7 +3310,7 @@ C
               IND   = MSHORT(IK)
 	      IFLAG = FLAG(IND)
 *             Ignore transparent objects except for the one being shaded
-	      IF (AND(IFLAG,TRANSP).NE.0 .AND. IND.NE.INDTOP) GOTO 260
+	      IF (iand(IFLAG,TRANSP).NE.0 .AND. IND.NE.INDTOP) GOTO 260
               K = MIST(IND)
               IF (TYPE(IND).EQ.TRIANG) THEN
                 X1 = SDTAIL(K+1)
@@ -3335,7 +3341,7 @@ C
                 IF ( (S.LT.0. .OR. T.LT.0. .OR. U.LT.0.) .AND.
      &               (S.GT.0. .OR. T.GT.0. .OR. U.GT.0.) ) GO TO 260
 *		Check bounding planes
-		IF (AND(IFLAG,BOUNDED).NE.0) THEN
+		IF (iand(IFLAG,BOUNDED).NE.0) THEN
 		  MAT = IFLAG/65536
 		  M = MLIST(MAT)+1
 		  IF (.NOT.INBOUNDS( M, TYPE, MIST, SDTAIL,
@@ -3378,7 +3384,7 @@ C
                 ZTEST = Z+DZ
                 IF (ZTEST.LE.ZSTOP) GO TO 260
 *	        Check bounding planes.
-	        IF (AND(IFLAG,BOUNDED).NE.0) THEN
+	        IF (iand(IFLAG,BOUNDED).NE.0) THEN
 	          ZBACK = Z-DZ
 		  M = MLIST(IFLAG/65536)+1
 		  IF (.NOT.INBOUNDS( M, TYPE, MIST, SDTAIL,
@@ -3409,8 +3415,8 @@ C
 *               skip object if z not a new high
                 IF (ZTEST.LE.ZSTOP) GO TO 260
 *	        Check bounding planes.
-	        IF (AND(IFLAG,BOUNDED).NE.0) THEN
-		  ISCYL = CYLTEST( OR(IFLAG,INSIDE+TRANSP), AXFRAC,
+	        IF (iand(IFLAG,BOUNDED).NE.0) THEN
+		  ISCYL = CYLTEST( ior(IFLAG,INSIDE+TRANSP), AXFRAC,
      &		          X1,Y1,Z1, X2,Y2,Z2, XS,YS,ZBACK, R1, XA,YA,ZA)
 		  M = MLIST(IFLAG/65536)+1
 		  IF (.NOT.INBOUNDS( M, TYPE, MIST, SDTAIL,
@@ -3445,7 +3451,7 @@ CDEBUG
 *               skip object if z not a new high
                 IF (ZTEST.LE.ZSTOP) GO TO 260
 *	        Check bounding planes.
-	        IF (AND(IFLAG,BOUNDED).NE.0) THEN
+	        IF (iand(IFLAG,BOUNDED).NE.0) THEN
 		  M = MLIST(IFLAG/65536)
 		  IF (DETAIL(LIST(M)+1) .EQ. ORTEP) THEN
 		    ISQUAD = QTEST( SDTAIL(K+1), SDTAIL(K+5),
@@ -3498,7 +3504,7 @@ C	  End of search for objects that shadow this one
 *
           K = LIST(INDTOP)
           IF (TYPE(INDTOP).EQ.TRIANG) THEN
-	    IF (AND(FLAG(INDTOP),VCOLS).NE.0) THEN
+	    IF (iand(FLAG(INDTOP),VCOLS).NE.0) THEN
 	      ALPHA = DETAIL(K+14)
 	      BETA  = DETAIL(K+15)
 	      INEXT = INDTOP + 1
@@ -3527,7 +3533,7 @@ C	  End of search for objects that shadow this one
             RGBCUR(2) = DETAIL(K+6)
             RGBCUR(3) = DETAIL(K+7)
 	  ELSEIF (TYPE(INDTOP).EQ.CYLIND) THEN
-	    IF (AND(FLAG(INDTOP),VCOLS).NE.0) THEN
+	    IF (iand(FLAG(INDTOP),VCOLS).NE.0) THEN
 	      FRAC = DETAIL(K+8)
 	      INEXT = INDTOP + 1
 	      IF (TYPE(INEXT).EQ.VERTRANSP) INEXT = INEXT + 1
@@ -3575,10 +3581,10 @@ C	  End of search for objects that shadow this one
             NORMAL(2) = -NORMAL(2)
             NORMAL(3) = -NORMAL(3)
 	    BACKFACE = .TRUE.
-	    IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
+	    IF (iand(FLAG(INDTOP),PROPS).NE.0) THEN
 		K = FLAG(INDTOP) / 65536
 		CALL ASSERT(K.GT.0,'lost material definition')
-		IF (AND(FLAG(MLIST(K)),INSIDE).NE.0) THEN
+		IF (iand(FLAG(MLIST(K)),INSIDE).NE.0) THEN
 		  K = LIST(MLIST(K))
 		  RGBCUR(1) = DETAIL(K+11)
 		  RGBCUR(2) = DETAIL(K+12)
@@ -3647,11 +3653,11 @@ c	  CALL ASSERT(ABS(ABSN-1.0).LT.0.02,'>> Abnormal normal')
 *	  Extra properties make specular highlighting calculation a
 *	  bit more complex. First we have to find the MATERIAL description.
 *
-	  IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
+	  IF (iand(FLAG(INDTOP),PROPS).NE.0) THEN
 	    K = FLAG(INDTOP) / 65536
 	    CALL ASSERT(K.GT.0,'lost material definition')
-	    IF (AND(FLAG(MLIST(K)),INSIDE).NE.0  .AND.
-     &		AND(FLAG(INDTOP),  INSIDE).NE.0) THEN
+	    IF (iand(FLAG(MLIST(K)),INSIDE).NE.0  .AND.
+     &		iand(FLAG(INDTOP),  INSIDE).NE.0) THEN
 	      K = LIST(MLIST(K))
 	      MPHONG  = DETAIL(K+14)
 	      SPECM   = DETAIL(K+15)
@@ -3673,7 +3679,7 @@ c	  CALL ASSERT(ABS(ABSN-1.0).LT.0.02,'>> Abnormal normal')
 	  ENDIF
 *
 *	  20-Feb-2000 Allow per-vertex transparency (obj type 18)
-	  IF (AND(FLAG(INDTOP),VTRANS).NE.0) THEN
+	  IF (iand(FLAG(INDTOP),VTRANS).NE.0) THEN
 	      IF (TYPE(INDTOP).EQ.CYLIND) THEN
                 K = LIST(INDTOP)
 	        FRAC = DETAIL(K+8)
@@ -3721,7 +3727,7 @@ C-ALT	    SBLEND = (1. - CLRITY*ABS(NL(3)))**2
 C
 C	  Final calculation of specular properties of special materials
 C
-	  IF (AND(FLAG(INDTOP),PROPS).NE.0) THEN
+	  IF (iand(FLAG(INDTOP),PROPS).NE.0) THEN
 	    DIFFM     = 1. - (SPECM + AMBIEN)
 	    SDIFF     = SDIFF * DIFFM / DIFFUS
 	    PDIFF     = PDIFF * DIFFM / DIFFUS
@@ -3733,7 +3739,7 @@ C
      &          PSPEC = PSP**MPHONG * PRIMAR*SPECM
 *	    de-emphasize highlights from inside surface of transparent objects
 *	    Could use BACKFACE flag instead of INSIDE to catch non-triangles
-	    IF (AND(FLAG(INDTOP),INSIDE).NE.0) THEN
+	    IF (iand(FLAG(INDTOP),INSIDE).NE.0) THEN
 		SSPEC = SSPEC * (1.-SPECM)
 		PSPEC = PSPEC * (1.-SPECM)
 	    ENDIF
@@ -3836,7 +3842,7 @@ C
 C       Transparency processing totally overhauled Feb 2001
 C	The first pass is sufficient if top object is opaque.
 	  IF (NTRANSP .EQ. 0) GOTO 299
-	  IF (INDEPTH.EQ.1 .AND. AND(FLAG(INDTOP),TRANSP).EQ.0) GOTO 299
+	  IF (INDEPTH.EQ.1 .AND. iand(FLAG(INDTOP),TRANSP).EQ.0) GOTO 299
 	  IF (ITPASS.EQ.1) THEN
 	      RGBLND(1)  = (1.-SBLEND)*BKGND(1) + TILE(1,I,J)
 	      RGBLND(2)  = (1.-SBLEND)*BKGND(2) + TILE(2,I,J)
@@ -4223,7 +4229,7 @@ C		zb = -99999.
 		cyltest = .false.
 		return
 	else
-		if (  and(flag,TFI) .eq. TFI) then
+		if ( iand(flag,TFI) .eq. TFI) then
 			dz = (-sqrt(Q) - A1) / (2.0 * A2)
 		else
 			dz = ( sqrt(Q) - A1) / (2.0 * A2)
@@ -4273,12 +4279,12 @@ c
 	end if
 c
 c Rounded cylinder end
-	if (AND(flag,FLAT) .eq. 0) then
+	if (iand(flag,FLAT) .eq. 0) then
 		if (dx2+dy2 .gt. r2) then
 			cyltest = .false.
 			return
 		else
-		    if (  and(flag,TFI) .eq. TFI) then
+		    if ( iand(flag,TFI) .eq. TFI) then
 			zb = za - sqrt(r2 - (dx2+dy2))
 		    else
 			zb = za + sqrt(r2 - (dx2+dy2))
@@ -4356,11 +4362,11 @@ C
       PARAMETER	(VCOLS=512, CLIPPED=1024, VTRANS=2048, BOUNDED=4096)
 *
 *     The MOPT1 flag signals an alternative mode of transparency
-	if (and(flag(ind),mopt1).ne.0) goto 400
+	if (iand(flag(ind),mopt1).ne.0) goto 400
 *
 	do i = 1, indepth
       	    if (zp.gt.zlist(i)) then
-	    	if (and(flag(ind),transp).eq.0) then
+	    	if (iand(flag(ind),transp).eq.0) then
 		    indepth    = i
 		    zhigh = zp
 		    goto 345
@@ -4375,7 +4381,7 @@ C
 		    indepth = indepth + 1
 		    goto 344
 		endif
-	    else if (and(flag(indlist(i)),TRANSP).eq.0) then
+	    else if (iand(flag(indlist(i)),TRANSP).eq.0) then
 	    	return
 	    endif
 	enddo
@@ -4396,7 +4402,7 @@ c
 	normlist(1,i) = normal(1)
     	normlist(2,i) = normal(2)
 	normlist(3,i) = normal(3)
-	if (and(flag(ind),transp).eq.0) zhigh = zp
+	if (iand(flag(ind),transp).eq.0) zhigh = zp
 	indtop = indlist(1)
   	ztop   = zlist(1)
 	return
@@ -4430,7 +4436,7 @@ c		In this case overwrite the lower MOPT1 surface
 		   normlist(3,j+1)= normlist(3,j)
 		enddo
 		goto 345
-	    else if (and(flag(indlist(i)),TRANSP).eq.0) then
+	    else if (iand(flag(indlist(i)),TRANSP).eq.0) then
 	    	return
 	    else if (flag(ind)/65536 .eq. flag(indlist(i))/65536) then
 	    	return

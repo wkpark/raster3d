@@ -15,7 +15,7 @@ and a number of ancillary programs that read atomic coordinates from
 PDB (Protein Data Bank) files to produce scene descriptions for input to render. 
 Raster3D can also render images composed using other programs such as 
 <a href="#refs">Molscript</a> and 
-<a href="http://www.scripps.edu/pub/dem-web/index.html">XtalView</a>.
+<a href="http://www.sdsc.edu/CCMS/Packages/XTALVIEW/">XtalView</a>.
 
 
 <div class="box">
@@ -254,16 +254,13 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
 
 <h4><a name="source">SOURCE</a></h4>
 <dl>
-<dt><i>anonymous ftp site:	</i>
-    <dd>ftp.bmsc.washington.edu /pub/raster3d/
 <dt><i>via WWW: </i>
     <dd><a href="http://www.bmsc.washington.edu/raster3d/raster3d.html">
         http://www.bmsc.washington.edu/raster3d/raster3d.html</a>
 <dt><i>contact: 	</i>
     <dd>Ethan A Merritt
-    <br>Dept of Biological Structure
-    <br>University of Washington,
-    <br>Seattle WA 98195-7742
+    <br>Biomolecular Structure Center
+    <br>University of Washington
     <br>merritt@u.washington.edu
 </dl>
 
@@ -295,15 +292,8 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
 	development project via anonymous ftp from 
 	<a href="ftp://ftp.uu.net/graphics/jpeg/">ftp.uu.net/graphics/jpeg/</a>.
     <dt>ImageMagick
-    <dd>In order to view the rendered images on a workstation screen you must 
-	also obtain and install an image viewer. 
-	Two commonly available viewers are John Christy's 
-	<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">
-	ImageMagick</a> 
-	(also available via anonymous ftp from 
-	<a href="ftp://ftp.x.org"> 
-	ftp.x.org </a>) 
-	and John Bradley's xv.
+    <dd>For full functionality you must also obtain and install a copy of
+	<a href="http://ImageMagick.org"> ImageMagick</a> 
     <dt>Ghostscript
     <dd>Used only by the label-processing tools 
 	<a href="r3dtops.html">r3dtops</a> and <a href="label3d">label3d</a>.
@@ -311,14 +301,15 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
 
 <h5>Some other programs with direct Raster3D output modes:</h5>
 <dl>
+    <dt>Coot
+    <dd>The contents of the current view window in a Coot session may be rendered in 
+	Raster3D using the &lt;F8&gt; hotkey. More complicated scripting from Coot
+	is also possible. Coot web page:
+	<a href="http://www.ysbl.york.ac.uk/~emsley/coot/">
+	http://www.ysbl.york.ac.uk/~emsley/coot/</a>.
     <dt>Molscript
     <dd>Figures composed in Molscript can be rendered in Raster3D rather than
-	being printed as PostScript images.  The features of Raster3D version
-	2.0 are supported by Moslcript version 1.4 (with a couple of additional
-	patches that come in the Raster3D distribution).  To obtain Molscript
-	please contact Per Kraulis directly (Email:
-	<a href="mailto:pjk@avatar.se">pjk@avatar.se</a>). There is now a
-	Molscript web page at 
+	being printed as PostScript images.  The Molscript web page is
 	<a href="http://www.avatar.se/molscript">
 	http://www.avatar.se/molscript</a>.
     <dt>ORTEP and the small molecule world
@@ -331,11 +322,6 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
 	Raster3D rendering options is WinGX, available from 
 	<a hred="http://www.chem.gla.ac.uk/~louis/software">
 	http://www.chem.gla.ac.uk/~louis/software</a>.
-    <dt>TkRaster3D
-    <dd> an X11-based front-end (GUI) for the Raster3D programs developed by 
-	Hillary Gilson at NIST, 
-	<a href="http://www.cstl.nist.gov/div831/TkRaster3D/">
-	http://www.cstl.nist.gov/div831/TkRaster3D/</a>
     <dt>VMD
     <dd>Biomolecular visualization tool from the Theoretical Biophysics group 
 	at the University of Illinois, 
@@ -350,18 +336,10 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
     <dd> General crystallographic model building, map fitting, and 
 	analysis program by Duncan McRee, available in both academic and 
 	commercial versions, 
-	<a href="http://www.scripps.edu/pub/dem-web/index.html">
-	http://www.scripps.edu/pub/dem-web/index.html</a>
+	<a href="http://www.sdsc.edu/CCMS/Packages/XTALVIEW/">
+	http://www.sdsc.edu/CCMS/Packages/XTALVIEW/</a>
 </dl>
 <br>
-
-Several auxiliary programs are available from the ftp site above which may be
-useful, though they have not been kept up to date with the current Raster3D
-version. These include two attempts to aid in the composition of Raster3D
-images (atoms, preras3d) and tools for conversion to half-toned monochrome
-images and annotation and display of the images (viewtools). Most of the code
-was written specifically for SGI workstations, and may not transport well to
-other platforms.
 
 <h4>
 <a name="authors">AUTHORS </a></h4>

@@ -42,12 +42,11 @@ even labels which should be occluded by a foreground object.
  
 .B contact:		
  	Ethan A Merritt
- 	Dept of Biological Structure Box 357742
  	University of Washington, Seattle WA 98195
  	merritt@u.washington.edu
 
 .SH SEE ALSO
-render(l), r3dtops(l), Raster3D(l), stereo3d(l)
+render(l), r3dtops(l), raster3d(l), stereo3d(l)
 .PP
 .SH AUTHORS
 

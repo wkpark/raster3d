@@ -34,16 +34,11 @@ in /usr/tmp.
 </p>
 
 <p>
-<font color=red><b>Note</b></font>: stereo3d has been rewritten for version 2.6e<br>
 <ul>
-<li>The syntax of the stereo3d command has been changed (V2.6d) to
-match that of render. Input is from <i>stdin</i>, output is to <i>stdout</i> unless 
-a filename is given as a parameter to the -tiff or -png switches.
-<li>Earlier versions of stereo3d generated stereo separation by applying a
-shear operator to the left and right images.  This is still the default, but the
-new -angsep option allows you to instead generate stereo separation by rotation rather
-than shear.  Neither method is perfect, so you can't win.  Below is a summary of
-the weak points of the two methods.
+<li>By default stereo3d generates stereo separation by applying a shear operator
+to the left and right images.  The -angsep option allows you to instead generate
+stereo separation by rotation rather than shear.  Neither method is perfect,
+so you can't win.  Below is a summary of the weak points of the two methods.
 </ul>
 <pre>
                                 shear           rotation
@@ -84,8 +79,7 @@ overriding whatever values are given in the input file.
 
 <h4>ENVIRONMENT</h4>
 This script requires the
-<a href="http://www.wizards.dupont.com/cristy/ImageMagick.html">
-ImageMagick</a> image processing package. 
+<a href="http://imagemagick.org"> ImageMagick</a> image processing package. 
 
 The default version of stereo3d invokes the <a href="label3d.html">label3d</a>
 script so that labels are processed in stereo also.  If label3d processing
