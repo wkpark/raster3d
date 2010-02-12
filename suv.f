@@ -3,19 +3,63 @@ C       ===============================================================
 C	Correlation coefficient between two (3x3) anisotropic 
 C	displacement matrices Uij and Vij.
 C	See Merritt (1999) Acta Crystallographica D55, 1997-2004.
+C	Return 0 if any of the tensors involved are NPD
 C       ===============================================================
+	REAL CCuij V3VINV
 	REAL UU(3,3), VV(3,3), WW(3,3), UI(3,3), VI(3,3), WI(3,3)
 	REAL DUI, DVI, DWI
 	DUI = 1. / V3INV(UI,UU)
 	DVI = 1. / V3INV(VI,VV)
-	IF (DUI.LE.0 .OR. DVI.LE.0) THEN
+C	Sylvester's criterion for NPD tensor
+	IF (DUI.LE.0 .OR. UU(1,1).LE.0 
+     &   .OR. (UU(1,1)*UU(2,2)-UU(1,2)*UU(2,1)).LE.0) THEN
+		CCuij = 0
+		RETURN
+	ENDIF
+	IF (DVI.LE.0 .OR. VV(1,1).LE.0 
+     &   .OR. (VV(1,1)*VV(2,2)-VV(1,2)*VV(2,1)).LE.0) THEN
 		CCuij = 0
 		RETURN
 	ENDIF
 	CALL M3ADD(WI,UI,VI)
 	DWI = V3INV(WW,WI)
+	IF (DWI.LE.0 .OR. WW(1,1).LE.0
+     &   .OR. (WW(1,1)*WW(2,2)-WW(1,2)*WW(2,1)).LE.0) THEN
+		CCuij = 0
+		RETURN
+	ENDIF
 	CCuij 	= sqrt(sqrt(DUI*DVI))
      &		/ sqrt(0.125*DWI)
+	RETURN
+	END
+
+
+	FUNCTION CCuv(U,V)
+C       ===============================================================
+C	Wrapper for CCuij()
+C       ===============================================================
+	REAL CCuv, CCuij
+	REAL U(6), V(6)
+	REAL UU(3,3), VV(3,3)
+	UU(1,1) = U(1)
+	UU(2,2) = U(2)
+	UU(3,3) = U(3)
+	UU(1,2) = U(4)
+	UU(2,1) = U(4)
+	UU(1,3) = U(5)
+	UU(3,1) = U(5)
+	UU(2,3) = U(6)
+	UU(3,2) = U(6)
+	VV(1,1) = V(1)
+	VV(2,2) = V(2)
+	VV(3,3) = V(3)
+	VV(1,2) = V(4)
+	VV(2,1) = V(4)
+	VV(1,3) = V(5)
+	VV(3,1) = V(5)
+	VV(2,3) = V(6)
+	VV(3,2) = V(6)
+	CCuv = CCuij(UU,VV)
 	RETURN
 	END
 
@@ -25,6 +69,7 @@ C	Normalized correlation coefficient ("similarity") between two
 C	anisotropic displacement vectors Uij and Vij.
 C	See Merritt (1999) Acta Crystallographica D55, 1997-2004.
 C       ===============================================================
+	REAL Suv, CCuij
 	REAL U(6), V(6)
 	REAL UU(3,3), VV(3,3), Uiso(3,3), Viso(3,3), WW(3,3)
 	REAL Ueq, Veq

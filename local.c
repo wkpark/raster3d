@@ -68,10 +68,10 @@
 #undef jpeg_create_compress
 #endif
   /* JPEG data structures */
-  struct jpeg_compress_struct	cinfo;
-  struct jpeg_error_mgr      	jerr;
-  JSAMPLE			*jpeg_pixels;
-  JSAMPROW			jpeg_row[1];
+  static struct jpeg_compress_struct	cinfo;
+  static struct jpeg_error_mgr      	jerr;
+  static JSAMPLE			*jpeg_pixels;
+  static JSAMPROW			jpeg_row[1];
 #endif
 
 #ifdef PNG_SUPPORT
@@ -80,9 +80,9 @@
 #  define png_jmpbuf(png_ptr) ((png_ptr)->jmpbuf)
 #endif
   /* PNG data structures */
-  png_structp png_ptr;
-  png_infop   info_ptr;
-  png_text    text_ptr[2];
+  static png_structp png_ptr;
+  static png_infop   info_ptr;
+  static png_text    text_ptr[2];
 #endif
 
 /* Pick up version number from same include file used by Makefile */
@@ -272,7 +272,7 @@ if (*option == 0)
       {
 	fprintf(stderr, "\n%s",program_name);
       	if (strncmp( (char *)buffer1, "-help", 5) != 0)
-	    fprintf(stderr, "\n Unfamiliar switch: %12.12s", buffer1);
+	    fprintf(stderr, "\n Unfamiliar switch: %12.12s", (char *)buffer1);
 	fprintf(stderr, "\n\n Usage:");
 	fprintf(stderr, "\n   input from stdin; output mode controlled from command line \n");
 	fprintf(stderr,
@@ -757,8 +757,8 @@ else if (*option == 4)
 #ifdef JPEG_SUPPORT
     if (mode == 4)
 	{
-	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char*)program_name,strlen(program_name));
-	jpeg_write_marker(&cinfo,JPEG_COM,"\n",2);
+	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char *)program_name,strlen(program_name));
+	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char *)"\n",2);
 	jpeg_write_marker(&cinfo,JPEG_COM,(unsigned char *)buffer1,80);
 	}
     else

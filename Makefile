@@ -61,12 +61,16 @@ linux-gfortran:	strip-for-g77
 	@cp Makefile.template Makefile.incl
 	@echo OS = linux                      >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
-	@echo CFLAGS = -g -w -Dgfortran       >> Makefile.incl
+	@echo CFLAGS = -g -Wall -Dgfortran    >> Makefile.incl
 	@echo FC = gfortran                   >> Makefile.incl
-	@echo FFLAGS = -g -w -O -ffixed-line-length-132 >> Makefile.incl
+	@echo FFLAGS = -g -w -O3 -Wtabs -ffixed-line-length-132 >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl
+	@echo                                 >> Makefile.incl
+	@echo qinp.o: qinp.f                  >> Makefile.incl
+	@echo "	\$$(FC) -g -O0 -Wall -Wtabs -c -o qinp.o qinp.f" >> Makefile.incl
+	@echo                                 >> Makefile.incl
 
 linux-pgf77:
 	@cp Makefile.template Makefile.incl
@@ -201,15 +205,16 @@ rastep:	rastep.f quadric.o suv.o
 	rastep.f quadric.o suv.o $(LDFLAGS) \
 	-o rastep 
 
-render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o
+render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o qinp.o
 	$(FC) $(FFLAGS) \
 	render.o local.o quadric.o parse.o r3dtops.o ungz.o \
+	qinp.o \
 	$(LIBS) $(LDFLAGS) \
 	-o render
 
-normal3d:	normal3d.o quadric.o ungz.o parameters.incl
+normal3d:	normal3d.o quadric.o qinp.o ungz.o parameters.incl
 	$(FC) $(FFLAGS) \
-	normal3d.o quadric.o ungz.o $(LDFLAGS) \
+	normal3d.o quadric.o ungz.o qinp.o $(LDFLAGS) \
 	-o normal3d
 
 stereo3d:
@@ -220,18 +225,18 @@ label3d:
 # Install
 #
 install:	all
-	if [ ! -e $(prefix)  ] ; then mkdirhier $(prefix) ; fi
-	if [ ! -e $(bindir)  ] ; then mkdirhier $(bindir) ; fi
+	if [ ! -e $(prefix)  ] ; then mkdir -p $(prefix) ; fi
+	if [ ! -e $(bindir)  ] ; then mkdir -p $(bindir) ; fi
 	chmod 755 $(PROGS);   cp $(PROGS) $(bindir)
 	chmod 755 $(SCRIPTS); cp $(SCRIPTS) $(bindir)
-	if [ ! -e $(datadir) ] ; then mkdirhier $(datadir) ; fi
+	if [ ! -e $(datadir) ] ; then mkdir -p $(datadir) ; fi
 	cp materials/* $(datadir)
-	if [ ! -e $(mandir)  ] ; then mkdirhier $(mandir) ; fi
+	if [ ! -e $(mandir)  ] ; then mkdir -p $(mandir) ; fi
 	cp doc/*.l $(mandir)
-	if [ ! -e $(htmldir) ] ; then mkdirhier $(htmldir) ; fi
+	if [ ! -e $(htmldir) ] ; then mkdir -p $(htmldir) ; fi
 	cp html/* $(htmldir)
-	if [ ! -e $(examdir) ] ; then mkdirhier $(examdir) ; fi
-	if [ ! -e $(examdir)/msms ] ; then mkdirhier $(examdir)/msms ; fi
+	if [ ! -e $(examdir) ] ; then mkdir -p $(examdir) ; fi
+	if [ ! -e $(examdir)/msms ] ; then mkdir -p $(examdir)/msms ; fi
 	cp -R examples/* $(examdir)
 	@echo ""
 	@echo "	********************************************"

@@ -102,6 +102,7 @@
 *     Initial entry
 *     Open file for PostScript output
 *
+      LEN = 80
       DO I = 80,2,-1
          IF (FILENAME(I:I).EQ.' ') LEN = I - 1
       END DO
@@ -289,6 +290,7 @@ c     Read in next object
 c
 c	Here is where Perl would shine
 c
+	len = 0
 	DO i=1,80
 	    if (fontname(i:i).ne.' ') len = i
 	enddo

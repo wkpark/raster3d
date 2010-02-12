@@ -28,6 +28,7 @@ tar:	../$(TARFILE)
 #
 rpm:		../$(TARFILE) rpm_build
 rpm_build:
-	cp ../Raster3D_$(VERSION).tar.gz /usr/src/RPM/SOURCES/
-	rpm -ba --target i586 raster3d-$(VERSION).spec
+	cp ../Raster3D_$(VERSION).tar.gz /usr/src/rpm/SOURCES/
+	rpmbuild -ba --target i586 raster3d-$(VERSION).spec
+#	rpmbuild -ba --target x86_64 raster3d-$(VERSION).spec
 

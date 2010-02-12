@@ -44,6 +44,7 @@ c
       PARAMETER (MAXCOL=5000, MAXATM=10000)
 C     REAL RGB(3,MAXCOL)
       REAL RADIUS(MAXCOL)
+      REAL RAD
       CHARACTER*24 MASK(MAXCOL),TEST
       CHARACTER*80 ATOM(MAXATM),CARD
       LOGICAL SMATCH
@@ -55,6 +56,7 @@ C	finding translation, center, and scale.  Afterwards the input matrix
 C	to RENDER is therefore the identity matrix.
 C EAM Aug 1997 - Honor COLOUR requests
 C EAM Nov 1999 - remove all (q) formats
+C EAM Jan 2010 - declare and initialize RAD
 C                                                     
 c
 	common /COLORS/ ischeme, cindex, COLOR1(3), COLOR2(3), COLOR3(3)
@@ -65,8 +67,7 @@ c
 	common /FLAGS/  mflag, hflag, dflag
 	logical		mflag, hflag, dflag
 c
-	character*64	in_file, out_file
-	character*8	mode
+	character*64	in_file
 	character*32	flags
 	character*80	line
 	common /matrix/ matrix, coords
@@ -167,6 +168,7 @@ C
       YMIN =  1E20
       ZMAX = -1E20
       ZMIN =  1E20
+      RAD  =  1.7
 
       DO 100 IATM=1,NATM
         CARD = ATOM(IATM)
@@ -179,16 +181,17 @@ C
      1  	  + coords(3)*matrix(3,2)
 		z = coords(1)*matrix(1,3) + coords(2)*matrix(2,3)
      1  	  + coords(3)*matrix(3,3)
-            RAD = RADIUS(ICOL)
             SPAM(1,IATM) = X
             SPAM(2,IATM) = Y
             SPAM(3,IATM) = Z
-            SPAM(4,IATM) = RAD
+c           SPAM(4,IATM) = RAD
 C
 C	    EAM Aug 1997 - finally get around to honoring atom colors
 	    DO 84 ICOL = 1, NCOL
 		IF (SMATCH(TEST,MASK(ICOL))) THEN
 		    SCAM(IATM) = ICOL
+		    RAD = RADIUS(ICOL)
+		    SPAM(4,IATM) = RAD
 		    GOTO 86
 		ENDIF
    84	    CONTINUE
@@ -274,7 +277,7 @@ c	because smoothed curve doesn't go through guide points.
 	read  (line,*,end=158,err=158) nchord
   158	continue
 	if (nchord.le.1) nchord = 10
-  159	continue
+
 	write (noise,160)
   160	format(' Coloring schemes available:',
      1	/,' 0 or 1: solid color (RGB values from color1 below)',
@@ -415,9 +418,8 @@ c
 	common /FLAGS/  mflag, hflag, dflag
 	logical		mflag, hflag, dflag
 c
-	real	s(ndata1)
-	REAL	XP(4,NDATA)
-	REAL	TEMP1(NDATA), TEMP2(NDATA)
+c	real	s(ndata1)
+c	REAL	XP(4,NDATA)
 	real	smooth(4,nspln,2)	! npt*nchord points on splined curve
 	real	color(3)
 c
@@ -462,12 +464,6 @@ c
 	    end do
  1100	continue
 C
-
-	if (mflag) then
-		assign 3 to iformat
-	else
-		assign 2 to iformat
-	end if
     2	format(9f8.3,2x,3f5.2)
     3	format('1',/,9f8.3,2x,3f5.2)
 c
@@ -499,18 +495,32 @@ c
 		call colorit( color, fraction,
      1  	  smooth(1,ires,1), smooth(1,jres,2), smooth(1,inext,1))
 c
-		write (output,iformat) (smooth(i,ires,  1),i=1,3),
+		if (mflag) then
+			write (output,3) (smooth(i,ires,  1),i=1,3),
      1  		          (smooth(i,jres,  2),i=1,3),
      2  		          (smooth(i,inext,1),i=1,3),
      3  		          color
+ 		else
+			write (output,2) (smooth(i,ires,  1),i=1,3),
+     1  		          (smooth(i,jres,  2),i=1,3),
+     2  		          (smooth(i,inext,1),i=1,3),
+     3  		          color
+ 		endif
 c
 		if (jres .eq. kres) goto 2100
 		call colorit( color, fraction,
      1  	  smooth(1,kres,2), smooth(1,inext,1), smooth(1,jres,2))
-		write (output,iformat) (smooth(i,jres,  2),i=1,3),
+		if (mflag) then
+			write (output,3) (smooth(i,jres,  2),i=1,3),
      1  		          (smooth(i,inext,1),i=1,3),
      2  		          (smooth(i,kres,  2),i=1,3),
      3  		          color
+		else
+			write (output,2) (smooth(i,jres,  2),i=1,3),
+     1  		          (smooth(i,inext,1),i=1,3),
+     2  		          (smooth(i,kres,  2),i=1,3),
+     3  		          color
+		end if
 		jres = kres
 		if (kres .lt. iout) kres = kres + 1
  2100	continue

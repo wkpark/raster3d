@@ -1,4 +1,30 @@
-11-May-2006	rings3d.f: gfortran/irix6 compatibility tweak (INTEGER iargc)
+12-Feb-2010	Release 2.9-1
+12-Feb-2010	added escape characters for dollar sign in $(FC) in Makefile
+26-Jan-2010	bring ribbon.f ribbon1.f into the gfortran era
+22-Jan-2010	commit my current source tree to cvs repository on verdandi
+22-Jan-2010	avs2ps.c: more brackets in the initializer for avail[][]
+		local.c:  add casts to quiet compiler warning
+22-Dec-2009	render.f: initialize fullname character storage
+03-Dec-2009	suv.f: CCuv() was failing to initialize VV(3,2)
+22-Oct-2009	VERSION VERSION.incl: bump version to 2.9EAM
+22-Oct-2009	rastep.f: -aniso flag to include isotropic atoms in the analysis
+12-Oct-2009	suv.f:		additional checks for NPD matrices
+02-Sep-2009	suv.f:		wrapper function CCuv
+		rastep.f:	Calculate CCuij for C-N bonds
+19-Aug-2009	rastep.f   slight modification to format of output from -tabulate
+04-Nov-2008	rings3d.f: -ribose option
+15-Aug-2008	rings3d.f: Initialize nhits array
+		           Allow for left-shifted atom labels in input PDB file
+13-Mar-2008	qinp fails if compiled with gfortran and -On (n > 0)
+		so break out qinp.f into separate file for non-optimized compilation
+07-Mar-2008
+		Release 2.7s   (band-aid release to support recent gfortran)
+07-Mar-2008	render.f Makefile local.c normal3d.f quadricf parse.f rastep.f
+		yet more initializers to make gfortran happy
+		static structures in local.c
+		gfortran optimization level must be -O2 or -O3 (else bad code)
+25-Feb-2008	render.f	 	Initialize NSXMAX, NSYMAX to zero
+25-Feb-2008	VERSION VERSION.incl	Development version on skuld versioned as 2.7s
 		Release 2.7d
  3-May-2006	rastep.f: gfortran requires initialization to zero!
 12-Apr-2006	label3d: ImageMagick 6+ requires different syntax to set transparency

@@ -320,6 +320,11 @@ c
       sepang = 0.0
       TMPNAM = '_'
 c
+c	various tmp variables that gfortran wants to have initialized
+      IALIGN = 0
+      lentmp = 1
+c
+c
       i     = 1
       NARG  = IARGC()
    10 continue
@@ -391,10 +396,8 @@ c
       IF (SFLAG) THEN
 	HFLAG = .TRUE.
 	OPEN(UNIT=LEFT,FILE=TMPNAM(1:lentmp)//'left.r3d',
-     &       CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
 	OPEN(UNIT=RIGHT,FILE=TMPNAM(1:lentmp)//'right.r3d',
-     &       CARRIAGECONTROL='LIST',
      &	     STATUS='UNKNOWN')
       ENDIF
 *
@@ -804,6 +807,7 @@ c     Aug 1996 - allow file indirection
 	  IF (LINE(I:I).EQ.CHAR(0)) K = I-1
 	  IF (LINE(I:I).EQ.'	') LINE(I:I) = ' '
  	ENDDO
+	IF (J.EQ.1) GOTO 74
 	DO I=J,K
 	  IF (LINE(I:I).NE.' ') L = I
 	ENDDO
@@ -824,7 +828,6 @@ cdebug	    it doesn't support dispose='DELETE'.
 	    if (verbose) 
      &		write(noise,*) 'Creating temporary file: ',fullname(j:k)
 	    open (unit=input0+ilevel,err=74,status='OLD',
-     &            DISPOSE='DELETE',
      &		  file=fullname(j:k))
 	    fullname = line(2:132)
 	    goto 72
@@ -1210,9 +1213,9 @@ c
      	    goto 772
   771	    read (input,*,err=48) ((RAFTER(i,j),j=1,3),i=1,3)
   772	    continue
-  774       WRITE (NOISE,775) ((RAFTER(I,J),J=1,3),I=1,3)
+	    WRITE (NOISE,775) ((RAFTER(I,J),J=1,3),I=1,3)
   775       FORMAT('Post-rotation matrix:  ',3(/,3F10.4))
-  	    d = det(rafter)
+ 	    d = det(rafter)
 	    IF (ABS(1.0-ABS(D)).GT.0.02) WRITE (NOISE,*)
      &      '>>> Warning: Post-rotation matrix has determinant',D
 	    call qsetup

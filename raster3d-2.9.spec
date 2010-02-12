@@ -1,7 +1,7 @@
 Summary: Raster3D photorealistic molecular graphics package
 Name: Raster3D
-Version: 2.7d
-Release: 4
+Version: 2.9
+Release: 1
 %define  r3dver %{name}_%{version}
 License: Source freely available, redistribution restricted
 Source: http://www.bmsc.washington.edu/raster3d/%{name}_%{version}.tar.gz
@@ -41,7 +41,7 @@ if [ -x $PGI/linux86/bin/pgf77 ]; then
   make all FFLAGS='-O -Munroll -tp px' PLIBS='/usr/lib/libpng.a'
 elif [ -x /usr/bin/gfortran ]; then
   make linux-gfortran
-  make all FFLAGS="-g -w -O -ffixed-line-length-132" CFLAGS="-Dgfortran $RPM_OPT_FLAGS"
+  make all FFLAGS="-g -Wall -O3 -ffixed-line-length-132" CFLAGS="-Dgfortran $RPM_OPT_FLAGS"
 else
   make linux
   make all FFLAGS="$RPM_OPT_FLAGS" CFLAGS="$RPM_OPT_FLAGS"
@@ -144,6 +144,8 @@ fi
 
 
 %changelog
+* Fri Mar  7 2008 EAM
+- More gfortran initialization problems
 * Wed May  3 2006 EAM
 - rastep was suffering from gfortran + uninitialized arrays
 * Tue Apr 12 2006 EAM

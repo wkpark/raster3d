@@ -1,0 +1,10 @@
+15-Aug-2008
+===========
+
+rings3d
+-------
+fix - initialize [some] arrays in rings3d.f
+add - residue type PDC (test case; requested by user).
+fix - name match is column sensitive but PDB is flaky.
+      recode to ignore leading whitespace
+      Not tested very heavily!

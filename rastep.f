@@ -3,13 +3,15 @@
 *
 * Usage: 
 *    rastep [-h] [-iso] [-Bcolor Bmin Bmax] [-prob xx] [-radius r] [-fancy[0-9]]
-*           [-tabulate histogram.file] [-by_atomtype] [-suv_check]
+*           [-tabulate histogram.file] [-by_atomtype] [-suv_check] [-cn_check]
 *
 *
 *	-auto		auto-orientation of viewpoint
 *	-h		suppresses header records in output
 *	-iso		forces isotropic B values (spheres rather than
 *			ellipsoids) even if ANISOU cards present
+*	-aniso		converts isotropic B values into Uij terms so that they
+*			can be included in the analysis
 *	-Bcolor Bmin Bmax 
 *			color by Biso values; Bmin = dark blue, Bmax = light red
 *	-Acolor		color by anisotropy;  red < white (A=0.5) < green
@@ -41,6 +43,7 @@
 *	-nohydrogens	don't plot hydrogens even if present
 *	-mini		small size plot (176x208) with auto-orientation
 *	-suv_check	use Suv to validate similarity of bonded ellipsoids
+*	-cn_check	use CCuij to check similarity across C-N bonds
 *
 ********************************************************************************
 *
@@ -74,6 +77,11 @@
 * EAM May 2003	- expand default color table to allow for off-by-one atom names
 * EAM Oct 2003	- trap and report 0 values for axial Uij components in input
 * EAM May 2006	- initial arrays to 0 for gfortran
+* EAM Feb 2008	- 2.7s initialize even more arrays for gfortran
+* EAM Aug 2009	- slightly revised output format for -tabulate
+* EAM Sep 2009	- Explicitly test CCuij for C-N bonds
+* EAM Oct 2009	- report CCuij = if C or N is NPD
+*		  -aniso flag
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -92,7 +100,7 @@
       character*1  spacer
       LOGICAL MATCH
       logical		hflag, ellipses, bcflag, tflag, atflag, comflag
-      logical		acflag, nohydro, mini, auto
+      logical		acflag, nohydro, mini, auto, aniflag
       integer           fancy
       character*80	flags
 c
@@ -133,9 +141,12 @@ c
       integer	hdist(110), comlun, dshells
 c
 c     Support for validation of similarity of bonded atoms
-      logical	suvflag
-      integer	suvlun, suvbad
+      logical	suvflag, cnflag
+      integer	suvlun, suvbad, cnlun, cnbad
+      character*1  prevchain
+      character*10 name_i, name_j
       real	anisov(6)
+      real      cn_min_ccuij
 c
 c     Default to CPK colors and VDW radii
       integer DEFCOLS
@@ -188,15 +199,19 @@ c
 	atflag   = .false.
 	comflag  = .false.
 	suvflag  = .false.
+	cnflag   = .false.
 	ellipses = .true.
 	hwhacky  = .false.
 	nohydro  = .false.
 	mini     = .false.
 	auto     = .false.
+	aniflag  = .false.
 	fancy    = 0
 	prob     = 0.50
 	radius   = 0.10
 	nerrors  = 0
+c
+	prevchain = '@'
 c
 c	Gfortran is nuts
 	wsum = 0
@@ -212,6 +227,26 @@ c	Gfortran is nuts
 	    adist(i) = 0
 	    hdist(i) = 0
 	enddo
+	do i = 1,3
+	    do j = 1,3
+	        Rr(i,j) = 0
+	    enddo
+	enddo
+	do i = 1,4
+	    eigens(i) = 0
+	    do j = 1,4
+	        evecs(i,j) = 0
+		evecinv(i,j) = 0
+		evecit(i,j) = 0
+		qq(i,j) = 0
+		qp(i,j) = 0
+		temp(i,j) = 0
+		U(i,j) = 0
+	    enddo
+	enddo
+	do i = 1,5
+	    Xmom(i) = 0
+	enddo
 c
 	narg = iargc()
 	i = 1
@@ -221,6 +256,7 @@ c
 	    if (flags(1:6) .eq. '-debug') verbose = .true.
 	    if (flags(1:2) .eq. '-h') hflag = .true.
 	    if (flags(1:4) .eq. '-iso') ellipses = .false.
+	    if (flags(1:6) .eq. '-aniso') aniflag = .true. 
 	    if (flags(1:4) .eq. '-rad') then
 		i = i + 1
 		if (i.gt.narg) goto 701
@@ -287,8 +323,8 @@ c
 		if (flags(1:1) .ne. '-') then
 		    hislun = 1
 		    open(unit=hislun,file=flags,status='UNKNOWN'
-     &		    , CARRIAGECONTROL='LIST'
      &              )
+		    i = i + 1
 		endif
 	    endif
 	    if (flags(1:4) .eq. '-com') then
@@ -299,8 +335,8 @@ c
 		if (flags(1:1) .ne. '-') then
 		    comlun = 2
 		    open(unit=comlun,file=flags,status='UNKNOWN'
-     &		    , CARRIAGECONTROL='LIST'
      &              )
+		    i = i + 1
 		endif
 	    endif
 	    if (flags(1:4) .eq. '-suv') then
@@ -310,7 +346,20 @@ c
 		if (i.ge.narg) goto 799
 		call getarg(i+1,flags)
 		if (flags(1:1) .ne. '-') then
-		read (flags,*,err=701) suvlimit
+		    read (flags,*,err=701) suvlimit
+		    i = i + 1
+		endif
+	    endif
+	    if (flags(1:9) .eq. '-cn_check') then
+		cnflag = .true.
+		cnlun = NOISE
+		cn_min_ccuij = 0.95
+		if (i.ge.narg) goto 799
+		call getarg(i+1,flags)
+		if (flags(1:1) .ne. '-') then
+		    cnlun = 3 
+		    open(unit=cnlun,file=flags,status='UNKNOWN')
+		    i = i + 1
 		endif
 	    endif
 	    if (flags(1:8) .eq. '-by_atom') then
@@ -339,7 +388,7 @@ c
 	write (noise,'(A)')
      &  '	[-fancy[0-6]] [-radius R] [-auto]'
 	write (noise,'(A,A)')
-     &  '	[-nohydrogens] [-suv [suv_limit]]'
+     &  '	[-nohydrogens] [-suv [suv_limit]] [-cn_check [cnfile]]'
 	write (noise,'(A,A)')
      &  '	[-tabulate [tabfile]] [-by_atomtype] [-com [comfile]]'
 	call exit(-1)
@@ -356,7 +405,7 @@ c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
      &                  VERSION
-	write (noise,*) 'E A Merritt -  2 Feb 2002'
+	write (noise,*) 'E A Merritt -  03 Dec 2009'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -369,6 +418,8 @@ c
 	endif
 	write (noise,803) pradius
   803	format(' Corresponding critical value           ', f7.4)
+	if (aniflag) write (noise,*) 
+     &     ' Isotropic atoms will be included in the analysis'
 c
       if (acflag) then
       	write (noise,*) 'Atoms will be colored based on Anisotropy'
@@ -559,6 +610,15 @@ c	    else
 	    xsum = xsum + weight * X
 	    ysum = ysum + weight * Y
 	    zsum = zsum + weight * Z
+	    if (uij(1,iatm).lt.0 .and. aniflag) then
+		uij(1,iatm) = Uiso
+		uij(2,iatm) = Uiso
+		uij(3,iatm) = Uiso
+		uij(4,iatm) = 0.0
+		uij(5,iatm) = 0.0
+		uij(6,iatm) = 0.0
+c		write(0,*) 'Setting Uiso for atom ',card
+	    endif
             GO TO 100
           ENDIF
 80      CONTINUE
@@ -1037,7 +1097,7 @@ c       Calculate mean and sigma of distribution
      &  write (hislun,'(A,I10)')'#          ANISOU hydrogens:',nhyd
 	write (hislun,'(A)') '#'
 	write (hislun,'(A,F7.3)')
-     &       '# correlation between anisotropy and B_iso:', ccoef
+     &       '# correlation of anisotropy with B_iso:', ccoef
 	write (hislun,'(A)') '#'
 	write (hislun,'(A)') '#              Anisotropy  B_iso'
 	write (hislun,'(A)') '#  AtomType   mean  sigma   mean  number'
@@ -1119,7 +1179,7 @@ c
 	enddo
   146	format(F10.3,F10.3,I10)
       endif
-      if (suvflag) goto 160
+      if (suvflag.or.cnflag) goto 160
       call exit(0)
 
 c
@@ -1214,17 +1274,22 @@ C cylinders with each color.
 C
       if (nerrors.eq.0) write(noise,*) 
      &	 '... no errors found in input file'
-      if (radius.eq.0.0 .and. .not.suvflag) goto 210
+      if (radius.eq.0.0 .and. .not.suvflag .and. .not.cnflag) goto 210
       if (suvflag) then
          write (suvlun,'(A,A,F5.3,A)') 
      &      'Checking for neighboring atoms with dissimilar Uij ',
      &	    '(Suv < ',suvlimit,')...'
          suvbad = 0
       endif
+      if (cnflag) then
+         write (NOISE,'(A,F5.3)') 
+     &      'Checking for C-N linkages with CCuij < ', cn_min_ccuij
+         cnbad = 0
+      endif
 c
       DO 202 IATM=1,NATM
      	IF (nohydro .AND. ATOM(IATM)(77:78).EQ.' H') GOTO 202
-	if (suvflag) then
+	if (suvflag .or. cnflag) then
 	  if (Biso(IATM).eq.0.0) goto 202
 	  if (uij(1,IATM).lt.0.) goto 202
 	endif
@@ -1238,14 +1303,15 @@ c
 	DX2 = (XI - SPAM(1,JATM))**2
 	if (dx2 .gt. close2) goto 201
 	DY2 = (YI - SPAM(2,JATM))**2
+	if (dy2 .gt. close2) goto 201
 	DZ2 = (ZI - SPAM(3,JATM))**2
 	DIST2 = DX2 + DY2 + DZ2
 c
 c	  Checking for bonded atoms with dissimilar Uij
-	  if (suvflag) then
+	  if (suvflag .or. cnflag) then
 	    IF (DIST2 .GT. CLOSE2) GOTO 201
-	    IF (Biso(JATM).eq.0.0) goto 201
-	    if (uij(1,jatm).lt.0.) goto 201
+	    IF (Biso(JATM).eq.0.0) goto 180
+	    if (uij(1,jatm).lt.0.) goto 180
 CDEBUG Version 2.6c used explicit test on 0.6*VdW distance
 CDEBUG but this is very slow so I have fixed CLOSE2 at the C-S bond length
 CDEBUG It might be worth doing a first cut using, say, 2.25A (>S-S bond)
@@ -1256,7 +1322,7 @@ C	    CLOSE2 = (0.6 * (VDWI + VDWJ)) **2
 C	    IF (DIST2 .GT. CLOSE2) GOTO 201
 CDEBUG Add this section back to see if results match V2.6c numbers
 	    similarity = Suv( uij(1,iatm), uij(1,jatm) )
-	    if (similarity .lt. suvlimit) then
+	    if (suvflag .and. (similarity .lt. suvlimit)) then
 		write (suvlun,161) 
      &		    ATOM(IATM)(13:17),ATOM(IATM)(18:27),
      &	            ATOM(JATM)(13:17),ATOM(JATM)(18:27),
@@ -1264,6 +1330,34 @@ CDEBUG Add this section back to see if results match V2.6c numbers
      		suvbad = suvbad + 1
   161	    format(1X,A5,1X,A10,8X,A5,1X,A10,4X,'Suv = ',F8.4)
 	    endif
+c
+c	    Check in particular for C-N links that may be TLS group boundaries
+  180	    continue
+	    if (cnflag .and. 
+     &         (ATOM(IATM)(13:15) .eq. ' C ') .and. (ATOM(JATM)(13:15) .eq. ' N ')) then
+	        cc = CCuv( uij(1,iatm), uij(1,jatm) )
+		if (ATOM(IATM)(22:22).ne.prevchain) then
+	            prevchain = ATOM(IATM)(22:22)
+		    write (cnlun,'(1x)')
+		    write (cnlun,'(1x)')
+		endif
+		name_i = ATOM(IATM)(18:27)
+		name_j = ATOM(JATM)(18:27)
+		if (name_i(5:5) .eq. ' ') name_i(5:5) = 'X'
+		if (name_j(5:5) .eq. ' ') name_j(5:5) = 'X'
+		do ichar = 6,9
+		    if (name_i(ichar:ichar).eq.'_') name_i(ichar:ichar) = ' '
+		    if (name_j(ichar:ichar).eq.'_') name_j(ichar:ichar) = ' '
+		enddo
+		write (cnlun,182) name_i, name_j, cc
+		if (cc .lt. cn_min_ccuij) then
+		    write (NOISE,183) name_i, name_j, cc
+		    cnbad = cnbad + 1
+		endif
+  182	    format(1X,A10,8X,A10,4X,'CCuij = ',F8.4)
+  183	    format(1X,A15,8X,A15,4X,'C-N CCuij = ',F8.4)
+	    endif
+
 	    if (tflag) goto 201
 	  endif
 
@@ -1318,9 +1412,12 @@ C211  FORMAT(1H3,/,11(f8.3))
 212   FORMAT(2H17,/,9f8.3)
 c
 	if (suvflag) then
-	    if (suvbad.eq.0) write (suvlun,*) '... None!'
-	    call exit(0)
+	    if (suvbad.eq.0) write (suvlun,*) '... No Suv outliers'
 	endif
+	if (cnflag) then
+	    if (cnbad.eq.0) write (suvlun,*) '... No CCuij outliers'
+	endif
+	if (suvflag .or. cnflag) call exit(0)
 c
 	write (noise,'(/)')
 	write (noise,156) 'X  min max center-of-mass:', XMIN, XMAX, xcom

@@ -43,19 +43,15 @@ User configurable options are contained in two files:
    Depending on your system configuration, it may be sufficient to simply
    copy these two files into directory /etc/profile.d
 
-6) [Optional] If you have ImageMagick version 4.1.8 or newer installed, you
-   may want to teach it how to use the Raster3D rendering program as a 
-   delegate.  You can do this by adding lines at the end of the file
-   /usr/local/share/ImageMagick/delegates.mgk   as shown below:
-
-# Version 4.x of ImageMagick used a private format for the delegate file
-# Use Raster3D rendering program as a delegate for files ending in .r3d
-   r3d=>
-	   render -tiff %o < %i
+6) [Optional] You may want to teach ImageMagick how to use the Raster3D
+   rendering program as a delegate.  You can do this by adding lines at
+   the end of the ImageMagick configuration file.  It probably has a
+   name similar to this:
+	/usr/lib64/ImageMagick-6.5.0/config/delegates.xml
 
 # Versions 5.x and 6.x of ImageMagick uses XML for the delegate file
 # Use Raster3D rendering program as a delegate for files ending in .r3d
-   <delegate decode="r3d" command='render -png "%o"<"%i"' />
+   <delegate decode="r3d" command='"render" < "%i" > "%o"' />
 
 
 7) Go to the examples subdirectory and try running the example scripts
@@ -76,66 +72,22 @@ A sample installation on a DEC Alpha might go:
 %       Known Problems          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Digital Unix
-============
-Everything is fine under DU 4.0D and above.  The "-r8" compiler option
-forces double precision arithmatic, which slows down rendering by 
-approximately 7%.  Some image quality degradation is noticeable if you
-settle for single precision.
+=== linux ===
+=== OSX ===
 
-Irix
-====
-"make irix6" uses the new f77 compiler (-mips 3), which produces 
-code for render that runs about 30% faster.  
-Under Irix 6.1 6.2 6.4, you may have to fiddle with the library search 
-paths to bring in compatible versions of the libimage, libtiff, and libjpeg 
-libraries.
-Works with no fiddling under Irix 6.5
+None known, but that will probably change.
 
-Some versions of Irix 6 include self-incompatible versions of 
-libjpeg.h and libjpeg.so.  To work around this there is a conditional
-flag in local_jpeg.c triggered by adding the definition -DBROKEN_LIBJPEG
-in Makefile.template. Or just obtain and build a correct version of libjpeg.so
-from the independent JPEG development group ftp://ftp.uu.net/graphics/jpeg/
+The gfortran compiler has changed in major ways.  We have tried to modify
+version 2.9 of raster3d to match, but it has not yet been extensively 
+tested.  Earlier versions of gfortran produced incorrect code if 
+optimization was enabled, so by default we have disabled it in the Makefile
+for the critical routines in qinp.f
 
-Irix 6.5 contains an ancient, beta-test, version of the PNG library.
-You will have to choose between disabling PNG support in Makefile.template
-or obtaining and installing a more recent version of libpng from
-     http://www.libpng.org/pub/png/libpng.html
-
-linux
-=====
-
-The Makefile knows about 3 compilers for linux.
-g77  - "make linux" The package works when compiled with g77,
-but runs slower than it does when compiled by a better compiler.
-pg77 - I have included another configuration option "make linux-pgf77"
-that can be used with the Portland Group compiler.  It produces faster code,
-and correctly supports the auto-delete option for scratch files.
-gfortran - "make linux-gfortran" The newer gcc Fortran front end is better
-than g77, but has not yet settled down into a stable version. I suspect
-we will be seeing version incompatibilities for a while.
-
-Sun
-===
-Makefile.sun assumes you are using the g77 compiler.  As such it suffers
-from the same problem as under linux - no support for autodeletion of
-scratch files.  If you are worried about space in the system temp directories,
-you could comment out -DGUNZIP from Makefile.template
-On the sun machine I used for tests the -DTIFF_INVERT flag was required
-for proper image orientation.  I don't know how general this is, but I
-made it the default.
-
-HP
-==
-No reported problems, but I don't have access to this platform so 
-I haven't checked the package myself.  If you can confirm that it works
-as distributed, I'd appreciate the information.  If you had to make
-changes, I'd be even more appreciative if you'd let me know what they
-were so that I can fix the distribution accordingly.
+The Intel compiler works also, but probably has its own quirks.
+Please report problems.
 
 
-=== OS/2 ===
+=== OS/2 (old advice, but maybe still relevant) ===
 
 Uwe Baumert reports the following:
 
@@ -150,7 +102,7 @@ just delete these two lines from the source code].
 >>    ftp://ftp.leo.org/pub/comp/os/os2/leo/graphics/netpbm*.zip. 
 
 
-=== Windows ===
+=== Windows (old advice, but maybe still relevant) ===
 
 Suhaib Siddiqi has kindly provided a pre-built set of Raster3D executables
 for version 2.6c, which is available from the Raster3D web site.

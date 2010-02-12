@@ -1,6 +1,6 @@
       PROGRAM RENDER
 *
-*     Version 2.6f (15 May 2002)
+*     Version 2.9  (22 Dec 2009)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -80,6 +80,8 @@
 * EAM Apr 2006  - V2.6d gfortran accommodations
 *               - Change AND() to iand() everywhere
 *               - Change  OR() to  ior() everywhere
+* EAM Mar 2008	- initialize various static storage areas
+* FZ  Dec 2009	- initialize more static storage areas (valgrind runs)
 *		  
 *     General organization:
 *
@@ -451,7 +453,7 @@ C     INTEGER*2 NAX, NAY
       LOGICAL INFLGS(MXTYPE),INFLG
 *
 *     Allow very long names for file indirection
-      CHARACTER*128 FULLNAME
+      CHARACTER*132 FULLNAME
 *
 *     Stuff for shading
       REAL   NL(3),NORMAL(3),LDOTN
@@ -624,6 +626,12 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
       SDET(VERTEXRGB)= 1
       SDET(VERTRANSP)= 1
 *
+*	Feb 2008 - more initializations for current gfortran
+	NSXMAX = 0
+	NSYMAX = 0
+	CLROPT = 0
+	SCHEME = 0
+*
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
       WRITE (NOISE,*) ' '
@@ -652,15 +660,24 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
 *
 *     Initialize global properties
       FOGTYPE = -1
+
+      RGBLND(1) = 0
+      RGBLND(2) = 0
+      RGBLND(3) = 0
 *
 *     EAM Aug 1999 - break out command line parsing into new routine
 	call parse
 *
 *     Get title
   100 CONTINUE
+      DO I=1,132
+        TITLE(I:I) = ' '
+      ENDDO
+
       READ (INPUT,'(A)',END=104,ERR=104) TITLE
       IF (TITLE(1:1) .EQ. '#') GOTO 100
       IF (TITLE(1:1) .EQ. '@') THEN
+	J = 1
 	K = 132
 	DO I=132,2,-1
 	  IF (TITLE(I:I).EQ.'	') TITLE(I:I) = ' '
@@ -668,6 +685,7 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
 	  IF (TITLE(I:I).EQ.'#') K = I-1
 	  IF (TITLE(I:I).EQ.'!') K = I-1
 	ENDDO
+	IF (J.EQ.1) GOTO 101
 	DO WHILE (TITLE(K:K).EQ.' ')
 	  K = K -1
 	ENDDO
@@ -1150,7 +1168,6 @@ c	    since it doesn't support dispose='DELETE'.
 	    if (verbose) 
      &		write(noise,*) 'Creating temporary file: ',fullname(j:k)
 	    open (unit=input+1,err=73,status='OLD',
-     &            DISPOSE='DELETE',
      &		  file=fullname(j:k))
 	    fullname = line(2:132)
 	    goto 72
@@ -1326,6 +1343,7 @@ C     20-Feb-1997 Save both object type and material type
       LIST(N) = NDET
       IF (SHADOW) MIST(N) = MDET
       ISTRANS  = 0
+      JUSTCLIPPED = .FALSE.
 *     From this point on, we'll use the symbolic codes for objects
       IF (INTYPE.EQ.TRIANG .or. INTYPE.EQ.PLANE) THEN
 *       triangle as read in
@@ -4470,6 +4488,7 @@ c
 	REAL    FOGFRONT, FOGBACK, FOGDEN, FOGLIM(2), FOGRGB(3)
 	REAL    FOGDIM
 c
+	FOGDIM = 0.5
 	IF (FOGTYPE .EQ. 0) 
      &	    FOGDIM = FOGDEN * DEPTH / (FOGLIM(2)-FOGLIM(1))
 	IF (FOGTYPE .GT. 0)
@@ -4492,7 +4511,7 @@ c
 	subroutine liblookup( name, fullname )
 c
 	character*(*) name
-	character*128 fullname
+	character*132 fullname
 	character*132 R3DLIB
 c
 	call getenv('R3D_LIB',R3DLIB)

@@ -24,7 +24,7 @@
 *     I/O units for colour/co-ordinate input, specs output, user output
       INTEGER INPUT, OUTPUT, NOISE
       PARAMETER (INPUT=5, OUTPUT=6, NOISE=0)
-      PARAMETER (MAXCOL=5000, MAXATM=10000)
+      PARAMETER (MAXCOL=5000, MAXATM=100000)
       REAL RGB(3,MAXCOL),VDW(MAXCOL)
       REAL SPAM(6,MAXATM)
       REAL CEN(3)

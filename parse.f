@@ -115,8 +115,8 @@ c
 	    else if (option(1:3).eq.'-bg') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
-		if (option(1:5).eq.'white') xbg = X'FFFFFFFF'
-		if (option(1:5).eq.'black') xbg = X'FF000000'
+		if (option(1:5).eq.'white') xbg = X'FFFFFF'
+		if (option(1:5).eq.'black') xbg = X'000000'
 		if (option(1:1).eq.'#') then
 		    read  (option(2:7),'(1Z6)') xbg
 		    write (0,'(1Z12)') xbg
@@ -216,7 +216,7 @@ c
 	    write(0,32) 'X',ntx,npx,ntx*npx,nax
 	    write(0,32) 'Y',nty,npy,nty*npy,nay
    32	    format('Autotiling on ',A1,': ',i3,' x ',i3,' = ',i5,
-     &		   ' >= ',i5)
+     &             ' >= ',i5)
 	end if
 c
 	end

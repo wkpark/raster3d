@@ -1,7 +1,7 @@
-Most recent change:	  12-Apr-2006
+Most recent change:	  12-Feb-2010
 
-The file Raster3D_2.7d.tar.gz contains the full source distribution for
-version 2.7d of Raster3D.
+The file Raster3D-2.9-1.tar.gz contains the full source distribution for
+version 2.9-1 of Raster3D.
 
   See CHANGELOG for a history of changes to the package.
 
@@ -18,25 +18,16 @@ version 2.7d of Raster3D.
 	7)  (optional)
 	    modify ImageMagick delegates file so that ImageMagick recognizes
 	    *.r3d files by default.  On my systems this file is in
-	    	/usr/lib/ImageMagick-2.6.4/config/delegates.mgk
+	    	/usr/lib/ImageMagick-6.3.2/config/delegates.xml
 	    Add the following line
-	    	<delegate decode="r3d" command='render -png "%o"<"%i"' />
+	    	<delegate decode="r3d" command='"render" < "%i" > "%o"' />
 
-- Changes in Version 2.7d compared to 2.7d
-	+ compatible with gfortran compiler
-	+ scripts modified to work with ImageMagick version 6
+- Changes in Version 2.9 compared to 2.7s
+	+ compatible with gfortran and intel compilers
+	+ new code in rastep to support Skittles validation 
 
-This distribution has been tested on the following platforms:
-
-	Alpha / OSF 4.0 / Tru64 5.1
-	SGI / Irix 6.2 6.5
-	IBM RS6000 / AIX
-	SUNOS (g77/gcc)
-	x86 x86_64 linux (Mandriva 2006 - gfortran, g77)
-
-Previous versions have been tested under Irix 5.3 and the Cygwin
-environment for Windows.  If you run into installation problems, please let
-me know, particularly if you can also tell me what you did to fix it!
+If you run into installation problems, please let me know,
+particularly if you can also tell me what you did to fix it!
 
 For optimal use of Raster3D you should also obtain 
 John Cristy's ImageMagick package for image manipulation and viewing 

@@ -6,6 +6,7 @@
 * EAM May 1999	- initial version
 *		  residue types are hard-wired in DATA statements
 *		  planes are not smoothed
+* EAM Nov 2008	- revise for use with TLSMD
 *------------------------------------------------------------------------------
 	implicit none
 c
@@ -16,10 +17,10 @@ c
 	integer input, output, noise
 	parameter (input=5, output=6, noise=0)
 	integer 	narg
-	integer 	iargc
+c	integer 	iargc
 c	external	iargc
 	character*64	options
-	logical		bflag, pflag, sflag
+	logical		bflag, pflag, sflag, rflag
 c
 c     Data arrays
 c
@@ -65,7 +66,7 @@ c		adjust start/end indices of protein/base/sugar flags
 c		optional:  add default colour record
 C
 	integer	   NTYPES
-	parameter (NTYPES=21)
+	parameter (NTYPES=28)
 	character*4	type( 10, NTYPES )
 	integer		nhits( NTYPES )
 	integer		p_start, p_end, b_start, b_end, s_start, s_end
@@ -81,7 +82,7 @@ C
      & 'COLOUR###########  G##########   1.000   0.101   0.101  2.00',
      & 'COLOUR###########  T##########   0.501   1.000   0.501  2.00',
      & 'COLOUR###########  U##########   0.501   1.000   0.501  2.00',
-     & 'COLOUR########################   0.800   0.000   0.000  2.00'
+     & 'COLOUR########################   0.800   0.800   0.800  2.00'
      &            /
 c
 	data type /
@@ -97,6 +98,7 @@ c
      &	' MAN',' C1 ',' C2 ',' C3 ',' C4 ',' C5 ',' O5 ',' ',' ',' ',
      &	' MNG',' C1 ',' C2 ',' C3 ',' C4 ',' C5 ',' O5 ',' ',' ',' ',
      &	' SIA',' C2 ',' C3 ',' C4 ',' C5 ',' C6 ',' O6 ',' ',' ',' ',
+     &	' RIP',' O4''',' C4''',' C3''',' C2''',' C1''',' ',' ',' ',' ',
      &  '  +C',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
      &  '  +T',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
      &  '  +U',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
@@ -107,19 +109,28 @@ c
      &  '   C',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
      &  '   T',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
      &  '   U',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
-     &  '   A',' N3 ',' C2 ',' N1 ',' C6 ',' C5 ',' C4 ',
-     &         ' N7 ',' C8 ',' N9 ',
-     &  '   G',' N3 ',' C2 ',' N1 ',' C6 ',' C5 ',' C4 ',
-     &         ' N7 ',' C8 ',' N9 '
+     &  '   A',' N3 ',' C2 ',' N1 ',' C6 ',' C5 ',' C4 ',' N7 ',' C8 ',' N9 ',
+     &  '   G',' N3 ',' C2 ',' N1 ',' C6 ',' C5 ',' C4 ',' N7 ',' C8 ',' N9 ',
+     &  '  DC',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
+     &  '  DT',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
+     &  '  DU',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' ',' ',' ',
+     &  '  DA',' N3 ',' C2 ',' N1 ',' C6 ',' C5 ',' C4 ',' N7 ',' C8 ',' N9 ',
+     &  '  DG',' N3 ',' C2 ',' N1 ',' C6 ',' C5 ',' C4 ',' N7 ',' C8 ',' N9 ',
+     &  ' PDC',' N1 ',' C2 ',' N3 ',' C4 ',' C5 ',' C6 ',' C9 ',' C8 ',' N7 '
      &  / 
 c
 	data p_start, p_end / 1,  4 /
-	data s_start, s_end / 5, 11 /
-	data b_start, b_end /12, 21 /
+	data s_start, s_end / 5, 12 /
+	data b_start, b_end /13, 28 /
+c
+	do i = 1, NTYPES
+		nhits(i) = 0
+	enddo
 c
 	bflag  = .FALSE.
 	pflag  = .FALSE.
 	sflag  = .FALSE.
+	rflag  = .FALSE.
 	narg  = iargc()
 	i = 0
   100	continue
@@ -132,6 +143,8 @@ c
 		pflag = .true.
 	      else if (options(1:2) .eq. '-s') then
 		sflag = .true.
+	      else if (options(1:2) .eq. '-r') then
+		rflag = .true.
 	      else
 		goto 101
 	      endif
@@ -141,15 +154,17 @@ c
 	write (noise,'(A)') 
      &	     'syntax: rings3d [-options] < infile.pdb > outfile.r3d'
 	write (noise,'(A)') 
-     &	     '        -bases    A/C/G/T/U'
+     &	     '        -bases    A/C/G/T/U DA/+A/etc'
 	write (noise,'(A)') 
-     &	     '        -proteinn HIS/PHE/TRP/TYR'
+     &	     '        -ribose   sugar in A/C/G/T/U DA/+A/etc'
+	write (noise,'(A)') 
+     &	     '        -protein  HIS/PHE/TRP/TYR'
 	write (noise,'(A)') 
      &	     '        -sugars   GAL/GLC/MAN/NAG/NGA/SIA'
 
 	call exit(-1)
   199	continue
-	if (.not.bflag .and. .not.pflag) sflag = .true.
+	if (.not.bflag .and. .not.pflag .and. .not.rflag) sflag = .true.
 c
 	write (noise,*) 'Raster3D rings3d program ',VERSION
 c
@@ -249,10 +264,23 @@ c
 	    if (resname(iatm)(2:4).eq.type(1,n)(2:4)) goto 310
 	  enddo
 	endif
+c       Look for base names, but use sugar ring (ribopyranose)
+	if (rflag) then
+	  do n = b_start, b_end
+	    if (resname(iatm)(2:4).eq.type(1,n)(2:4)) then
+	      goto 309
+	    endif
+	  enddo
+	endif
 	goto 300
+
+  309   continue
+c       Found a ribose inside a base
+	n = b_start - 1
 
   310	continue
   	ringsize = 9
+	if (rflag) n = b_start - 1
 	do i = 2, 10
 	  if (type(i,n).eq.' ') then
 	    ringsize = i - 2
@@ -260,6 +288,12 @@ c
 	  endif
 	  do j = iatm, jatm
 	    if (type(i,n).eq.name(j)) then
+	      ind(i-1) = j
+	      goto 312
+	    endif
+c	    Allow for incorrect column
+	    if ((type(1,n)(1:1).eq.' ') .and.
+     &          (type(i,n)(2:4).eq.name(j)(1:3))) then
 	      ind(i-1) = j
 	      goto 312
 	    endif
