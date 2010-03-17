@@ -1,4 +1,5 @@
-12-Feb-2010	Release 2.9-1
+16-Mar-2010	Release 2.9-2 (dynamic)
+12-Feb-2010	Release 2.9-1 (static)
 12-Feb-2010	added escape characters for dollar sign in $(FC) in Makefile
 26-Jan-2010	bring ribbon.f ribbon1.f into the gfortran era
 22-Jan-2010	commit my current source tree to cvs repository on verdandi

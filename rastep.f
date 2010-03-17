@@ -82,6 +82,7 @@
 * EAM Sep 2009	- Explicitly test CCuij for C-N bonds
 * EAM Oct 2009	- report CCuij = if C or N is NPD
 *		  -aniso flag
+* EAM Mar 2010	- CCuij for phosphate backbone also
 * 
 *     I/O units for colour/co-ordinate input, specs output, user output
 *
@@ -142,7 +143,7 @@ c
 c
 c     Support for validation of similarity of bonded atoms
       logical	suvflag, cnflag
-      integer	suvlun, suvbad, cnlun, cnbad
+      integer	suvlun, suvbad, cnlun, cnbad, ccuijpair
       character*1  prevchain
       character*10 name_i, name_j
       real	anisov(6)
@@ -405,7 +406,7 @@ c
 	write (noise,800)
 	write (noise,*) 'Raster3D Thermal Ellipsoid Program ',
      &                  VERSION
-	write (noise,*) 'E A Merritt -  03 Dec 2009'
+	write (noise,*) 'E A Merritt -  11 Mar 2010'
 	write (noise,800)
   800	format('************************************************')
 c
@@ -1333,29 +1334,40 @@ CDEBUG Add this section back to see if results match V2.6c numbers
 c
 c	    Check in particular for C-N links that may be TLS group boundaries
   180	    continue
-	    if (cnflag .and. 
-     &         (ATOM(IATM)(13:15) .eq. ' C ') .and. (ATOM(JATM)(13:15) .eq. ' N ')) then
-	        cc = CCuv( uij(1,iatm), uij(1,jatm) )
-		if (ATOM(IATM)(22:22).ne.prevchain) then
-	            prevchain = ATOM(IATM)(22:22)
-		    write (cnlun,'(1x)')
-		    write (cnlun,'(1x)')
+	    if (cnflag) then
+	        ccuijpair = 0
+	        if ((ATOM(IATM)(13:15) .eq. ' C ') .and. (ATOM(JATM)(13:15) .eq. ' N ')) then
+	            ccuijpair = 1
 		endif
-		name_i = ATOM(IATM)(18:27)
-		name_j = ATOM(JATM)(18:27)
-		if (name_i(5:5) .eq. ' ') name_i(5:5) = 'X'
-		if (name_j(5:5) .eq. ' ') name_j(5:5) = 'X'
-		do ichar = 6,9
-		    if (name_i(ichar:ichar).eq.'_') name_i(ichar:ichar) = ' '
-		    if (name_j(ichar:ichar).eq.'_') name_j(ichar:ichar) = ' '
-		enddo
-		write (cnlun,182) name_i, name_j, cc
-		if (cc .lt. cn_min_ccuij) then
-		    write (NOISE,183) name_i, name_j, cc
-		    cnbad = cnbad + 1
+	        if ((ATOM(IATM)(13:15) .eq. ' O3') .and. (ATOM(JATM)(13:15) .eq. ' P ')) then
+	            ccuijpair = 2
 		endif
-  182	    format(1X,A10,8X,A10,4X,'CCuij = ',F8.4)
-  183	    format(1X,A15,8X,A15,4X,'C-N CCuij = ',F8.4)
+
+	        if (ccuijpair.ne.0) then
+	            cc = CCuv( uij(1,iatm), uij(1,jatm) )
+		    if (ATOM(IATM)(22:22).ne.prevchain) then
+	                prevchain = ATOM(IATM)(22:22)
+		        write (cnlun,'(1x)')
+		        write (cnlun,'(1x)')
+		    endif
+		    name_i = ATOM(IATM)(18:27)
+		    name_j = ATOM(JATM)(18:27)
+		    if (name_i(5:5) .eq. ' ') name_i(5:5) = 'X'
+		    if (name_j(5:5) .eq. ' ') name_j(5:5) = 'X'
+		    do ichar = 6,9
+		        if (name_i(ichar:ichar).eq.'_') name_i(ichar:ichar) = ' '
+		        if (name_j(ichar:ichar).eq.'_') name_j(ichar:ichar) = ' '
+		    enddo
+		    write (cnlun,182) name_i, name_j, cc
+		    if (cc .lt. cn_min_ccuij) then
+		        if (ccuijpair.eq.1) write (NOISE,183) name_i, name_j, cc
+		        if (ccuijpair.eq.2) write (NOISE,184) name_i, name_j, cc
+		        cnbad = cnbad + 1
+		    endif
+  182	        format(1X,A10,8X,A10,4X,'CCuij = ',F8.4)
+  183	        format(1X,A15,8X,A15,4X,'C-N CCuij = ',F8.4)
+  184	        format(1X,A15,8X,A15,4X,'O3''-P CCuij = ',F8.4)
+	        endif
 	    endif
 
 	    if (tflag) goto 201

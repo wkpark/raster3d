@@ -144,6 +144,13 @@ fi
 
 
 %changelog
+* Tue Mar 16 2010 Christoph Champ <champc@u.washington.edu>
+- released Raster3D-2.9-2 (dynamic)
+* Fri Feb 12 2010 Christoph Champ <champc@u.washington.edu>
+- released Raster3D-2.9-1 (static)
+* Thu Jan 21 2010 Christoph Champ <champc@u.washington.edu>
+- changed "mkdirhier" to "mkdir -p"
+- added "-fno-range-check" to FFLAGS
 * Fri Mar  7 2008 EAM
 - More gfortran initialization problems
 * Wed May  3 2006 EAM
