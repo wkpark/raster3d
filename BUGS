@@ -12,11 +12,6 @@ All platforms
 	  and totally breaks Z-clipping.
 
 	- ISOLATE (object code 15) not yet implemented for quadric surfaces
-	- Linear depth-cueing code (FOG 0) is not correct for parts of the 
-	  scene behind a transparent object. This problem arises because a 
-	  linear fog model does not correspond to reality. 
-	  It would be possible to handle transparency correctly for an 
-	  exponential fog model, but doesn't seem worth the effort right now.
 	- Z-clipped objects cast un-clipped shadows.
 	- The mixed Fortran/C calls to local() generate an interesting 
 	  variety of compiler warnings because of inadequte type-casting
@@ -26,18 +21,7 @@ All platforms
 	- Explicit vertex colors take precedence over material colors;
 	  (That's a feature, not a bug)
 	- Labels with TeX-like escape sequences are always treated as Left-Align.
-	- Angstrom symbol only loaded into Times/Helvetica fonts.
 	- ribbon coloring scheme 6 doesn't work
-
-SGI
-===
-	- In general the JPEG and PNG libraries supplied with Irix are bad,
-	  and should be rebuilt from current source
-	- Some versions of Irix contain a header file jpeglib.h that is not
-	  compatible with the actual libjpeg in the same distribution
-	- The PNG library and header files are from an ancient beta-test version.
-	  You must choose between disabling PNG support in Makefile.template or
-	  installing a newer version of libpng on your machine
 
 AIX 
 ===
@@ -49,14 +33,4 @@ AIX
 	dispose='delete' not permitted in open statement
 	Work-around :
 		None; temp files accumulate until deleted
-
-linux (g77 and gfortran compilers)
-====================
-
-	The g77 and gfortran compilers do not support file open options 
-	CARRIAGECONTROL='LIST' or DISPOSE='DELETE'.
-	Work-around :
-		'make linux' deletes these specifications from the source
-		files; unfortunately, this means that temporary files do not
-		automatically get deleted from the system temp directory.
 

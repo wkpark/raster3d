@@ -1,5 +1,5 @@
 #
-# makefile template for Raster3D distribution 2.6
+# makefile template for Raster3D distribution 3.0
 #
 # You may want to edit some of the lines below to select
 # options or directories appropriate to your local installation.
@@ -30,28 +30,17 @@ LIBDIRS  =	-L/usr/local/lib
 # TDEFS =	-DTIFF_SUPPORT
 
 #
-# JPEG support (enabled by default)
-#     add -DJPEG_SUPPORT to the DEFINES statement.
-#     add -ljpeg to the LIBS definition.
-  JLIBS =	-ljpeg
-  JDEFS =	-DJPEG_SUPPORT
-
-# PNG support (enabled by default)
-#     add -DPNG_SUPPORT to the DEFINES statement
-#     add -lpng to the LIBS definition (may need -lz also)
-  PLIBS =	-lpng -lz
-  PDEFS =	-DPNG_SUPPORT
+# libgd support for PNG and JPEG output (enabled by default)
+#     add -DGD_SUPPORT to the DEFINES statement.
+#     add -lgd to the LIBS definition.
+  GDLIBS =	-lgd
+  GDDEFS =	-DGD_SUPPORT
 
 #
 # Everybody (I think) needs these
 #
   CLIBS =	-lm 
   
-#
-# Auto conversion of output using ImageMagick (enabled by default)
-#
-  IDEFS =	-DIMAGEPIPE
-
 #
 # Support for on-the-fly decompression of input files using gunzip
 # (may not work on all systems)

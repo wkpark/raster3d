@@ -5,14 +5,14 @@ c
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG, XBG
-      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      INTEGER*4        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
 c
 	common /asscom/  assout, verbose
 	integer          assout
 	logical                  verbose
 c
-	character*64     args(4), option, labelfile
+	character*132    args(4), option, labelfile
 	save             args
 c
 	integer    INVERTFLAG
@@ -119,7 +119,9 @@ c
 		if (option(1:5).eq.'black') xbg = X'000000'
 		if (option(1:1).eq.'#') then
 		    read  (option(2:7),'(1Z6)') xbg
-		    write (0,'(1Z12)') xbg
+		    if (verbose) then
+		        write (0,'(1Z12)') xbg
+		    endif
 		endif
 	    else 
 	    	larg = larg + 1
@@ -157,7 +159,7 @@ c
 	integer          assout
 	logical                  verbose
 c
-	integer*2 nax, nay
+	integer*4 nax, nay
 c
 c	Anti-aliasing requires that NPY is a multiple of modulus
 	integer   modulus
@@ -215,8 +217,8 @@ c
 	if (verbose .and. (nax.gt.0 .or. nay.gt.0)) then
 	    write(0,32) 'X',ntx,npx,ntx*npx,nax
 	    write(0,32) 'Y',nty,npy,nty*npy,nay
-   32	    format('Autotiling on ',A1,': ',i3,' x ',i3,' = ',i5,
-     &             ' >= ',i5)
+   32	    format('Autotiling on ',A1,': ',i5,' x ',i5,' = ',i7,
+     &             ' >= ',i7)
 	end if
 c
 	end

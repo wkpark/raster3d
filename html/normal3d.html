@@ -54,42 +54,6 @@ format specifiers (which are set to *). <p>
 </dl>
 </p>
 
-<b>normal3d</b> also reports the total number of objects in the input file by
-object type, and gives the array sizes which would be required for the
-<b>render</b> program to process this file. It may therefore be used to
-determine how large the 
-<a href="render.html#arrays">array sizes in render</a> 
-should be set, should one
-of your image descriptions exceed the values compiled into <b>render</b>.<p>
-
-<h4> EXAMPLES</h4>
-Feed a large file through <b>normal3d</b> to judge array size requirements for rendering:
-
-<pre>
-
-normal3d < largeinputfile.r3d > /dev/null
-
- tmat (v' = v * tmat):
- -0.7543700     0.2779890     -0.6327600    0.0000000E+00
-  8.3310001E-02 0.9392580      0.3367110    0.0000000E+00
-  0.6530600     0.2012850     -0.6973090    0.0000000E+00
-  -54.14897     -48.99439      -13.01923     25.00000
- -------------------------------
- spheres   =    67
- cylinders =  5128
- triangles = 23402
- -------------------------------
- Compare these to the array dimensions in render:
- special materials =      1 (check against MAXMAT)
- total objects     =  47402 (check against MAXOBJ)
- details           = 506943 (check against MAXDET)
- shadow details    = 364323 (check against MAXSDT)
- -------------------------------
- True center of input coordinates (not used):
- -0.7435400 3.0629992E-02 -0.4582600
-
-</pre>
-
 <h4>AUTHORS</h4>
 Ethan A Merritt.
 

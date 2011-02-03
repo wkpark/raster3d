@@ -13,9 +13,9 @@
 <a name="grasp">
 <h4>grasp/ungrasp</h4></a>
 <p>
-Grasp (<a href="http://trantor.bioc.columbia.edu/grasp/">home page</a>)
-is a commercial molecular visualization tool that to the best of my
-knowledge is available only for SGI workstations. Grasp itself does
+Grasp (<a href="http://wiki.c2b2.columbia.edu/honiglab_public/index.php/Software">home page</a>)
+is a molecular visualization tool that to the best of my knowledge is available
+only for SGI workstations and some older versions of Windows. Grasp itself does
 not produce Raster3D output, but the molecular surfaces calculated 
 by grasp can be saved to a file and then converted to a Raster3D input
 description.  The filter program that does this conversion is called
@@ -28,13 +28,11 @@ of the Raster3D source tree.
 <h4>MSMS</h4></a>
 <p>
 MSMS 
-(<a href="http://www.scripps.edu/pub/olson-web/people/sanner/html/msms_home.html">home page</a>)
+(<a href="http://www.scripps.edu/pub/olson-web/people/sanner/html/msms_home.html">original home page</a>)
 is another program that calculates molecular surfaces, and has a number of advantages over
-grasp.  It is not limited to SGI workstations; it allows you to specify how fine
-is the grid of triangles that tesselate the surface; it can be run entirely from the
-command line, or from a shell script.
-MSMS is not open source, but binaries (free, so far as I know) are available for 
-linux, SGI, Dec Alpha, HP9000, IBM PC, Sun workstations and others.
+grasp. Although you may still be able to download MSMS itself, it has been replaced by
+a newer python-based tool PMV
+(<a href="http://mgltools.scripps.edu/">home page</a>).
 
 Two filter programs to convert MSMS output files into Raster3D input files are
 provided in the Raster3D source distribution. One is a perl script. The other is C source

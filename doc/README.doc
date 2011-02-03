@@ -5,8 +5,7 @@ In the latter case you may have to rename them so that the suffix is
 "1" (number) rather than "l" (lower case L).
 
 R3D_manual.pdf is a complete set of Raster3D documentation pages 
-packaged into a PDF file. It can be viewed with the [free] Acrobat reader
-from Adobe.
+packaged into a PDF file.
 
 >>>> HTML documentation files have been moved to ../html <<<<
 

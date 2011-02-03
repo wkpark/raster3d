@@ -1,5 +1,12 @@
 *     $$$$$$$$$$$$$   ARRAY SIZE LIMITS START HERE   $$$$$$$$$$$$$$
 *
+*     Maximum size for dynamic (allocatable) arrays.
+*     The values MAXNTX * MAXNTY, MAXNPX * MAXNPY, MAXOBJ, MAXDET, 
+*     MAXSDT, MAXSHR, MAXSSL, and MAXGLOWS below are initial sizes,
+*     which can be expanded to this limit as needed.
+      INTEGER MAXMEM
+      PARAMETER (MAXMEM = 600000000)
+*
 *     Maximum number of tiles
       INTEGER    MAXNTX,       MAXNTY
       PARAMETER (MAXNTX = 256, MAXNTY = 256)
@@ -17,22 +24,21 @@
       PARAMETER (MAXNPX = 32, MAXNPY = 32)
 *
 *     Maximum number of objects
-***   PARAMETER (MAXOBJ =   7500)
       INTEGER    MAXOBJ
-      PARAMETER (MAXOBJ = 3000000)
+***   PARAMETER (MAXOBJ =   7500)
+      PARAMETER (MAXOBJ = 200000)
 *
 *     Array elements available for object details 
 *     Should be roughly 10*MAXOBJ
       INTEGER    MAXDET,             MAXSDT
 ***   PARAMETER (MAXDET =   150 000, MAXSDT =   150 000)
-***   PARAMETER (MAXDET = 2 000 000, MAXSDT = 2 000 000)
-      PARAMETER (MAXDET = 40 000 000, MAXSDT = 40 000 000)
+      PARAMETER (MAXDET = 2 000 000, MAXSDT = 2 000 000)
 *
 *     Array elements available for sorted lists ("short" lists)
 *     Increased requirements as more objects are stacked behind each other
       INTEGER    MAXSHR,             MAXSSL
 ***   PARAMETER (MAXSHR =   150 000, MAXSSL =   150 000)
-      PARAMETER (MAXSHR = 10 000 000, MAXSSL = 10 000 000)
+      PARAMETER (MAXSHR = 4 000 000, MAXSSL = 2 000 000)
 *
 *     Maximum number of MATERIAL definitions (object type 8)
       INTEGER    MAXMAT

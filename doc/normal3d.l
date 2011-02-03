@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH NORMAL3D 1 "19 Apr 2002" "Raster3D"
+.TH NORMAL3D 1 "12 Dec 2010" "Raster3D"
 .SH NAME
 
 normal3d - apply transformation matrix in Raster3D input file
@@ -22,12 +22,6 @@ set to *). The -h flag suppresses all header records in the output file.
 All objects in the input file are
 also in the output file, but their coordinate descriptions have been
 normalized (i.e. the original transformation matrix has been applied).
-.PP
-\fInormal3d\fP 
-also reports the total number of objects in the input file by object type,
-and gives the array sizes which would be required for the render program
-to process the file.  It may therefore be used to determine how large the
-array sizes in render should be set.
 
 .SH OPTIONS
 
@@ -67,9 +61,7 @@ primary output file.  If a scratch directory name is given, it is
 prepended to give output files {scratch}_left.r3d and {scratch}_right.r3d
 
 .SH SOURCE
-.B anonymous ftp site:	
- 	ftp.bmsc.washington.edu
-.
+
 .B web URL:
  	http://www.bmsc.washington.edu/raster3d/raster3d.html
  

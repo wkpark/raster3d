@@ -48,10 +48,10 @@ input stream:
  
 .TP 5
 .B MPHONG
-override global Phong power for specular highlighting
+value >=0 overrides the global Phong power for specular highlighting
 .TP 5
 .B MSPEC
-override global specular scattering contribution
+value >=0 overrides the global specular scattering contribution
 .TP 5
 .B SR,SG,SB 
 RGB triple specifying color of reflected light
@@ -67,12 +67,18 @@ an opaque surface and 1.0 a purely transparent one.
 Affects processing of transparent objects which belong to the
 same material, but occlude each other (for instance the front
 and back surfaces of a transparent molecular surface). 
- OPT1 = 0 will render all transparent surfaces
- OPT1 = 1 will render only the topmost surface
- OPT1 = 2 will render back surface of transparent spheres and cylinders
+ OPT1 = 0 will render all outward-facing transparent surfaces
+ OPT1 = 1 will render only the topmost outward-facing surface
+ OPT1 = 2 will render both the outward- and inward- facing surfaces of transparent spheres and cylinders
 .TP 5
 .B OPT2
-Not used
+Selects from several variant treatments of transparency as a function of 
+alpha and the Z component ZN of the surface normal.
+ OPT2 = 0    T(ZN) = 0.25(1+cos(pi*alpha*ZN)^2
+ OPT2 = 1    T(ZN) = (1-abs(alpha*ZN))^2
+ OPT2 = 2    T(ZN) = 1 - alpha ^ (cos(pi/4) / abs(ZN))
+ OPT2 = 3    T(ZN) = 1 - alpha
+Option 0 is an empirical function that I think looks good.
 .TP 5
 .B OPT3
 Not used
@@ -81,25 +87,30 @@ Not used
 Non-zero to indicate that additional modifier records follow
 immediately. Each modifier must constitute a single line,
 and OPT4 tells how many of these lines there will be.
+Here is a complete list of modifiers currently available, and their parameters
+ SOLID		RED GREEN BLUE
+ BACKFACE	RED GREEN BLUE MPHONG MSPEC
+ FRONTCLIP	ZFRONT
+ BACKCLIP	ZBACK
+ BOUNDING_COLOR	RED GREEN BLUE
+ BOUNDING_PLANE	BPTYPE X Y Z Xnorm Ynorm Znorm
+ ORTEP_LIKE	used to create fancy ellipsoids (see rastep documentation)
 
 .SH Object type 9 - End_material
-Terminates previous set of special material properties.
+Terminates application of all previously defined special material properties
+(object type 8) or isolation from TMAT transformation (object type 15).
 
 .SH Object types 10,11,12 - Label descriptors
 These object types are used as label descriptors.
-The current version of render recognizes them
-as labels, but otherwise ignores them.
-See \fBr3dtops(l)\fP and \fBlabel3d(l)\fP for more information.
+The current version of render ignores them unless the -labels
+option is selected on the command line.
 
 .TP 0
 .B Object type 10 - "font_name" size "alignment"
 Legal values subject to details of font processing implementation.
-In the context of label3d/r3dtops/ghostscript processing,
- \fBfont_name\fP is any PostScript font name
- \fBsize\fP is the font size in points (but see label3d notes)
+ \fBfont_name\fP is any font name recognized by libgd
+ \fBsize\fP is the font size in points, but is modified by render's -fontscale option 
  \fBalignment\fP is "Left", "Right", "Center", or "Offset".
-
-Default is \fB"Times-Bold" 10 "Left"\fP
 
 .TP 0
 .B Object type 11 - Label text
@@ -193,4 +204,4 @@ from -0.5 to +0.5 regardless of the aspect ratio of the rendered image.
 
 .SH SEE ALSO
  PostScript and HTML documentation
- render(l), label3d(l)
+ render(l) 

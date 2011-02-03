@@ -7,23 +7,23 @@ default: all
 include Makefile.incl
 include VERSION
 
-LIBS	= $(LIBDIRS) $(CLIBS) $(TLIBS) $(JLIBS) $(SLIBS) $(PLIBS)
-DEFINES	= $(GDEFS) $(IDEFS) $(TDEFS) $(JDEFS) $(SDEFS) $(PDEFS) $(OSDEFS)
+LIBS	= $(LIBDIRS) $(CLIBS) $(TLIBS) $(GDLIBS) $(SLIBS)
+DEFINES	= $(GDEFS) $(IDEFS) $(TDEFS) $(GDDEFS) $(SDEFS) $(OSDEFS)
 
 FLAGS	= $(INCDIRS) $(DEFINES)
 
 PROGS   = avs2ps balls rastep render ribbon rings3d rods normal3d
-SCRIPTS = label3d stereo3d
+SCRIPTS = stereo3d worms
 
 clean:	
 	rm -f *.o $(PROGS) core *~
+	rm -f render_small render_small.f parse_small.f qinp_small.f parameters_small.incl
+	rm -f lists.mod
+	$(MAKE) -C examples clean
 
 distclean: clean
 	rm -f Makefile.incl 
 	touch Makefile.incl
-	if [ -e render.f.bak ] ; then mv -f render.f.bak render.f; fi
-	if [ -e normal3d.f.bak ] ; then mv -f normal3d.f.bak normal3d.f; fi
-	if [ -e rastep.f.bak ] ; then mv -f rastep.f.bak rastep.f; fi
 	if [ -e aix-patch ] ; then rm -f aix-patch; fi
 	exit 0
 
@@ -34,8 +34,8 @@ help:
 	else \
 	echo "" ; \
 	echo "Please start by typing '"make OS"', where OS is one of" ; \
-	echo "	linux linux-gfortran linux-pgf77 linux-ppc dec sun sun-forte irix5 irix6 cygwin aix hpux" ; \
-	echo "If your OS is not shown but you have g77/gcc installed, try" ; \
+	echo "	linux linux-pgf77 linux-ifort dec osx-intel osx-fink sun sun-forte irix5 irix6 cygwin aix hpux" ; \
+	echo "If your OS is not shown but you have gfortran installed, try" ; \
 	echo "	make linux" ; \
 	echo "" ; \
 	echo "If all goes well, you can now type 'make' to build the programs" ; \
@@ -46,18 +46,8 @@ help:
 #
 # OS-specific initializations
 #
-linux:	strip-for-g77
-	@cp Makefile.template Makefile.incl
-	@echo OS = linux                      >> Makefile.incl
-	@echo CC = gcc                        >> Makefile.incl
-	@echo CFLAGS = -g -w                  >> Makefile.incl
-	@echo FC = g77                        >> Makefile.incl
-	@echo FFLAGS = -g -O -w -malign-double>> Makefile.incl
-	@echo RM = /bin/rm -f                 >> Makefile.incl
-	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
-	@echo include Makefile.package        >> Makefile.incl
 
-linux-gfortran:	strip-for-g77
+linux:	
 	@cp Makefile.template Makefile.incl
 	@echo OS = linux                      >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
@@ -72,6 +62,17 @@ linux-gfortran:	strip-for-g77
 	@echo "	\$$(FC) -g -O0 -Wall -Wtabs -c -o qinp.o qinp.f" >> Makefile.incl
 	@echo                                 >> Makefile.incl
 
+linux-ifort:
+	@cp Makefile.template Makefile.incl
+	@echo OS = linux                      >> Makefile.incl
+	@echo CC = gcc                        >> Makefile.incl
+	@echo CFLAGS = -g -Wall               >> Makefile.incl
+	@echo FC = ifort                      >> Makefile.incl
+	@echo FFLAGS = -g -w -O3 -132 -static-intel >> Makefile.incl
+	@echo RM = /bin/rm -f                 >> Makefile.incl
+	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
+	@echo include Makefile.package        >> Makefile.incl
+
 linux-pgf77:
 	@cp Makefile.template Makefile.incl
 	@echo OS = linux-pgf77                >> Makefile.incl
@@ -83,16 +84,39 @@ linux-pgf77:
 	@echo OSDEFS = -DLINUX -DNETWORKBYTEORDER        >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl
 
-linux-ppc:     strip-for-g77
+osx-intel:	
 	@cp Makefile.template Makefile.incl
-	@echo OS = linux-ppc                  >> Makefile.incl
-	@echo CC = gcc                        >> Makefile.incl
-	@echo CFLAGS = -g -O2 -fsigned-char   >> Makefile.incl
-	@echo FC = g77                        >> Makefile.incl
-	@echo FFLAGS = -g -O2 -fsigned-char   >> Makefile.incl
+	@echo OS = osx                        >> Makefile.incl
+	@echo CC = icc                        >> Makefile.incl
+	@echo CFLAGS = -g -Wall               >> Makefile.incl
+	@echo FC = ifort                      >> Makefile.incl
+	@echo FFLAGS = -g -w -O3 -Wtabs -132  >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
-	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
+	@echo OSDEFS =  -DOSX -DNETWORKBYTEORDER       >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl
+	@echo                                 >> Makefile.incl
+	@echo qinp.o: qinp.f                  >> Makefile.incl
+	@echo "	\$$(FC) -g -O0 -w -Wtabs -132 -c -o qinp.o qinp.f" >> Makefile.incl
+	@echo                                 >> Makefile.incl
+
+osx-fink:	
+	@cp Makefile.template Makefile.incl
+	@echo .NOTPARALLEL:                   >> Makefile.incl
+	@echo                                 >> Makefile.incl
+	@echo OS = osx                        >> Makefile.incl
+	@echo CC = /sw/bin/gcc-4              >> Makefile.incl
+	@echo INCDIRS = -I/sw/include         >> Makefile.incl
+	@echo LIBDIRS = -L/sw/lib             >> Makefile.incl
+	@echo CFLAGS = -g -Wall -Dgfortran    >> Makefile.incl
+	@echo FC = /sw/bin/gfortran           >> Makefile.incl
+	@echo FFLAGS = -g -w -O3 -Wtabs -ffixed-line-length-132 >> Makefile.incl
+	@echo RM = /bin/rm -f                 >> Makefile.incl
+	@echo OSDEFS =  -DOSX -DNETWORKBYTEORDER       >> Makefile.incl
+	@echo include Makefile.package        >> Makefile.incl
+	@echo                                 >> Makefile.incl
+	@echo qinp.o: qinp.f                  >> Makefile.incl
+	@echo "	\$$(FC) -g -O0 -Wall -Wtabs -c -o qinp.o qinp.f" >> Makefile.incl
+	@echo                                 >> Makefile.incl
 
 irix5:	
 	@cp Makefile.template Makefile.incl
@@ -126,7 +150,7 @@ dec:
 	@echo OSDEFS = -DNETWORKBYTEORDER     >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl
 
-aix:	aix-patch strip-for-g77
+aix:	aix-patch 
 	@cp Makefile.template Makefile.incl
 	@echo OS=aix >> Makefile.incl
 	@echo CC = cc                         >> Makefile.incl
@@ -141,7 +165,7 @@ aix-patch:
 	mv render.f.orig render.f.bak
 	@touch aix-patch
 
-sun:	strip-for-g77
+sun:	
 	@cp Makefile.template Makefile.incl
 	@echo OS = sun                        >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
@@ -151,7 +175,7 @@ sun:	strip-for-g77
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo LDFLAGS = -L/usr/local/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.6.2 -lgcc >> Makefile.incl
 
-sun-forte:	strip-for-g77
+sun-forte:	
 	@cp Makefile.template Makefile.incl
 	@echo OS = sun                        >> Makefile.incl
 	@echo CC = cc                         >> Makefile.incl
@@ -160,17 +184,6 @@ sun-forte:	strip-for-g77
 	@echo FFLAGS = \${CFLAGS}               >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 
-
-strip-for-g77: render.f.bak normal3d.f.bak rastep.f.bak
-render.f.bak:
-	mv render.f render.f.bak
-	egrep -v '(CARRIAGECONTROL|DISPOSE)' render.f.bak > render.f
-normal3d.f.bak:
-	mv normal3d.f normal3d.f.bak
-	egrep -v '(CARRIAGECONTROL|DISPOSE)' normal3d.f.bak > normal3d.f
-rastep.f.bak:
-	mv rastep.f rastep.f.bak
-	egrep -v '(CARRIAGECONTROL|DISPOSE)' rastep.f.bak > rastep.f
 
 #
 # These source files are dependent on parameters.incl
@@ -188,7 +201,7 @@ avs2ps:	avs2ps.c
 	$(CC) $(CFLAGS) $(FLAGS) $(LDFLAGS) -o avs2ps avs2ps.c -lm
 
 balls:	balls.f
-	$(FC) $(FFLAGS) -o balls balls.f 
+	$(FC) $(FFLAGS) $(LDFLAGS) -o balls balls.f 
 
 local.o:	Makefile.incl local.c
 	$(CC) $(CFLAGS) $(FLAGS) -c local.c
@@ -205,9 +218,9 @@ rastep:	rastep.f quadric.o suv.o
 	rastep.f quadric.o suv.o $(LDFLAGS) \
 	-o rastep 
 
-render:	render.o local.o quadric.o parse.o r3dtops.o ungz.o qinp.o
+render:	render.o local.o quadric.o parse.o r3dtogd.o ungz.o qinp.o
 	$(FC) $(FFLAGS) \
-	render.o local.o quadric.o parse.o r3dtops.o ungz.o \
+	render.o local.o quadric.o parse.o r3dtogd.o ungz.o \
 	qinp.o \
 	$(LIBS) $(LDFLAGS) \
 	-o render
@@ -218,8 +231,6 @@ normal3d:	normal3d.o quadric.o qinp.o ungz.o parameters.incl
 	-o normal3d
 
 stereo3d:
-
-label3d:
 
 #
 # Install
@@ -244,4 +255,27 @@ install:	all
 	@echo "	* scripts to verify your installation and  *"
 	@echo "	* to serve as examples of use.             *"
 	@echo "	********************************************"
+
+tests: all render_small
+	$(MAKE) -C examples
+	$(MAKE) -j1 -C examples compare
+
+example1.png: render_small
+	./render_small
+
+render_small: render_small.o local.o quadric.o parse_small.o r3dtogd.o ungz.o qinp_small.o
+	$(FC) $(FFLAGS) $^ $(LIBS) $(LDFLAGS) -o $@
+
+.SUFFIXES: .incl
+SMALL=10
+parameters_small.incl: parameters.incl
+	sed 's/PARAMETER *(MAXOBJ *=.*)/PARAMETER (MAXOBJ=$(SMALL))/;' $< \
+	  | sed 's/PARAMETER *(MAXDET *=.*)/PARAMETER (MAXDET=$(SMALL),MAXSDT=$(SMALL))/;' \
+	  | sed 's/PARAMETER *(MAXSHR *=.*)/PARAMETER (MAXSHR=$(SMALL),MAXSSL=$(SMALL))/;' \
+	  > $@
+
+render_small.o parse_small.o qinp_small.o: parameters_small.incl
+
+render_small.f parse_small.f qinp_small.f: %_small.f: %.f
+	sed 's/parameters.incl/parameters_small.incl/;' $< >$@
 

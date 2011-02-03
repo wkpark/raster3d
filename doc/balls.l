@@ -88,24 +88,24 @@ The Red, Green, and Blue components must all be in the range 0 to 1.
 
 The Mask field is used in the matching process as follows.  
 First the program reads in and stores all the ATOM, HETA, and
-COLO records in input order.  Then it goes through each stored
-ATOM/HETA record in turn, and searches for a COLO record that matches
+COLOUR records in input order.  Then it goes through each stored
+ATOM/HETA record in turn, and searches for a COLOUR record that matches
 the ATOM/HETA record in all of columns 7 through 30.  The first such
-COLO record to be found determines the colour and radius of the atom.
+COLOUR record to be found determines the colour and radius of the atom.
 
-In order that one COLO record can provide colour and radius
+In order that one COLOUR record can provide colour and radius
 specifications for more than one atom (e.g., based on residue or atom
 type, or any other criterion for which labels can be given somewhere in
 columns 7 through 30), the "#" symbol is used as a wildcard. I.e. a #
-in a COLO record matches any character in the
+in a COLOUR record matches any character in the
 corresponding column in an ATOM or HETA record.  All other characters
 must match literally to count as a match.  Note that the very last COLO
 record in the input should have # symbols in all of columns 7 through
 30 in order to provide a colour for any atom whose ATOM/HETA record
-fails to match any previous COLO record.  This idea of matching masks for
+fails to match any previous COLOUR record.  This idea of matching masks for
 colour specifications is due to Colin Broughton.
 
-Several files of COLO records, including one based on Bob Fletterick's
+Several files of COLOUR records, including one based on Bob Fletterick's
 "Shapely Models" and another mimicking CPK model parts, are
 provided as samples.
 .SH ENVIRONMENT

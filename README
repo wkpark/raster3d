@@ -1,7 +1,7 @@
-Most recent change:	  12-Feb-2010
+Most recent change:	  19-Dec-2010
 
-The file Raster3D-2.9-1.tar.gz contains the full source distribution for
-version 2.9-1 of Raster3D.
+The file Raster3D_3.0.tar.gz contains the full source distribution for
+version 3.0 of Raster3D.
 
   See CHANGELOG for a history of changes to the package.
 
@@ -22,20 +22,22 @@ version 2.9-1 of Raster3D.
 	    Add the following line
 	    	<delegate decode="r3d" command='"render" < "%i" > "%o"' />
 
-- Changes in Version 2.9 compared to 2.7s
-	+ compatible with gfortran and intel compilers
-	+ new code in rastep to support Skittles validation 
+- Changes in Version 3.0
+	+ new code in rastep to support Skittles validation (introduced in 2.9)
+	+ dynamic array allocation
+	+ png/jpeg output using libgd
+	+ labels handled by libgd
 
 If you run into installation problems, please let me know,
 particularly if you can also tell me what you did to fix it!
 
 For optimal use of Raster3D you should also obtain 
-John Cristy's ImageMagick package for image manipulation and viewing 
+- John Cristy's ImageMagick package for image manipulation and viewing 
 	(source distribution available from www.ImageMagick.org)
-Some version of a TIFF library
-Some version of a JPEG library
-Some recent version of the PNG library (http://www.libpng.org/pub/png/libpng.html)
-Version 2.0 or greater of Molscript (http://www.avatar.se/molscript)
+- Version 2.0 or greater of Per Kraulis's program Molscript
+
+To build support for direct output of TIFF files
+- Some version of a TIFF library
 
 
 				Ethan A Merritt

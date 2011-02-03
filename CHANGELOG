@@ -1,6 +1,28 @@
+03-Feb-2011	Package 3.0-2 (SBGRID builds)
+26-Jan-2011	Joe Krahn: use AlphaBlending mode 0 when rendering labels
+19-Dec-2011	Package 3.0-1 (SBGRID builds)
+18-Dec-2010	make NAX,NAY integer*4 to prevent overflow during autotiling
+16-Dec-2010	modify stereo3d script to use render -labels rather than label3d
+		hardwire libraries in LDFLAGS for building static rpm
+		read in full header before initializing output
+16-Dec-2010	Joe Krahn:
+		Add Makefile entries for osx and osx-fink
+		Use new Fortran intrinsic LEN_TRIM
+		Choice of four transparency algorithms
+15-Dec-2010	Handle UTF-8 sub and superscripts in label processing
+		Use OPT(2) of MATERIAL record to select transparency algorithm
+		Add a Makefile option for "make osx"
+14-Dec-2010	Revise packaging instructions in Makefile.package
+14-Dec-2010	add first cut of modified render.f local.c r3dtogd.f that use libgd
+		to produce png/jpeg output and also to handle labels
+14-Dec-2010	Add dummy MODULES to normal3d.f so that the symbols are defined for qinp
+04-Apr-2010	updated the version on raster3d-3.0.spec and raster3d-static-3.0.spec SPEC files
+30-Mar-2010	added the raster3d-static-2.9.spec SPEC file for static builds
 16-Mar-2010	Release 2.9-2 (dynamic)
 12-Feb-2010	Release 2.9-1 (static)
 12-Feb-2010	added escape characters for dollar sign in $(FC) in Makefile
+09-Feb-2010	expandable array allocations to for MAXOBJ, MAXN*XY, etc
+09-Feb-2010	created Raster3D-3.0 branch from Raster3D-2.9
 26-Jan-2010	bring ribbon.f ribbon1.f into the gfortran era
 22-Jan-2010	commit my current source tree to cvs repository on verdandi
 22-Jan-2010	avs2ps.c: more brackets in the initializer for avail[][]

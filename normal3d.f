@@ -1,6 +1,13 @@
+* Not really used by normal3d, but needed in order to link with qinp
+      MODULE LISTS
+        INTEGER, ALLOCATABLE, DIMENSION(:,:)   :: KOUNT, MOUNT
+        INTEGER, ALLOCATABLE, DIMENSION(:,:)   :: TTRANS
+        INTEGER ISTRANS
+      END MODULE LISTS
+
       PROGRAM NORMAL3D
 *
-*     Version 2.6e 19-Apr-2002
+*     Version 3.0 (14 Dec 2010)
 *
 * EAM Jan 1996	- Initial release as part of version 2.2
 * EAM Aug 1996	- Add -expand option to deal with file indirection
@@ -23,6 +30,7 @@
 *		  stereo defaults to shear (as before); force EYEPOS = 0
 *		  but specifying -angle AA switches to +/- AA separation instead
 *		  You can't win:  shear breaks bounding planes, AA breaks Z-clip
+* EAM Dec 2010	- Dynamic array allocation to match that in render
 *
 *	This program is part of the Raster3D package.
 *	It is simply a stripped down version of the input section of render.
@@ -114,9 +122,6 @@
       INTEGER LEFT, RIGHT
       PARAMETER (LEFT=1, RIGHT=2)
 *
-*     User-settable array limits
-      INCLUDE 'parameters.incl'
-*
       INTEGER    ILEVEL
 *
 *     Codes for triangle, sphere, truncated cone, and string of pearls
@@ -132,7 +137,7 @@
       PARAMETER (NORMS    = 7)
       PARAMETER (MATERIAL = 8)
       PARAMETER (MATEND   = 9)
-      PARAMETER (FONT     = 10, LABEL = 11 )
+      PARAMETER (FONT     = 10, LABEL = 11)
       PARAMETER (GLOWLIGHT= 13)
       PARAMETER (QUADRIC  = 14)
       PARAMETER (ISOLATE1 = 15)
@@ -141,6 +146,9 @@
       PARAMETER (VERTRANSP= 18)
       PARAMETER (ISOLATE2 = 19)
       PARAMETER (MXTYPE   = 19)
+*
+*     $$$$$$$$$$$$$   ARRAY SIZE LIMITS $$$$$$$$$$$$$$
+      INCLUDE 'parameters.incl'
 *
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
@@ -206,7 +214,7 @@
       LOGICAL INFLGS(MXTYPE),INFLG
 *
 *     Allow very long names for file indirection
-      CHARACTER*128 FULLNAME
+      CHARACTER*132 FULLNAME
 *
 *     Stuff for shading
 c     REAL   NL(3),NORMAL(3),LDOTN
@@ -215,6 +223,7 @@ c     REAL SPECOL(3)
 *
 *     Support for transparency
       REAL OPT(4)
+      INTEGER OPT4
 *
 *     Support for quadric surfaces
       EXTERNAL QINP
@@ -237,8 +246,8 @@ c     REAL SPECOL(3)
 c
 c
       LOGICAL      HFLAG, XFLAG, SFLAG, SKIP
-      CHARACTER*80 FLAGS
-      CHARACTER*80 TMPNAM
+      CHARACTER*132 FLAGS
+      CHARACTER*132 TMPNAM
       INTEGER      LENTMP
 *
 *     Stuff for labels
@@ -350,8 +359,8 @@ c
 		IF (I.LT.NARG) THEN
 		    CALL GETARG(I+1, FLAGS)
 		    IF (FLAGS(1:1).NE.'-') THEN
-			do j=1,80
-			    if (flags(j:j).lt.'!') goto 88 
+			do j=1,len(flags)
+			    if (flags(j:j).lt.'!') goto 88
 			enddo
    88			lentmp = j
 			TMPNAM = FLAGS(1:lentmp-1)//'_'
@@ -367,6 +376,8 @@ c
 		    read(flags,'(1f6.0)',end=89,err=89) sepang
 		    skip = .true.
 		endif
+	else if (flags(1:6) .eq. '-label') then
+		continue
 	else if (skip) then
 		skip = .false.
 	ELSE
@@ -435,6 +446,9 @@ c
       ENDIF
 *
 *     2.4h - allow file indirection for header
+      J = 1
+      K = 132
+      L = 132
       IF (TITLE(1:1) .EQ. '@') THEN
 	DO I=132,2,-1
 	  IF (TITLE(I:I).NE.' ') J = I
@@ -773,6 +787,7 @@ c
       nplanes = 0
       ntriang = 0
       nquads  = 0
+      nlabels = 0
 c
 c     Objects in, and count up objects that may impinge on each tile
       NDET = 0
@@ -800,6 +815,7 @@ c     Aug 1996 - allow file indirection
      &	            'Too many levels of indirection')
      	J = 1
 	K = 132
+	L = 132
  	DO I=132,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
 	  IF (LINE(I:I).EQ.'#') K = I-1
@@ -1085,8 +1101,10 @@ c
      &                    OPT(1),OPT(2),OPT(3),OPT(4)
 94      FORMAT (F5.0,1X,F5.2,1X,3F7.3,1X,F6.3,3X,4F6.1)
 *	24-Feb-1997 OPT(4) signals additional MATERIAL records
-	IF (OPT(4).GT.0) THEN
-	  DO I = 1, OPT(4)
+	OPT4 = OPT(4)
+	IF (OPT4.GT.0) THEN
+	  L = 1
+	  DO I = 1, OPT4
             READ (INPUT,'(A)',END=50) LINE
 	    DO J = 132, 1, -1
 	      IF (LINE(J:J).NE.' '.AND.LINE(J:J).NE.'	') L = J
@@ -1261,6 +1279,8 @@ c
       IF (NQUADS .NE.0) WRITE(NOISE,*) 'quadric surfaces  =',NQUADS
       IF (NTRANSP.NE.0) WRITE(NOISE,*) 'transparent objs  =',NTRANSP
       WRITE(NOISE,*)'-------------------------------'
+      IF (NLABELS.NE.0) WRITE(NOISE,*) 'labels            =',NLABELS
+      WRITE(NOISE,*)'-------------------------------'
 *
       WRITE (NOISE,*) 'Compare these to the array dimensions in render:'
       IF (NPROPM.NE.0) WRITE(NOISE,*)  'special materials =',NPROPM,
@@ -1350,16 +1370,13 @@ C     STOP 1234
 	subroutine liblookup( name, fullname )
 c
 	character*(*) name
-	character*128 fullname
+	character*132 fullname
 	character*132  R3DLIB
 c
 	call getenv('R3D_LIB',R3DLIB)
 c
 	fullname = ' '
-	len = 0
-	do i = 1, 132
-	    if (R3DLIB(i:i).ne.' ') len = i
-	enddo
+	len = len_trim(R3DLIB)
 	if (len.eq.0) then
 	    fullname = name
 	    return

@@ -31,23 +31,21 @@ Usage:
      render -jpeg [outfile]        JPEG image to outfile (defaults to stdout)
      render -sgi  [outfile]        output to SGI libimage file (defaults to render.rgb)
      render -tiff [outfile]        output to TIFF file (defaults to render.tif)
-     render -out   outfile.xxx     pipe output to ImageMagick for
-                                   conversion to image type xxx
 </pre>
 Options:
 <pre>
    these over-ride contents of input stream header records 
 
-    -aa                   anti-aliasing (SCHEME 4)
+    -aa                   use anti-aliasing (SCHEME 4)
     -alpha                alpha channel in output image (SCHEME 0)
-    -bg <color>           set background, <color> is black, white or #RRGGBB
+    -bg COLOR             set background, COLOR is black, white or #RRGGBB
     -debug                verbose output while running
     -draft                no anti-aliasing (SCHEME 1)
     -fontscale FF         multiplier for PostScript label fonts
     -gamma GG             apply gamma correction GG to output image
     -invert               invert y axis
-    -labels [outfile.ps]  write labels to PostScript file [default: label3d.ps]
-    -quality QQ           0 < QQ < 100   jpeg compression parameter (default 90)
+    -labels               render embedded labels to the output file as well
+    -quality QQ           0 &lt; QQ &lt; 100   jpeg compression parameter (default 90)
     -[no]shadow	          enable or disable shadowing
     -size HHHxVVV         specify size of output image in pixels
     -transparent          same as -alpha (SCHEME 0)
@@ -89,13 +87,13 @@ Options:
 Render a simple space-filling model coloured by residue type:
 
 <pre>
-    cat mycolors.pdb protein.pdb | balls | render &gt; mypicture.avs
+    cat mycolors.pdb protein.pdb | balls | render &gt; mypicture.png
 </pre>
 Display
 the same picture on an X-windows display directly using ImageMagick:
 
 <pre>
-    cat mycolors.pdb protein.pdb | balls | render | display avs:-
+    cat mycolors.pdb protein.pdb | balls | render | display png:-
 </pre>
 Render
 and display the same picture using the SGI libimage format:
@@ -114,7 +112,7 @@ a TIFF file.
 <pre>
     ribbon -d4 protein.pdb &gt; ribbon.r3d 
     cat colors.pdb cofactor.pdb | rods -bs -h &gt; cofactor.r3d 
-    cat ribbon.r3d cofactor.r3d | render | convert avs:- picture.tiff
+    cat ribbon.r3d cofactor.r3d | render | convert png:- picture.tiff
 </pre>
 If
 TIFF support has been built directly into Raster3D, then the previous command
@@ -140,7 +138,7 @@ can be modified to produce a TIFF file without conversion:
     <dd>Set background color. #RRGGBB is a hexadecimal representation of the
 	color components.
     <dt><i> -draft</i>
-    <dd>Turn off anti-aliasing (SCHEME 1) to increase rendering speed.
+    <dd>Turn off anti-aliasing to increase rendering speed.
     <dt><i> -fontscale XX</i>
     <dd>Only meaningful in conjunction with the <i>-labels</i> option.
     	Modifies the interpretation of font sizes during label processing.
@@ -161,16 +159,10 @@ can be modified to produce a TIFF file without conversion:
     <dd>Only if compiled with -DJPEG_SUPPORT. By default
 	render will produce an AVS-compatible image on stdout. The -jpeg flag will
 	cause it to output a JPEG image stream to stdout instead.
-    <dt><i> -labels [outfile.ps]</i>
+    <dt><i> -labels </i>
     <dd>Process labels (<a href="#obj10">object types 10,11,12</a>)
-    	and create a PostScript output file <b>label3d.ps</b> in addition to the
-	rendered image file.  If no filename is given, output file defaults to
-	label3d.ps.
-	This option is used by the <a href="label3d.html">label3d</a> script.
-    <dt><i> -out filename.xxx</i>
-    <dd>Only if compiled with -DIMAGEPIPE. The -out flag will cause render to pipe output to the 
-	ImageMagick command convert, with instructions to convert it to an image file whose type is 
-	determined by the filename extension xxx. 
+	and embed them in the output image.  The text rendering is done via libgd,
+	so this option only works from png or jpeg output.
     <dt><i> -quality NN</i>
     <dd>Only meaningful in conjunction with the <i>-jpeg</i> option;
     <dt><i> -size HHHxVVV</i>
@@ -187,8 +179,8 @@ can be modified to produce a TIFF file without conversion:
     <dd>Only if compiled with -DTIFF_SUPPORT.
 	The -tiff flag will cause render to output a TIFF image to the specified file.
     <dt><i>-transparent</i>
-    <dd>(same as <i>-alpha</i>) Force output of transparency information (SCHEME 0).
-    	This only works if the output format supports an alpha channel (AVS, TIFF, 
+    <dd>(same as <i>-alpha</i>) Force output of transparency information.
+    	This only works if the output format supports an alpha channel (AVS, PNG, TIFF, 
 	but <i>not</i> JPEG).
     <dt><i>-zoom ZZ[%]</i>
     <dd>Modifies the scale factor TMAT(4,4) in the header records. This does not change
@@ -217,12 +209,18 @@ variables in the program source code.
 <dl>
 <dt><b><i></i></b></dl><dl>
 <dt><i>TITLE</i><dd>Anything you like, up to 80 characters.
-<dt><i>NTX,NTY</i><dd>Number of ``tiles'' in each direction. (The output
-display is considered to be divided up into an array of identical rectangular
-tiles.) The maximum is 192 unless you have increased MAXNTX and MAXNTY in
-render.f.
+<dt><i>NTX,NTY</i><dd>Number of "tiles" in each direction.
+(The image is rendered piecemeal by dividing it into an array of equal 
+size rectangular tiles.) 
+The width of the output image in pixels is NTX*NPX by NTY*NPY.
+The speed of the program is sensitive to the number of tiles.
+However, as a convenience you can set NPX and NPY to zero and use NTX, NTY
+to provide the net size of the output image in pixels.  In this case the
+program will choose the number of tiles itself so that you don't have to
+worry about it.
 <dt><i>NPX,NPY</i><dd>Number of computing pixels per tile in each direction.
-Maximum = 36 (MAXNPX, MAXNPY in render.f)
+Maximum = 36 (MAXNPX, MAXNPY in render.f). If you set NPX and NPY to zero,
+the program will use NTX and NTY as the net size of the image in pixels.
 <dt><i>SCHEME</i><dd>Pixel averaging (anti-aliasing) scheme.
 Anti-aliasing reduces the jaggedness of edges at the cost of additional 
 computation. If you are going to matte your images against an externally 
@@ -230,13 +228,11 @@ generated background, use scheme 0 (matting and anti-aliasing do not mix well).
 <br>
 <dl>
     <dt> Scheme 0
-    <dd> no anti-aliasing, include alpha blend (matte) channel in 
-	output image
+    <dd> no anti-aliasing, include alpha blend channel in output image
     <dt> Scheme 1
-    <dd> no anti-aliasing, no matted channel
+    <dd> no anti-aliasing, no alpha channel
     <dt> Scheme 2
-    <dd> anti-alias by averaging 2x2 computing pixels for each 
-	output pixel 
+    <dd> anti-alias by averaging 2x2 computing pixels for each output pixel 
     <dt> Scheme 3
     <dd> anti-alias by averaging 3x3 computing pixels for each
 	2x2 output pixels (obsolete - use scheme 4 instead)
@@ -291,7 +287,7 @@ ends up being applied as an inverse; i.e. a larger value of h will result in
 shrinking the objects in the picture. Input coordinate vectors [x&nbsp; y&nbsp;
 z] are extended with a 1 to make them homogeneous, and then post-multiplied by
 the entire matrix; i.e. [x' y' z' h'] = [x y z 1][TMAT], then the ultimate
-co-ordinates are [x'' y'' z''] = (1/h')[x' y' z'].
+co-ordinates are [x" y" z"] = (1/h')[x' y' z'].
 <dt><i>INMODE</i><dd>Object input mode (1, 2, or 3), where mode 1 means that
 all objects are triangles, mode 2 means that all objects are spheres, and mode
 3 means that each object will be preceded by a record containing a single
@@ -310,8 +306,8 @@ indicate free-format input.
 
 <pre>
 My picture. (describes a 1280 x 1024 pixel anti-aliased image) 
-80 64 	  tiles in x,y 
-16 16     pixels (x,y) per tile 
+80 64 	  tiles in x,y             (or set these to 1280 1024)
+16 16     pixels (x,y) per tile    (and set these to 0 0)
 4 	  anti-aliasing level 4; 3x3-&gt;2x2 
 0 0 0 	  black background 
 F 	  no shadows cast 
@@ -423,10 +419,10 @@ F 	  no shadows cast
      line of the input stream:
      <dl>
      <dt> MPHONG
-	<dd>override global Phong parameter for specular highlighting
+	<dd>value &gt;= 0 overrides the global Phong parameter for specular highlighting
 
      <dt>MSPEC 
-	<dd>override global specular scattering contribution
+	<dd>value &gt;= 0 overrides the global specular scattering contribution
 
      <dt>SR,SG,SB 	
         <dd>RGB triple specifying color of reflected light (by default
@@ -441,14 +437,21 @@ F 	  no shadows cast
 
      <dt>OPTS(4)
         <dd>four additional fields are reserved for future expansion of
-	the material properties list; these must be present. The first field
-	controls alternative algorithms for rendering transparent objects:
+	the material properties list; these must be present. The first two fields
+	control alternative algorithms for rendering transparent objects:
 	<dl>
-	<dd>OPT(1) = 0 render self-occluding portions of a transparent material separately
-	<dd>OPT(1) = 1 render only the ``top'' surface of transparent material
-	<dd>OPT(1) = 2 render rear surface of transparent spheres and cylinders
+	<dd>OPT(1) = 0 render all outward-facing layers of a transparent material, even if they occlude each other
+	<dd>OPT(1) = 1 render only the "top" outward-facing surface of transparent material
+	<dd>OPT(1) = 2 render both the outward- and inward-facing surface of transparent spheres and cylinders
 	</dl>
-        The last field is non-zero to signal that additional modifier
+	OPT(2) specifies how net transparency varies as a function of surface normal.
+	<dl>
+	<dd>OPT(2) = 0 empirical function that looks best to me
+	<dd>OPT(2) = 1 faster empirical function
+	<dd>OPT(2) = 2 exponential function based on theory (slower)
+	<dd>OPT(2) = 3 ignore surface normal (transparent objects look flat)
+	</dl>
+        The fourth field is non-zero to signal that additional modifier
 	records will follow immediately. Each modifier record must constitute a
 	single line, and OPT(4) states how many of these there will be. For example
 	<dl>
@@ -488,6 +491,7 @@ Here is the complete list of modifiers currently available, and their parameters
     BACKCLIP		ZBACK
     BOUNDING_COLOR	RED GREEN BLUE
     BOUNDING_PLANE	BPTYPE X Y Z Xnorm Ynorm Znorm
+    ORTEP_LIKE    	used to create <a href="r3d_hints.html#bounding">bounding planes</a> of ellipsoids
 </pre>
 See elsewhere for more information on 
 <a href="r3d_hints.html#clipping">clipping planes</a> and
@@ -508,16 +512,9 @@ See elsewhere for more information on
 <dt> Object types 10-12
 <dt><font color=#BB2222>Label descriptors</font>
 <dd>
-Version 2.3 introduced preliminary support for labels in a render input
-file. This has been substantially upgraded in version 2.4j.
+Version 3.0 supports rendering labels via the libgd library used to
+produce png or jpeg output images.
 Object types 10, 11, and 12 are used to specify labels. 
-The current implementation of label handling is not done in render,
-however, but rather in a separate program called 
-<a href="r3dtops.html">r3dtops</a>.  The executable shell script 
-<a href="label3d.html">label3d</a> will automatically feed an input 
-file containing labels through render, r3dtops, ghostscript and ImageMagick
-to yield a final image containing both the renderered molecular 
-graphics objects and the specified labels. 
 Here is an example:
 <pre>
         # Force the label coordinates to be interpreted as screen coords
@@ -527,9 +524,9 @@ Here is an example:
         # Choose a font
         10
         "Times-Italic" 12. "Center-align"
-        # specifiy a label 
+        # specify a label 
         11
-        0.0 0.45 0.0       1.0 0.0 0.0
+        0.0 0.45 0.0 &nbsp;&nbsp; 1.0 0.0 0.0
         I am a red title centered at the top of the image
         # Terminate isolation from coordinate transformation
         9
@@ -539,12 +536,12 @@ Here is an example:
 	<dt> Object type 10
 	<dd> <pre>"Font specifier" size  "alignment"</pre><br>
 	     Legal fonts specifiers are subject to the details of label processing implementation.
-	     In the context of label3d/r3dtops/ghostscript processing, <br>
-	     <b>fontname</b> is any PostScript font name recogized by ghostscript,<br>
+	     In the context of processing by libgd, <br>
+	     <b>fontname</b> is any font name recogized by libgd,<br>
 	     <b>size</b> is the font size in points (assuming eventual printing at 300 dpi),<br>
 	     <b>alignment</b> is either "Right-align", "Left-align", "Center-align", or "Offset"
 	     (only the first character is checked).<br>
-	     The default is "Times-Bold" 10 "Left-align".
+	     The default is "Times" 10 "Left-align".
 	     <p>
 	
 	<dt> Object type 11
@@ -823,12 +820,9 @@ material1.r3d
 <dt><b><i>Possible shadowing error NSXMAX = xxx </i></b>
     <dd>
     This is usually caused by an object which extends far out of
-    the field of view, for example a plane surface. In most cases the
-    shadowing "error" refers to a shadow which lies outside of the image
-    entirely.  However, if your image does in fact contain missing or
-    truncated shadows you can overcome this problem by re-compiling the
-    render program with larger values of NSX and NSY as indicated by the
-    error message.
+    the field of view, for example a plane surface that extends to infinity. 
+    In most cases the shadowing "error" refers to a shadow which lies 
+    outside of the image entirely.
 </dl>
 </p>
 
@@ -836,34 +830,9 @@ material1.r3d
 <a name="arrays">
 <h4>INCREASING THE ARRAY SIZES IN RENDER:</h4>
 </a>
-If you are creating images of very large proteins, or if you are rendering
-surfaces with many facets, then you may fill the storage arrays in render.
-If so you will get an error message something like
-<pre>
-	STOP 1234 **** too many objects - increase MAXOBJ and recompile
-</pre>
-The parameters which you may need to increase are contained in the 
-file <i>parameters.incl</i>:
-<pre>
-*     Maximum number of objects (was 7500)
-      PARAMETER (MAXOBJ = 25000)
-*
-*     Array elements available for object details
-      PARAMETER (MAXDET = 250 000, MAXSDT = 250 000)
-*
-*     Array elements available for sorted lists ("short" lists)
-      PARAMETER (MAXSHR = 150 000, MAXSSL = 150 000)
-</pre>
-You can use the 
-<a href="normal3d.html">normal3d</a> 
-utility to calculate how many objects and object
-details are needed for your picture.  The sorted list sizes are harder to
-calculate in advance, but the render program itself should indicate how much
-space would be required to complete a picture which it cannot currently
-handle.<p>
-
-Increase the appropriate PARAMETER values by editing <i>paramters.incl</i>, and
-recompile the render and normal3d programs by typing "make all".
+<p>
+As of Version 3.0, this should no longer be necessary.
+Arrays are expanded dynamically.
 </p>
 
 

@@ -1,15 +1,15 @@
 Summary: Raster3D photorealistic molecular graphics package
 Name: Raster3D
-Version: 2.9
-Release: 1
-%define  r3dver %{name}_%{version}
+Version: 3.0
+Release: 2
+%define  r3dver %{name}_%{version}-%{release}
 License: Source freely available, redistribution restricted
-Source: http://www.bmsc.washington.edu/raster3d/%{name}_%{version}.tar.gz
+Source: http://www.bmsc.washington.edu/raster3d/%{name}_%{version}-%{release}.tar.gz
 URL: http://www.bmsc.washington.edu/raster3d
 Packager: Ethan A Merritt
 Group: Graphics
 BuildRoot:%{_tmppath}/%{name}-%{version}-buildroot
-#BuildRequires: libpng-devel zlib-devel libjpeg-devel libtiff-devel
+BuildRequires: libgd-devel libtiff-devel
 #
 # You may or may not want the following definitions
 %define _prefix /usr/local
@@ -28,6 +28,8 @@ specular highlighting, transparency, and Phong shaded surfaces.  Output is to
 a pixel image with 24 bits of color information per pixel.
 Raster3D does not depend on graphics hardware.
 
+This version is dynamically linked.
+
 Program reference and requested citation: 
 	Merritt & Bacon  (1997) Meth. Enzymol. 277, 505-524.
 
@@ -40,8 +42,8 @@ if [ -x $PGI/linux86/bin/pgf77 ]; then
   make linux-pgf77
   make all FFLAGS='-O -Munroll -tp px' PLIBS='/usr/lib/libpng.a'
 elif [ -x /usr/bin/gfortran ]; then
-  make linux-gfortran
-  make all FFLAGS="-g -Wall -O3 -ffixed-line-length-132" CFLAGS="-Dgfortran $RPM_OPT_FLAGS"
+  make linux
+  make all FFLAGS="-g -O3 -ffixed-line-length-132 -Wtabs -fno-range-check" CFLAGS="-Dgfortran $RPM_OPT_FLAGS"
 else
   make linux
   make all FFLAGS="$RPM_OPT_FLAGS" CFLAGS="$RPM_OPT_FLAGS"
@@ -75,7 +77,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %{_bindir}/avs2ps 
 %{_bindir}/balls 
-%{_bindir}/label3d
+%{_bindir}/worms
 %{_bindir}/rastep 
 %{_bindir}/render 
 %{_bindir}/ribbon 
@@ -144,6 +146,10 @@ fi
 
 
 %changelog
+* Thu Feb 03 2011 Ethan Merritt <merritt@u.washington.edu>
+- release Raster3D-3.0-2 (dynamic array allocation; libgd support)
+* Tue Dec 19 2010 Ethan Merritt <merritt@u.washington.edu>
+- released Raster3D-3.0-1 (dynamic array allocation; libgd support)
 * Tue Mar 16 2010 Christoph Champ <champc@u.washington.edu>
 - released Raster3D-2.9-2 (dynamic)
 * Fri Feb 12 2010 Christoph Champ <champc@u.washington.edu>

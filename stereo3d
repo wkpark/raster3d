@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-#	Raster3D utility script "stereo3d" V2.7a
-#       ========================================
+#	Raster3D utility script "stereo3d" V3.0
+#       =======================================
 #
-# Ethan A Merritt - April 2002
+# Ethan A Merritt - December 2010
 #
 # Renders a single Raster3D scene description as a side-by-side stereo pair.
 # By default this version of the stereo3d script uses a shear operation to 
@@ -21,15 +21,11 @@
 #
 #
 # Requires:
-#	Raster3D label3d script
 #	ImageMagick utilities identify, mogrify, and montage.
-#	Ghostscript (if labels are present).
-# 	TIFF support, although this could be changed.
 # 	sed (previous versions used awk/nawk).
-# This script was tested using ImageMagick version 5.5.4
+# This script was tested using ImageMagick version 6.6.1
 #
 # Usage:
-#	stereo3d [-angsep] [-border]  -tiff [out.tiff] < infile.r3d > outfile.tiff
 #	stereo3d [-angsep] [-border] [-png  [out.png]] < infile.r3d > outfile.png
 #
 # Temporary files:
@@ -41,8 +37,10 @@
 #
 if [ "$TMPDIR" ]; then
     tmp=$TMPDIR/$$
-else
+elif [ -d /usr/tmp ]; then
     tmp=/usr/tmp/$$
+else
+    tmp=/tmp/$$
 fi
 # echo "DEBUG scratch files to $tmp"  1>&2
 
@@ -54,7 +52,8 @@ unset outfile
 unset img
 mode=
 previous=
-more_options=
+render_options=
+normal_options=
 
 for option in $*
 do
@@ -62,7 +61,6 @@ if   [ "$option" = "-border" ]; then STEREOBORDER=1;
 elif [ "$option" = "-png"    ]; then img=png; 
 elif [ "$option" = "-tiff"   ]; then img=tiff; 
 elif [ "$option" = "-angsep" ]; then mode="-ang 2.5"; 
-elif [ "$option" = "-size"   ]; then passthru= ;
 else
     if [ "$previous" = "-tiff" ] || [ "$previous" = "-png" ] ; then
     	outfile="$option"
@@ -70,14 +68,10 @@ else
 	    outfile="$option"
 	fi
     elif [ "$previous" = "-size" ] ; then
-    	more_options="-size $option"
+    	normal_options="${normal_options} -size $option"
+    	render_options="${render_options} $option"
     else
-	echo "stereo3d version 2.7a" 1>&2
-	echo "unrecognized option: $option" 1>&2
-	echo "Usage:" 1>&2
-	echo "	stereo3d [-border] [-angsep] [-tiff [outfile.tiff]] < infile.r3d > outfile.tiff" 1>&2
-	echo "	stereo3d [-border] [-angsep]  -png  [outfile.png ]  < infile.r3d > outfile.png " 1>&2
-	exit -1
+	render_options="${render_options} $option"
     fi
 fi
 previous="$option"
@@ -98,7 +92,7 @@ fi
 # Default is to use a shear operation to create stereo effect
 # -angsep selects angular separation instead
 
-if normal3d -stereo ${tmp} -expand $mode $more_options > ${tmp}_stereo3d.tmp 
+if normal3d -stereo ${tmp} -expand $mode ${normal_options} > ${tmp}_stereo3d.tmp 
 then
     echo "stereo3d: normal3d seems to be OK" 1>&2
 else
@@ -115,11 +109,13 @@ echo "@${tmp}_stereo3d.tmp" >> ${tmp}_right.r3d
 #    render -tiff left.tiff  < left.r3d
 #    render -tiff right.tiff < right.r3d
 #
+# echo " normal3d options $normal_options" 1>&2
+# echo " render options $render_options" 1>&2
 echo "stereo3d: rendering left eye view" 1>&2
-label3d -${img} < ${tmp}_left.r3d  > ${tmp}_left.${img} 2> /dev/null  \
+render ${render_options} -${img} < ${tmp}_left.r3d  > ${tmp}_left.${img} 2> /dev/null  \
          || mv ${tmp}_render.${img}  ${tmp}_left.${img}  
 echo "stereo3d: rendering right eye view" 1>&2
-label3d -${img} < ${tmp}_right.r3d > ${tmp}_right.${img} 2> /dev/null \
+render ${render_options} -${img} < ${tmp}_right.r3d > ${tmp}_right.${img} 2> /dev/null \
          || mv ${tmp}_render.${img}  ${tmp}_right.${img}
 #
 # Find image size

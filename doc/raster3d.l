@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH Raster3D 1 "28 August 2001" "Raster3D V2.6"
+.TH Raster3D 1 "14 December 2010" "Raster3D V3.0"
 .SH NAME
 .PP
 Raster3D molecular graphics package
@@ -9,7 +9,7 @@ Raster3D molecular graphics package
 The \fIRaster3D\fP molecular graphics package consists of a core
 program \fIrender\fP 
 and a number of ancillary programs 
-(\fIballs\fP, \fIrastep\fP, \fIrods\fP, \fIribbon\fP)
+(\fIballs\fP, \fIrastep\fP, \fIrods\fP)
 which produce input files for
 rendering from PDB (Protein Data Bank) files of atomic coordinates.
 \fIRaster3D\fP can also render images composed using other programs
@@ -40,8 +40,7 @@ you must also have installed an image viewing package (e.g. John
 Cristy's ImageMagick or the SGI libimage utilities).
 A filter utility \fIavs2ps\fP is included in the package which can
 convert an AVS format output stream directly to a dithered monochrome
-PostScript image. Other output formats are possible in conjunction
-with ImageMagick.
+PostScript image.
 
 Although Raster3D is not intended as a general purpose ray-tracing package,
 nothing in the rendering process is specific to molecular graphics.
@@ -67,9 +66,9 @@ representation of the protein and spheres drawn for the Fe atoms:
      #
      grep "FE" protein.pdb | cat colorfile - | balls -h > irons.r3d
      #
-     # combine the two descriptions and render as AVS image file
+     # combine the two descriptions and render to a PNG image
      #
-     cat ribbon.r3d irons.r3d | render > picture.x
+     cat ribbon.r3d irons.r3d | render > picture.png
 
 Integrated use of MOLSCRIPT/Raster3D/ImageMagick allows one to
 describe, render, and view 3D representations of existing MOLSCRIPT
@@ -77,15 +76,7 @@ figures:
 
      molscript -r infile.dat | render | display png:-
 
-A similar example using xv as an image viewer, and assuming that TIFF
-support has been built into the render program:
-
-     molscript -r infile.dat | render -tiff image.tif
-     xv image.tif
-
 .SH SOURCE
-.B anonymous ftp site:	
- 	ftp.bmsc.washington.edu
 
 .B web URL:
  	http://www.bmsc.washington.edu/raster3d/raster3d.html
@@ -97,7 +88,7 @@ support has been built into the render program:
 
 .SH SEE ALSO
 render(l), rastep(l), rods(l), ribbon(l), balls(l), avs2ps(l), 
-label3d(l), stereo3d(l)
+stereo3d(l)
 .PP
 .SH AUTHORS
  Originally written by David J Bacon and Wayne F Anderson.

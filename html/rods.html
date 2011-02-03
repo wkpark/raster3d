@@ -15,8 +15,7 @@ rods is a preprocessor for ball-and-stick figures in the
 rods [-h] [-b] [-radius R] [-Bcolor Bmin Bmax]
 </pre>
 rods
-reads a PDB coordinate file, including COLOUR records as
-described below, 
+reads a PDB coordinate file, including COLOUR records as described below, 
 and produces a stream of Raster3D descriptor records on stdout. The file
 produced by rods may be fed directly to render or it may be combined with
 descriptor files produced by other Raster3D utilities.
@@ -25,13 +24,13 @@ descriptor files produced by other Raster3D utilities.
 To describe a simple bonds-only model coloured by residue type:
 
 <pre>
-cat mycolours.pdb protein.pdb | rods | render &gt; mypicture.avs
+cat mycolours.pdb protein.pdb | rods | render &gt; mypicture.png
 </pre>
 To
 render the same molecule as ball-and-stick:
 
 <pre>
-cat mycolours.pdb protein.pdb | rods -b | render &gt; mypicture.avs
+cat mycolours.pdb protein.pdb | rods -b | render &gt; mypicture.png
 </pre>
 <H4>OPTIONS</H4>
 <dl>
@@ -57,7 +56,7 @@ The radius option allows you to change the cylindrical radius.
 The input to rods consists of a single text file containing colour information
 and atomic coordinates in PDB data bank format. Coordinates are
 output as Raster3D descriptor records with colours and sphere radii assigned
-according to the COLO records described below. Ball-and-stick figures have
+according to the COLOUR records described below. Ball-and-stick figures have
 atoms drawn at 0.2 * Van der Waals radius, connected by rods with 
 a default 0.2 &Aring;
 cylindrical radius. Atoms are connected if they lie closer to each other than
@@ -86,19 +85,19 @@ in the same positions as the X, Y, and Z components of an ATOM or HETA record,
 and the van der Waals radius goes in place of the Occupancy. The Red, Green,
 and Blue components must all be in the range 0 to 1.<p>
 The Mask field is used in the matching process as follows. First the program
-reads in and stores all the ATOM, HETA, and COLO records in input order. Then
-it goes through each stored ATOM/HETA record in turn, and searches for a COLO
+reads in and stores all the ATOM, HETA, and COLOUR records in input order. Then
+it goes through each stored ATOM/HETA record in turn, and searches for a COLOUR
 record that matches the ATOM/HETA record in all of columns 7 through 30. The
-first such COLO record to be found determines the colour and radius of the
+first such COLOUR record to be found determines the colour and radius of the
 atom.<p>
-In order that one COLO record can provide colour and radius specifications for
+In order that one COLOUR record can provide colour and radius specifications for
 more than one atom (e.g., based on residue or atom type, or any other criterion
 for which labels can be given somewhere in columns 7 through 30), the # symbol
-is treated as a wildcard. I.e., a # in a COLO record matches any character
+is treated as a wildcard. I.e., a # in a COLOUR record matches any character
 found in the corresponding column in an ATOM or HETA record. All other
-characters must match exactly. Note that the very last COLO record in the input
+characters must match exactly. Note that the very last COLOUR record in the input
 should have # symbols in all of columns 7 through 30 in order to provide a
-colour for any atom whose ATOM/HETA record fails to match any previous COLO
+colour for any atom whose ATOM/HETA record fails to match any previous COLOUR
 record. This idea of matching masks for colour specifications is due to Colin
 Broughton.
 <h4>

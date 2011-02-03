@@ -129,8 +129,6 @@ The files setup.matrix and setup.angles, if they exist,
 affect the header records produced by \fIrods\fP.
 
 .SH SOURCE
-.B anonymous ftp site:	
- 	ftp.bmsc.washington.edu
  
 .B web URL:
  	http://www.bmsc.washington.edu/raster3d/raster3d.html

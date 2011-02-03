@@ -1,6 +1,13 @@
+      MODULE LISTS
+        INTEGER, ALLOCATABLE, DIMENSION(:,:)   :: KOUNT, MOUNT
+        INTEGER, ALLOCATABLE, DIMENSION(:,:)   :: TTRANS
+        INTEGER ISTRANS
+      END MODULE LISTS
+
       PROGRAM RENDER
+      USE LISTS
 *
-*     Version 2.9  (22 Dec 2009)
+*     Version 3.0  (14 Dec 2010)
 *
 * EAM May 1990	- add object type CYLIND (cylinder with rounded ends)
 *		  and CYLFLAT (cylinder with flat ends)
@@ -82,6 +89,10 @@
 *               - Change  OR() to  ior() everywhere
 * EAM Mar 2008	- initialize various static storage areas
 * FZ  Dec 2009	- initialize more static storage areas (valgrind runs)
+* FZ  Feb 2010  - expandable memory allocation 
+* JMK Dec 2010	- Bugfix for JUSTCLIPPED reported by Joe Krahn
+* JMK Dec 2010	- More transparency algorithms; use OPT[2] to pass choice
+* EAM Dec 2010	- Read in all header info before initializing output file
 *		  
 *     General organization:
 *
@@ -107,12 +118,16 @@
 *
 *     Easy-to-change constants (kept in file parameters.incl):
 *
-*     - maximum number of tiles in each direction  MAXNTX, MAXNTY
+*     - maximum size of any expandable array       MAXMEM
+*     - maximum number of tiles in each direction  MAXNTX*, MAXNTY*
 *     - number of shadow tiles in each direction   NSX, NSY
-*     - maximum number of pixels in a tile         MAXNPX, MAXNPY
-*     - maximum number of objects                  MAXOBJ
-*     - maximum number of material specifications  MAXMAT
+*     - maximum number of pixels in a tile         MAXNPX*, MAXNPY*
+*     - maximum number of objects                  MAXOBJ*
+*     - maximum number of material specifications  MAXMAT*
 *     - maximum depth of stack transparent objects MAXTRANSP
+*
+*     *NOTE: MAXNTX,MAXNTY,MAXNPX,MAXNPY,MAXOBJ and MAXMAT are now
+*     initial array sizes for expandable arrays, rather than limits.
 *
 *     Input (line by line except where noted):
 *
@@ -196,7 +211,7 @@
 *			  (values <0 cause highlights to match object colour)
 *           CLRITY	- 0.0 (opaque) => 1.0 (transparent)
 *	    CLROPT	- [reserved] suboptions for transparency handling
-*	    OPT2	- [reserved] suboptions for bounding planes
+*	    OPT2	- [reserved] suboptions for bounding planes  Is it really used?
 *	    OPT3	- [reserved]
 *	    OPT4	- # of additional modifier records immediately following
 *	These material properties remain in effect for subsequent objects 
@@ -375,7 +390,7 @@
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG, XBG
-      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      INTEGER*4        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
 *
 *     Title for run
@@ -393,16 +408,17 @@
 C     INTEGER*2 NAX, NAY
 *
 *     One lonely tile
-      REAL TILE(3,MAXNPX,MAXNPY)
+      REAL, ALLOCATABLE, DIMENSION(:,:,:) :: TILE
 *
 *     With an alpha blend channel
-      REAL ACHAN(MAXNPX,MAXNPY)
+      REAL, ALLOCATABLE, DIMENSION(:,:)   :: ACHAN
 *
 *     Pixel averaging scheme
       INTEGER SCHEME
 *
 *     Background colour
       REAL   BKGND(3)
+      INTEGER IBKGND(3)
 *
 *     "Shadow mode?"
       LOGICAL SHADOW
@@ -472,46 +488,48 @@ C     INTEGER*2 NAX, NAY
 *     The s & m guys are for the shadow box in the following
 *
 *     Object list, consists of pointers (less 1) into detail, sdtail
-      INTEGER LIST(MAXOBJ), MIST(MAXOBJ)
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: LIST, MIST
 *
 *     Object types and flags, parallel to list
-      INTEGER   TYPE(MAXOBJ)
-      INTEGER*4 FLAG(MAXOBJ)
+      INTEGER,   ALLOCATABLE, DIMENSION(:) :: TYPE
+      INTEGER*4, ALLOCATABLE, DIMENSION(:) :: FLAG
 *
 *     Keep a separate list of special materials
 *     and remember any special props of current material on input
 CDEBUG MPARITY gets its own array because it's used in a per-pixel loop
 CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
-      INTEGER MLIST(MAXMAT), MPARITY(MAXMAT)
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: MLIST, MPARITY
       LOGICAL MATCOL, BACKFACE
       LOGICAL CLIPPING, MAYCLIP, JUSTCLIPPED
       REAL    RGBMAT(3)
 *
 *     Object details, shadow object details
-      REAL   DETAIL(MAXDET), SDTAIL(MAXSDT)
+      REAL, ALLOCATABLE, DIMENSION(:) :: DETAIL, SDTAIL
 *
 *     Input buffer for details
       REAL   BUF(100)
 *
 *     Number of objects in each tile's short list (m... are for shadows)
-      COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
-      INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
-      INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
+C     Moved from COMMON BLOCK LISTS to MODULE LISTS to allow dynamic
+C     allocation - FZ
+C     COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
+C     INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
+C     INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
 *     Pointer to where each tile's objects start
-      INTEGER KSTART(MAXNTX,MAXNTY), MSTART(NSX,NSY)
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: KSTART, MSTART
 *
 *     Pointer to where each tile's objects end
-      INTEGER KSTOP(MAXNTX,MAXNTY), MSTOP(NSX,NSY)
+      INTEGER, ALLOCATABLE, DIMENSION(:,:) :: KSTOP, MSTOP
 *
 *     Short list heap
-      INTEGER KSHORT(MAXSHR), MSHORT(MAXSSL)
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: KSHORT, MSHORT
 *
 *     Temporary for sorting
-      REAL   ZTEMP(MAXOBJ)
+      REAL, ALLOCATABLE, DIMENSION(:) :: ZTEMP
 *
 *     Where the permutation representing the sort is stored
-      INTEGER ZINDEX(MAXOBJ)
+      INTEGER, ALLOCATABLE, DIMENSION(:) :: ZINDEX
 *
 *     The number of "details" each object type is supposed to have
 *     :       input,        object,       shadow
@@ -537,7 +555,8 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
 * Support for a "glow" light source 
       REAL 	GLOWSRC(3), GLOWCOL(3), GDIST(3), GLOWRAD, GLOW, GLOWMAX
       INTEGER	GOPT, GPHONG
-      INTEGER	GLOWLIST(MAXGLOWS), NGLOWS
+      INTEGER,	ALLOCATABLE, DIMENSION(:) :: GLOWLIST
+      INTEGER	NGLOWS
 *
 * Support for decompression on the fly
       EXTERNAL ungz
@@ -555,7 +574,7 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
       REAL     TEMPNORM(3)
 *
 *     Output buffer
-      INTEGER*2 OUTBUF(OUTSIZ,4)
+      INTEGER*2, ALLOCATABLE, DIMENSION(:,:) :: OUTBUF
 *
 *     Copy of NOISE for ASSERT to see
       INTEGER ASSOUT
@@ -578,6 +597,37 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
       REAL              TRULIM(3,2), ZLIM(2), FRONTCLIP, BACKCLIP
       INTEGER           ISOLATION
 *
+*     Array of sizes to try allocating for expanded dynamic storage
+      INTEGER NEEDMEM, TRY1(3), TRY2(3)
+      INTEGER,   ALLOCATABLE, DIMENSION(:)     :: TMP1D
+      INTEGER*4, ALLOCATABLE, DIMENSION(:)     :: TMP1DI4
+      REAL,      ALLOCATABLE, DIMENSION(:)     :: TMP1DR
+      INTEGER,   ALLOCATABLE, DIMENSION(:,:)   :: TMP2D
+      INTEGER*2, ALLOCATABLE, DIMENSION(:,:)   :: TMP2DI2
+      REAL,      ALLOCATABLE, DIMENSION(:,:)   :: TMP2DR
+      REAL,      ALLOCATABLE, DIMENSION(:,:,:) :: TMP3DR
+
+      LOGICAL TEST_ALLOC
+      TEST_ALLOC = .TRUE.
+*
+*     Allocate initial space for dynamically allocatable arrays
+      ALLOCATE( TILE(3,MAXNPX,MAXNPY) )
+      ALLOCATE( ACHAN(MAXNPX,MAXNPY) )
+      ALLOCATE( ZTEMP(MAXOBJ) )
+      ALLOCATE( ZINDEX(MAXOBJ) )
+      ALLOCATE( LIST(MAXOBJ), MIST(MAXOBJ) )
+      ALLOCATE( TYPE(MAXOBJ) )
+      ALLOCATE( FLAG(MAXOBJ) )
+      ALLOCATE( MLIST(MAXMAT), MPARITY(MAXMAT) )
+      ALLOCATE( DETAIL(MAXDET), SDTAIL(MAXSDT) )
+      ALLOCATE( KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY) )
+      ALLOCATE( TTRANS(MAXNTX,MAXNTY) )
+      ALLOCATE( KSTART(MAXNTX,MAXNTY), MSTART(NSX,NSY) )
+      ALLOCATE( KSTOP(MAXNTX,MAXNTY), MSTOP(NSX,NSY) )
+      ALLOCATE( KSHORT(MAXSHR), MSHORT(MAXSSL) )
+      ALLOCATE( GLOWLIST(MAXGLOWS) )
+      ALLOCATE( OUTBUF(OUTSIZ,4) )
+
       TRULIM (1,1) = HUGE
       TRULIM (2,1) = HUGE
       TRULIM (3,1) = HUGE
@@ -631,6 +681,14 @@ CDEBUG (using DETAIL(LIST(MLIST(MAT))+18) cost 5% in execution time)
 	NSYMAX = 0
 	CLROPT = 0
 	SCHEME = 0
+	TRNSPOPT = 0
+	INFLG = .TRUE.
+	JUSTCLIPPED = .FALSE.
+	IXHI = 0
+	IXLO = 0
+	IYHI = 0
+	IYLO = 0
+	ITPASS = 0
 *
 *     Copy the info (also error reporting) unit number to common
       ASSOUT = NOISE
@@ -773,10 +831,86 @@ C     Either scheme 4 or -size and anti-aliasing selected on command line
       CALL ASSERT (NTY.GT.0.,'Tiling failure - nty = 0')
       CALL ASSERT (NPX.GT.0.,'Tiling failure - npx = 0')
       CALL ASSERT (NPY.GT.0.,'Tiling failure - npy = 0')
-      CALL ASSERT (NTX.LE.MAXNTX,'Tiling failure - ntx>maxntx')
-      CALL ASSERT (NTY.LE.MAXNTY,'Tiling failure - nty>maxnty')
-      CALL ASSERT (NPX.LE.MAXNPX,'Tiling failure - npx>maxnpx')
-      CALL ASSERT (NPY.LE.MAXNPY,'Tiling failure - npy>maxnpy')
+*
+*     Expand arrays KOUNT, TTRANS, KSTART and KSTOP if needed, eg NTX > MAXNTX
+      if (NTX.GT.SIZE(KSTOP,1) .OR. NTY.GT.SIZE(KSTOP,2)) THEN
+*
+*         Double the old allocation if that's enough, or take 150% of the new
+*         If that fails, try 150% of the old or 120% of new, or just the new
+          CALL GET_TRY(SIZE(KSTOP, 1), NTX, TRY1, 2)
+          CALL GET_TRY(SIZE(KSTOP, 2), NTY, TRY2, 2)
+*
+*         Try allocating memory to the arrays
+          do 900 ITRY = 1,3
+*        
+*             Test to see if requested allocation is valid
+              if (TRY1(ITRY) .LE. 0 .OR. TRY2(ITRY) .LE. 0 .OR.
+     &            TRY1(ITRY)*TRY2(ITRY) .LE. 0 .OR.
+     &            MAXMEM / TRY1(ITRY) .LT. TRY2(ITRY)) GOTO 900
+
+              ALLOCATE( TMP2D(TRY1(ITRY),TRY2(ITRY)), STAT=IERR)
+              if (ierr .NE. 0) GOTO 900
+C             TMP2D = 0
+              TMP2D = KOUNT 
+              CALL MOVE_ALLOC(from=TMP2D, to=KOUNT)
+
+              ALLOCATE( TMP2D(TRY1(ITRY),TRY2(ITRY)), STAT=IERR)
+              if (ierr .NE. 0) GOTO 900
+C             TMP2D = 0
+              TMP2D = TTRANS
+              CALL MOVE_ALLOC(from=TMP2D, to=TTRANS)
+
+              ALLOCATE( TMP2D(TRY1(ITRY),TRY2(ITRY)),stat=ierr)
+              if (ierr .NE. 0) GOTO 900
+C             TMP2D = 0
+              TMP2D = KSTART
+              CALL MOVE_ALLOC(from=TMP2D, to=KSTART)
+
+              ALLOCATE( TMP2D(TRY1(ITRY),TRY2(ITRY)),stat=ierr)
+              if (ierr .NE. 0) GOTO 900
+C             TMP2D = 0
+              TMP2D = KSTOP
+              CALL MOVE_ALLOC(from=TMP2D, to=KSTOP)
+              if(TEST_ALLOC)write(NOISE,*)"Expand MAXNTX x Y to ",
+     &              try1(ITRY)," x ",try2(ITRY)
+              GOTO 902
+900       CONTINUE
+      ENDIF
+*
+*     These should only fail if the above dynamic allocation failed
+902   CALL ASSERT (NTX.LE.SIZE(KSTOP, 1),'Tiling failure - ntx>maxntx')
+      CALL ASSERT (NTY.LE.SIZE(KSTOP, 2),'Tiling failure - nty>maxnty')
+*
+*     Expand arrays TILE, ACHAN next if needed, i.e. NPX,NPY > MAXNPX or Y
+      if (NPX.GT.SIZE(TILE,2).OR. NPY.GT.SIZE(TILE,3)) THEN
+          CALL GET_TRY(SIZE(TILE,2), NPX, TRY1, 2)
+          CALL GET_TRY(SIZE(TILE,3), NPY, TRY2, 2)
+          do 905 ITRY = 1,3
+*             Test to see if requested allocation is valid
+              if (TRY1(ITRY) .LE. 0 .OR. TRY2(ITRY) .LE. 0 .OR.
+     &            TRY1(ITRY)*TRY2(ITRY) .LE. 0 .OR.
+     &            MAXMEM / TRY1(ITRY) .LT. TRY2(ITRY)) GOTO 905
+
+              ALLOCATE( TMP2DR(TRY1(ITRY),TRY2(ITRY)),stat=ierr)
+              if (ierr .NE. 0) GOTO 905
+              TMD2DR = 0.
+              TMP2DR = ACHAN 
+              CALL MOVE_ALLOC(from=TMP2DR, to=ACHAN)
+
+              ALLOCATE( TMP3DR(3,TRY1(ITRY),TRY2(ITRY)),stat=ierr)
+              if (ierr .NE. 0) GOTO 905
+              TMD3DR = 0.
+              TMP3DR = TILE
+              CALL MOVE_ALLOC(from=TMP3DR, to=TILE)
+              if(TEST_ALLOC)write(NOISE,*)"Expand MAXNPX,Y to ",
+     &            try1(ITRY)," x ",try2(ITRY)
+              GOTO 907
+905       CONTINUE
+      ENDIF
+*
+*     These should only fail if the above dynamic allocation failed
+907   CALL ASSERT (NPX.LE.SIZE(TILE,2),'Tiling failure - npx>maxnpx')
+      CALL ASSERT (NPY.LE.SIZE(TILE,3),'Tiling failure - npy>maxnpy')
 *
       IF (VERBOSE) THEN
 	WRITE (NOISE,*) 'ntx=',NTX,' nty=',NTY
@@ -790,15 +924,33 @@ C     Either scheme 4 or -size and anti-aliasing selected on command line
       LINOUT = 0
       WRITE (NOISE,1105) 'Rendered raster size =',NPX*NTX,NPY*NTY
       WRITE (NOISE,1105) '  Output raster size =',NAX,NAY
-1105  FORMAT(A,I6,' x',I6)
+1105  FORMAT(A,I7,' x',I7)
 C
-      CALL ASSERT (OUTSIZ.GE.NOY*NOX*NTX,
+*
+*     Expand array OUTBUF if needed, i.e. NTX * NOX * NOY > OUTBUF size 
+*     NOTE: this may avoidably fail if the above array expansions took
+*     up more room than it needed, and didn't leave enough for OUTBUF.
+      NEEDMEM = NOY*NOX*NTX 
+      if ( NEEDMEM .GT. SIZE(OUTBUF,1) ) THEN
+          CALL GET_TRY(SIZE(OUTBUF,1), NEEDMEM, TRY1, 1)
+          do 910 ITRY = 1,3
+*             Test to see if requested allocation is valid
+              if (TRY1(ITRY).LE.0 .OR. TRY1(ITRY).GT.MAXMEM) GOTO 910
+
+              ALLOCATE( TMP2DI2(TRY1(ITRY),4), stat=ierr )
+              if (ierr .NE. 0) GOTO 910
+              TMP2DI2 = 0
+              TMP2DI2 = OUTBUF
+              CALL MOVE_ALLOC(from=TMP2DI2, to=OUTBUF)
+              if(TEST_ALLOC)write(NOISE,*)"Expand OUTBUF to ",try1(ITRY)
+              GOTO 912
+910       CONTINUE
+      ENDIF
+912   CALL ASSERT (SIZE(OUTBUF,1).GE.NEEDMEM,
      &             'image too large for output buffer')
 C
 C	Header records and picture title
       IF (SCHEME.EQ.0) OTMODE = ior(OTMODE,ALPHACHANNEL)
-      IERR = LOCAL(1, NAX, NAY, OTMODE, QUALITY)
-      IERR = LOCAL(4, TITLE)
 *
 *     Some derived parameters
       XCENT  = NTX*NPX/2.
@@ -809,6 +961,8 @@ C	Header records and picture title
 *     This was always true; now it's explicit
       BACKCLIP  = -(SCALE+1.0)
       FRONTCLIP =  HUGE
+*     Copy scheme to common, where r3dtogd can see it
+      NSCHEME = SCHEME
 *
 *     Get background colour
       READ (INPUT,*,ERR=104) BKGND
@@ -833,6 +987,16 @@ C	Header records and picture title
       CALL ASSERT (BKGND(1).LE.1., 'bkgnd(1) > 1')
       CALL ASSERT (BKGND(2).LE.1., 'bkgnd(2) > 1')
       CALL ASSERT (BKGND(3).LE.1., 'bkgnd(3) > 1')
+      IF (GAMMA.LT.0.99 .OR. GAMMA.GT.1.01) THEN
+	  IBKGND(1) = SQRT(BKGND(1)) ** (1.0/GAMMA) * MAXRGB + 0.5
+	  IBKGND(2) = SQRT(BKGND(2)) ** (1.0/GAMMA) * MAXRGB + 0.5
+	  IBKGND(3) = SQRT(BKGND(3)) ** (1.0/GAMMA) * MAXRGB + 0.5
+      ELSE
+          IBKGND(1) = 255. * SQRT(BKGND(1)) + .5
+          IBKGND(2) = 255. * SQRT(BKGND(2)) + .5
+          IBKGND(3) = 255. * SQRT(BKGND(3)) + .5
+      ENDIF
+*
 *
 *     Get "shadows" flag
       READ (INPUT,*,ERR=104) SHADOW
@@ -907,6 +1071,11 @@ C	Header records and picture title
             WRITE (NOISE,'(4f9.4)') (TMAT(I,J),J=1,4)
      	END DO
       END IF
+*
+*     Initialize output file
+      IERR = LOCAL(5, IBKGND(1), IBKGND(2), IBKGND(3))
+      IERR = LOCAL(1, NAX, NAY, OTMODE, QUALITY)
+      IERR = LOCAL(4, TITLE)
 *
 *     Allow command line rescaling option
       IF (ZOOM.LT.0.) ZOOM = -ZOOM / 100.
@@ -1069,13 +1238,11 @@ c     End of header processing
       WRITE (NOISE,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%',
      &                '%%%%%%%%%%%%%%%%%%%%%%%%%%'
 *
-*     If label processing is selected on command line, 
-*     initialize PostScript output file
-*
-      IF (LFLAG) THEN
-        PSSCALE = 2.0 * MIN( NTX*NOX/2., NTY*NOY/2. )
-      	CALL LSETUP( PSSCALE, BKGND, TITLE )
-      ENDIF
+*     If label processing is selected on command line, initialize 
+*     PostScript output file.  This isn't needed for Version 3, which
+*     uses libgd rather than PostScript to handle labels
+      PSSCALE = 2.0 * MIN( NTX*NOX/2., NTY*NOY/2. )
+      CALL LSETUP( PSSCALE, BKGND, TITLE )
       WRITE (NOISE,'(1X)')
 *
 *     Initialize gamma correction table
@@ -1100,7 +1267,7 @@ c     End of header processing
         MOUNT(I,J) = 0
 6     CONTINUE
 c
-      DO 662 I = 1,MAXOBJ
+      DO 662 I = 1,SIZE(FLAG)
 	FLAG(I) = 0
   662 CONTINUE
       nprops  = 0
@@ -1141,6 +1308,7 @@ c     May 1996 - allow file indirection
       ELSE IF (LINE(1:1) .EQ. '@') THEN
         J = 1
 	K = 132
+	L = 132
 	DO I=132,2,-1
 	  IF (LINE(I:I).NE.' ') J = I
 	  IF (LINE(I:I).EQ.'#') K = I-1
@@ -1149,6 +1317,7 @@ c     May 1996 - allow file indirection
 	  IF (LINE(I:I).EQ.'	') LINE(I:I) = ' '
 	ENDDO
 	IF (J.EQ.1) GOTO 7
+	L=0
 	DO I=J,K
 	  IF (LINE(I:I).NE.' ') L = I
 	ENDDO
@@ -1211,6 +1380,7 @@ c	    since it doesn't support dispose='DELETE'.
 	MSTATE    = 0
 	CLRITY    = 0
 	CLROPT    = 0
+	TRNSPOPT  = 0
 	MATCOL    = .FALSE.
 	ISOLATION = 0
 	CLIPPING  = .FALSE.
@@ -1246,6 +1416,7 @@ c	    since it doesn't support dispose='DELETE'.
 c     Global Properties
       ELSEIF (INTYPE .EQ. GPROP) THEN
 	READ (INPUT,'(A)',END=50) LINE
+	L = 1
 	DO I = 132, 1, -1
 	  IF (LINE(I:I).NE.' '.AND.LINE(I:I).NE.'	') L = I
 	ENDDO
@@ -1330,12 +1501,86 @@ c                 but all zeros is legal for [at least!] LABELs
       ENDDO
       GO TO 50
 9     CONTINUE
-      CALL ASSERT (NDET+KDET(INTYPE).LE.MAXDET,
+*
+*     Expand array DETAIL if needed: NDET+KDET(INTYPE) > size(DETAIL)
+      NEEDMEM = NDET+KDET(INTYPE) 
+      if ( NEEDMEM .GT. SIZE(DETAIL) ) THEN
+          CALL GET_TRY(SIZE(DETAIL), NEEDMEM, TRY1, 1)
+          DO 920 ITRY = 1,3
+              if (TRY1(ITRY).LE.0 .OR. TRY1(ITRY).GT.MAXMEM) GOTO 920
+              ALLOCATE( TMP1DR(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 920
+              TMP1DR = 0.
+              TMP1DR = DETAIL
+              if(TEST_ALLOC)write(NOISE,*)"Expand DETAIL to ",try1(ITRY)
+              CALL MOVE_ALLOC(from=TMP1DR, to=DETAIL)
+              GOTO 922
+920       CONTINUE
+      ENDIF
+922   CALL ASSERT (NEEDMEM.LE.SIZE(DETAIL),
      & 'too many object details - increase MAXDET and recompile')
-      IF (SHADOW) CALL ASSERT (MDET+SDET(INTYPE).LE.MAXSDT,
+      IF (SHADOW) THEN
+*         Expand array SDTAIL if needed
+          NEEDMEM = MDET+SDET(INTYPE)
+          IF ( NEEDMEM .GT. SIZE(SDTAIL) ) THEN
+              CALL GET_TRY(SIZE(SDTAIL), NEEDMEM, TRY1, 1)
+              DO 925 ITRY = 1,3
+                  if (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) GOTO 925
+                  ALLOCATE( TMP1DR(TRY1(ITRY)), stat=ierr )
+                  if (ierr .NE. 0) GOTO 925
+                  TMP1DR = 0.
+                  TMP1DR = SDTAIL
+                  CALL MOVE_ALLOC(from=TMP1DR, to=SDTAIL)
+                  if(TEST_ALLOC)write(NOISE,*)"Expand SDTAIL to ",
+     &                try1(ITRY)
+                  GOTO 927
+925           CONTINUE
+          ENDIF
+927       CALL ASSERT (NEEDMEM.LE.SIZE(SDTAIL),
      & 'too many shadow object details - increase MAXSDT and recompile')
+      ENDIF
       N = N + 1
-      CALL ASSERT (N.LE.MAXOBJ,
+*     Expand arrays ZTEMP, ZINDEX, LIST, MIST, TYPE, FLAG if needed
+      IF (N.GT.SIZE(FLAG)) THEN
+          CALL GET_TRY(SIZE(FLAG), N, TRY1, 1)
+          DO 930 ITRY = 1,3
+              if (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) GOTO 930
+              ALLOCATE( TMP1DR(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 930
+              TMP1DR = 0.
+              TMP1DR = ZTEMP
+              CALL MOVE_ALLOC(from=TMP1DR, to=ZTEMP)
+              ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 930
+              TMP1D = 0
+              TMP1D = ZINDEX
+              CALL MOVE_ALLOC(from=TMP1D, to=ZINDEX)
+              ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 930
+              TMP1D = 0
+              TMP1D = LIST
+              CALL MOVE_ALLOC(from=TMP1D, to=LIST)
+              ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 930
+              TMP1D = 0
+              TMP1D = MIST
+              CALL MOVE_ALLOC(from=TMP1D, to=MIST)
+              ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 930
+              TMP1D = 0
+              TMP1D = TYPE
+              CALL MOVE_ALLOC(from=TMP1D, to=TYPE)
+              ALLOCATE( TMP1DI4(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 930
+              TMP1DI4 = 0
+              TMP1DI4 = FLAG
+              CALL MOVE_ALLOC(from=TMP1DI4, to=FLAG)
+              if(TEST_ALLOC)write(NOISE,*)"Expand MAXOBJ to ",size(FLAG)
+              GOTO 932
+930       CONTINUE
+      ENDIF
+
+932   CALL ASSERT (N.LE.SIZE(FLAG),
      & 'too many objects - increase MAXOBJ and recompile')
 C     20-Feb-1997 Save both object type and material type 
       TYPE(N) = INTYPE
@@ -1343,7 +1588,6 @@ C     20-Feb-1997 Save both object type and material type
       LIST(N) = NDET
       IF (SHADOW) MIST(N) = MDET
       ISTRANS  = 0
-      JUSTCLIPPED = .FALSE.
 *     From this point on, we'll use the symbolic codes for objects
       IF (INTYPE.EQ.TRIANG .or. INTYPE.EQ.PLANE) THEN
 *       triangle as read in
@@ -1469,6 +1713,7 @@ C     20-Feb-1997 Save both object type and material type
 		TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 	    ENDDO
 	    ENDDO
+C           write(NOISE,*)"Incr kount ",NTX," x ",NTY
 	    IF (SHADOW) THEN
               MDET = MDET + SDET(INTYPE)
 	    ENDIF
@@ -1511,6 +1756,7 @@ C     20-Feb-1997 Save both object type and material type
           KOUNT(IX,IY) = KOUNT(IX,IY) + 1
 	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 10      CONTINUE
+C       write(NOISE,*)"Incr kount b ",IXLO,"-",IXHI," x ",IYLO,"-",IYHI
 11      CONTINUE
 *       repeat for shadow buffer if necessary
         IF (SHADOW) THEN
@@ -1668,6 +1914,8 @@ C     20-Feb-1997 Save both object type and material type
           KOUNT(IX,IY) = KOUNT(IX,IY) + 1
 	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 20      CONTINUE
+C       write(NOISE,*)"Incr kount c ",IXLO,"-",IXHI," x ",IYLO,"-",IYHI,
+C    &  kstart(IXLO,IYLO),kstop(IXLO,IYLO),kount(IXLO,IYLO)
 21      CONTINUE
 *       repeat for shadow buffer if necessary
         IF (SHADOW) THEN
@@ -1849,6 +2097,7 @@ c	with specs for the current object; we just need to set flags.
           KOUNT(IX,IY) = KOUNT(IX,IY) + 1
 	  TTRANS(IX,IY) = TTRANS(IX,IY) + ISTRANS
 710     CONTINUE
+C       write(NOISE,*)"Incr kount d ",IXLO,"-",IXHI," x ",IYLO,"-",IYHI
 711     CONTINUE
 *       repeat for shadow buffer if necessary
         IF (SHADOW) THEN
@@ -2098,7 +2347,28 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 *	Mark this object as current material
 	MSTATE = MATERIAL
 	NPROPM = NPROPM + 1
-	CALL ASSERT(NPROPM.LT.MAXMAT,
+*
+*       Expand arrays MLIST, MPARITY
+        IF ( NPROPM .GT. SIZE(MPARITY) ) THEN
+            CALL GET_TRY(SIZE(MPARITY), NPROPM, TRY1, 1)
+              DO 940 ITRY = 1,3
+                  if (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) GOTO 940
+                  ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+                  if (ierr .NE. 0) GOTO 940
+                  TMP1D = 0
+                  TMP1D = MLIST
+                  CALL MOVE_ALLOC(from=TMP1D, to=MLIST)
+                  ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+                  if (ierr .NE. 0) GOTO 940
+                  TMP1D = 0
+                  TMP1D = MPARITY
+                  CALL MOVE_ALLOC(from=TMP1D, to=MPARITY)
+                  if(TEST_ALLOC)write(NOISE,*)"Expand MAXMAT to ",
+     &                try1(ITRY)
+                  GOTO 942
+940           CONTINUE
+        ENDIF
+942     CALL ASSERT(NPROPM.LE.SIZE(MPARITY),
      &   'too many materials - increase MAXMAT and recompile')
 	MLIST(NPROPM) = N
 *	Clear any previous material properties
@@ -2130,7 +2400,9 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	CLROPT = BUF(7)
 	DETAIL(NDET+7) = BUF(7)
 *	The next one is used in conjunction with bounding planes
-	DETAIL(NDET+8) = BUF(8)
+*	Dec 2010: no, it's used to select which transparency algorithm is used
+	TRNSPOPT = BUF(8)
+	DETAIL(NDET+8) = TRNSPOPT
 *	One remaining field reserved for future expansion
 	DETAIL(NDET+9) = BUF(9)
 *	Initialize clipping planes, only used if CLIPPING is set below
@@ -2138,6 +2410,7 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	DETAIL(NDET+17) = BACKCLIP
 *	Additional properties may continue on extra lines
 	IF (INT(BUF(10)).GT.0) THEN
+	  L = 1
 	  DO I = 1,INT(BUF(10))
 	  READ (INPUT,'(A)',END=50) LINE
 	  DO J = 132, 1, -1
@@ -2178,11 +2451,47 @@ c	we should only see a SPHERE is if it's a collapsed cylinder
 	  ELSE IF (LINE(L:L+13).EQ.'BOUNDING_PLANE') THEN
 	    NBOUNDS  = NBOUNDS + 1
 	    nbplanes = nbplanes + 1
-	    CALL ASSERT(NDET+NBOUNDS*KDET(INTERNAL).LE.MAXDET,'BP Oops')
-	    IF (SHADOW) 
-     &      CALL ASSERT(MDET+NBOUNDS*SDET(INTERNAL).LE.MAXSDT,'BP Oops')
+*
+*           Expand arrays DETAIL and SDTAIL as needed
+            NEEDMEM = MAX(N+NBOUNDS, NDET+NBOUNDS*KDET(INTERNAL))
+            if ( NEEDMEM .GT. SIZE(DETAIL) ) THEN
+                CALL GET_TRY(SIZE(DETAIL), NEEDMEM, TRY1, 1)
+                DO 950 ITRY = 1,3
+                    IF (TRY1(ITRY) .LE. 0 .OR. TRY1(ITRY) .GT. MAXMEM) 
+     &                   GOTO 950
+                    ALLOCATE( TMP1DR(TRY1(ITRY)), stat=ierr )
+                    IF (IERR .NE. 0) GOTO 950
+                    TMP1DR = 0.
+                    TMP1DR = DETAIL
+                    if(TEST_ALLOC)write(NOISE,*)"Expand DETAIL to ",
+     &                 size(TMP1DR)
+                    CALL MOVE_ALLOC(from=TMP1DR, to=DETAIL)
+                    GOTO 952
+950             CONTINUE
+            ENDIF
+952         CALL ASSERT(NEEDMEM.LE.SIZE(DETAIL),
+     &        'BP Oops')
+	    IF (SHADOW) THEN
+                NEEDMEM = MDET+NBOUNDS*SDET(INTERNAL)
+                if ( NEEDMEM .GT. SIZE(DETAIL) ) THEN
+                    CALL GET_TRY(SIZE(DETAIL), NEEDMEM, TRY1, 1)
+                    DO 955 ITRY = 1,3
+                        IF (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) 
+     &                       GOTO 955
+                        ALLOCATE( TMP1DR(TRY1(ITRY)), stat=ierr )
+                        IF (IERR .NE. 0) GOTO 955
+                        TMP1DR = 0.
+                        TMP1DR = SDTAIL
+                        if(TEST_ALLOC)write(NOISE,*)"Expand SDTAIL to",
+     &                     try1(ITRY)
+                        CALL MOVE_ALLOC(from=TMP1DR, to=SDTAIL)
+                        GOTO 957
+955                 CONTINUE
+                ENDIF
+957             CALL ASSERT(NEEDMEM .LE.SIZE(SDTAIL),'BP Oops')
+            ENDIF
 	    NB = N + NBOUNDS
-	    CALL ASSERT( NB.LE.MAXDET, 'BP Oops')
+	    CALL ASSERT( NB.LE.SIZE(DETAIL), 'BP Oops')
 c	    OK, we've established there's room to store this bound;
 c	    Flag all properties belonging to the parent material
 	      TYPE(NB) = INTERNAL
@@ -2273,7 +2582,22 @@ c		Most of the time BPRGB(1) is -1 to signal no special color
 *
       ELSEIF (INTYPE.EQ.GLOWLIGHT) THEN
 	NGLOWS = NGLOWS + 1
-	CALL ASSERT(NGLOWS.LE.MAXGLOWS,'too many glow lights')
+*
+*       Expand array GLOWLIST
+        IF ( NGLOWS .GT. SIZE(GLOWLIST) ) THEN
+            CALL GET_TRY(SIZE(GLOWLIST), NGLOWS, TRY1, 1)
+              DO 960 ITRY = 1,3
+                  if (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) GOTO 960
+                  ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+                  if (ierr .NE. 0) GOTO 960
+                  TMP1D = GLOWLIST
+                  CALL MOVE_ALLOC(from=TMP1D, to=GLOWLIST)
+                  if(TEST_ALLOC)write(NOISE,*)"Expand GLOWLIST to ",
+     &                 try1(ITRY)
+                  GOTO 962
+960           CONTINUE
+        ENDIF
+962     CALL ASSERT(NGLOWS.LE.SIZE(GLOWLIST),'too many glow lights')
 	GLOWLIST(NGLOWS) = N
 	GLOWSRC(1) = BUF(1)
 	GLOWSRC(2) = BUF(2)
@@ -2511,7 +2835,7 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
       IF (NGLOWS.GT.0)  WRITE(NOISE,57) 'glow lights       =',NGLOWS
       IF (LFLAG) THEN
 	CALL LCLOSE( NLABELS )
-      	WRITE(NOISE,57)                 'PostScript labels =',NLABELS
+      	WRITE(NOISE,57)                 'labels            =',NLABELS
         WRITE(NOISE,*)'-------------------------------'
       ELSEIF (NLABELS.NE.0) THEN
         WRITE(NOISE,57) 'labels (ignored)  =',NLABELS
@@ -2521,8 +2845,9 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
 *
       ZSLOP = SLOP * MAX(NPX,NPY)
       IF (VERBOSE) THEN
-        WRITE (NOISE,*) 'ndet  =',NDET,' MAXDET=',MAXDET
-        IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',MAXSDT
+        WRITE (NOISE,*) 'ndet  =',NDET,' SIZE(DETAIL)=',SIZE(DETAIL)
+        IF (SHADOW) WRITE (NOISE,*) 'mdet  =',MDET,' MAXSDT=',
+     &    SIZE(SDTAIL)
 	WRITE (NOISE,*) 'EDGESLOP =',EDGESLOP
 	WRITE (NOISE,*) '   ZSLOP =',   ZSLOP
       ENDIF
@@ -2582,9 +2907,23 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
       IF (VERBOSE) THEN
 	write (noise,*) 'max/avg length of short lists=',
      &                   kntmax,(knttot/(ntx*nty))+1
-      	WRITE (NOISE,*) 'knttot=',KNTTOT,' MAXSHR=',MAXSHR
+      	WRITE (NOISE,*) 'knttot=',KNTTOT,' MAXSHR=',SIZE(KSHORT)
       ENDIF
-      CALL ASSERT (KNTTOT.LE.MAXSHR,'short list overflow')
+*
+*     Expand array KSHORT
+      IF ( KNTTOT .GT. SIZE(KSHORT) ) THEN
+          CALL GET_TRY(SIZE(KSHORT), KNTTOT, TRY1, 1)
+          DO 970 ITRY = 1,3
+              if (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) GOTO 970
+              ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 970
+              TMP1D = KSHORT
+              CALL MOVE_ALLOC(from=TMP1D, to=KSHORT)
+              if(TEST_ALLOC)write(NOISE,*)"Expand KSHORT to ",try1(ITRY)
+              GOTO 972
+970       CONTINUE
+      ENDIF
+972   CALL ASSERT (KNTTOT.LE.SIZE(KSHORT),'short list overflow')
       K = 0
       DO J = 1, NTY
       DO I = 1, NTX
@@ -2593,6 +2932,7 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
         K = K + KOUNT(I,J)
       ENDDO
       ENDDO
+C     write(NOISE,*)"Set kstart and kstop ",NTX," x ",NTY
       CALL ASSERT (K.EQ.KNTTOT,'k.ne.knttot')
       DO 90 I = 1, N
         IND = ZINDEX(N-I+1)
@@ -2680,6 +3020,8 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
           KSTOP(IX,IY) = KSTOP(IX,IY) + 1
           KSHORT(KSTOP(IX,IY)) = IND
 80      CONTINUE
+C       write(NOISE,*)"Incr kstop ",IXLO,"-",IXHI," x ",IYLO,"-",IYHI,
+C    &  kstart(IXLO,IYLO),kstop(IXLO,IYLO),kount(IXLO,IYLO)
 81      CONTINUE
 90    CONTINUE
       DO 95 J=1,NTY
@@ -2687,6 +3029,15 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
         K1 = KSTART(I,J)
         K2 = KSTOP(I,J)
         K3 = KOUNT(I,J)
+        if(K2-k1.ne.k3-1)then
+           write(NOISE,*)"*** ERROR IN KOUNT,KSTART,KSTOP"
+           write(NOISE,*)"I,J=",I,J," start,stop=",K1,K2," kount=",k3
+           write(NOISE,*)"NTX,Y ",NTX,NTY," kount=",size(kount,1)," x",
+     &       size(kount,2)," stop=",size(kstop,1),size(kstop,2)
+C          write(NOISE,*)((kstart(III,JJJ),III=1,I),JJJ=1,J)
+C          write(NOISE,*)((kstop(III,JJJ),III=1,I),JJJ=1,J)
+C          write(NOISE,*)((kount(III,JJJ),III=1,I),JJJ=1,J)
+        endif
         CALL ASSERT (K2-K1.EQ.K3-1,'k2-k1.ne.kount(i,j)-1')
         CALL ASSERT (K1.GE.1.AND.K1.LE.KNTTOT+1,'kstart(i,j)')
         CALL ASSERT (K2.GE.0.AND.K2.LE.KNTTOT,'kstop(i,j)')
@@ -2738,8 +3089,24 @@ C    &      .AND. DETAIL(KK).NE.DETAIL(L+II-6)) GOTO 54
         DO 170 I = 1, NSX
           MNTTOT = MNTTOT + MOUNT(I,J)
 170     CONTINUE
-        IF (VERBOSE) WRITE (NOISE,*) 'mnttot=',MNTTOT,' MAXSSL=',MAXSSL
-        CALL ASSERT (MNTTOT.LE.MAXSSL,'shadow short list overflow')
+        IF (VERBOSE) WRITE (NOISE,*) 'mnttot=',MNTTOT,' MAXSSL=',
+     &     SIZE(MSHORT)
+*
+*       Expand array MSHORT
+        IF ( MNTTOT .GT. SIZE(MSHORT) ) THEN
+            CALL GET_TRY(SIZE(MSHORT), MNTTOT, TRY1, 1)
+            DO 975 ITRY = 1,3
+              if (TRY1(ITRY).LE.0.OR.TRY1(ITRY).GT.MAXMEM) GOTO 975
+              ALLOCATE( TMP1D(TRY1(ITRY)), stat=ierr )
+              if (ierr .NE. 0) GOTO 975
+              TMP1D = MSHORT
+              CALL MOVE_ALLOC(from=TMP1D, to=MSHORT)
+              if(TEST_ALLOC)write(NOISE,*)"Expand MSHORT to ",try1(ITRY)
+              GOTO 977
+975         CONTINUE
+        ENDIF
+977     CALL ASSERT (MNTTOT.LE.SIZE(MSHORT),
+     &  'shadow short list overflow')
         K = 0
         DO 175 J = 1, NSY
         DO 175 I = 1, NSX
@@ -3264,6 +3631,14 @@ C	      Check against limiting sphere in 3D
             ENDIF
 240       CONTINUE
 250       CONTINUE
+C         Apply background fog here (added 2010)
+	  IF (FOGTYPE .GE. 0) THEN
+     	      FOGDIM = FOGGY( FOGLIM(2) - ZTOP )
+	      TILE(1,I,J) = (1.-FOGDIM)*TILE(1,I,J) + FOGDIM*FOGRGB(1)
+	      TILE(2,I,J) = (1.-FOGDIM)*TILE(2,I,J) + FOGDIM*FOGRGB(2)
+	      TILE(3,I,J) = (1.-FOGDIM)*TILE(3,I,J) + FOGDIM*FOGRGB(3)
+	  ENDIF
+
 *         Background colour if we never found an object in this line of sight
           IF (INDTOP.EQ.0) GO TO 299
 C	  We now know this is not a background pixel so set alpha channel to 1
@@ -3280,6 +3655,9 @@ C	      CALL ASSERT(INDEPTH.GT.0,'INDEPTH = 0')
 	      NORMAL(1) = NORMLIST(1,INDEPTH)
 	      NORMAL(2) = NORMLIST(2,INDEPTH)
 	      NORMAL(3) = NORMLIST(3,INDEPTH)
+	      RGBLND(1) = BKGND(1)
+	      RGBLND(2) = BKGND(2)
+	      RGBLND(3) = BKGND(3)
 	  ENDIF
 *         ZP is the "height" of the chosen pixel,
 *         and indtop tells us which object it came from:
@@ -3601,6 +3979,7 @@ C	  End of search for objects that shadow this one
 	    BACKFACE = .TRUE.
 	    IF (iand(FLAG(INDTOP),PROPS).NE.0) THEN
 		K = FLAG(INDTOP) / 65536
+                if(K.le.0)WRITE(NOISE,*)"FLAG(",INDTOP,")=",FLAG(INDTOP)
 		CALL ASSERT(K.GT.0,'lost material definition')
 		IF (iand(FLAG(MLIST(K)),INSIDE).NE.0) THEN
 		  K = LIST(MLIST(K))
@@ -3634,6 +4013,7 @@ c	  CALL ASSERT(ABS(ABSN-1.0).LT.0.02,'>> Abnormal normal')
           IF (LDOTN.LE.0.) THEN
             PDIFF = 0.
             PSPEC = 0.
+	    PSP = 0.
           ELSE
             PDIFF = LDOTN * PRIMAR*DIFFUS
             PSP = 2.*LDOTN*NL(3) - SOURCE(3)
@@ -3673,6 +4053,11 @@ c	  CALL ASSERT(ABS(ABSN-1.0).LT.0.02,'>> Abnormal normal')
 *
 	  IF (iand(FLAG(INDTOP),PROPS).NE.0) THEN
 	    K = FLAG(INDTOP) / 65536
+            if(K.le.0)then
+                  WRITE(NOISE,*)"FLAG(",INDTOP-1,") =",FLAG(INDTOP-1)
+                  WRITE(NOISE,*)"FLAG(",INDTOP,") =",FLAG(INDTOP)
+                  WRITE(NOISE,*)"FLAG(",INDTOP+1,") =",FLAG(INDTOP+1)
+            endif
 	    CALL ASSERT(K.GT.0,'lost material definition')
 	    IF (iand(FLAG(MLIST(K)),INSIDE).NE.0  .AND.
      &		iand(FLAG(INDTOP),  INSIDE).NE.0) THEN
@@ -3727,20 +4112,29 @@ c	  CALL ASSERT(ABS(ABSN-1.0).LT.0.02,'>> Abnormal normal')
 	  ENDIF
 
 C
-C	EAM February 1996
 C	This is the only computationally intensive code (as opposed to mere
 C	bookkeeping) involved in rendering transparent objects. The blend
 C	factor must be some function of the clarity/transparency, but I'm not
-C	sure exactly what the equation ought to be.  The cosine
-C	function below was chosen after purely empirical tests of the
+C	sure exactly what the equation ought to be.  The cosine function in
+C	TRNSPOPT option 0 below was chosen after purely empirical tests of the
 C	resulting image quality. If your machine bogs down incredibly due to
-C	the cosine call, then comment out that line and uncomment the line
-C	that currently begins with C-ALT.
-C	Then re-compile (type "make render") and you should be all set.
+C	the cosine call, then you might prefer to use TRNSPOPT 1 instead.
+C	Conversely, if you don't mind the extra computation then you could use
+C	TRNSPOPT 2, which is closer to an ideal model.
+C	Dec 2010: controlled by OPT(2) in the MATERIAL specification record
 C
 	  IF (CLRITY.NE.0) THEN
-            SBLEND = .25*(1.+COS(3.1416*CLRITY*NL(3)))**2
-C-ALT	    SBLEND = (1. - CLRITY*ABS(NL(3)))**2
+            ZN = ABS(NL(3)) + MODULO(TRNSPOPT,1.0)
+            SELECT CASE(FLOOR(TRNSPOPT))
+            CASE DEFAULT ! CASE 0
+              SBLEND = .25*(1.+COS(3.1416*CLRITY*ZN))**2
+            CASE (1)
+              SBLEND = (1. - CLRITY*ZN)**2
+            CASE (2)
+              SBLEND = 1.0 - CLRITY ** ( 0.7071 / ZN )
+            CASE (3)
+              SBLEND = 1.0 - CLRITY
+            END SELECT
 	  ENDIF
 C
 C	  Final calculation of specular properties of special materials
@@ -3857,21 +4251,29 @@ C 		This isn't right for transparent surfaces
             TILE(3,I,J) = RGBSHD(3)
           ENDIF
 C
+C	Fog processing added July 1998; moved into transp. loop 2010.
+C       Note: Background fog is applied at beginning of this loop.
+C	Should have glow lights brighten fog?
+	IF (FOGTYPE .GE. 0) THEN
+     	    FOGDIM = FOGGY( FOGLIM(2) - ZP )
+	    TILE(1,I,J) = (1.-FOGDIM)*TILE(1,I,J) + FOGDIM*FOGRGB(1)
+	    TILE(2,I,J) = (1.-FOGDIM)*TILE(2,I,J) + FOGDIM*FOGRGB(2)
+	    TILE(3,I,J) = (1.-FOGDIM)*TILE(3,I,J) + FOGDIM*FOGRGB(3)
+	ENDIF
+
+C
 C       Transparency processing totally overhauled Feb 2001
 C	The first pass is sufficient if top object is opaque.
 	  IF (NTRANSP .EQ. 0) GOTO 299
 	  IF (INDEPTH.EQ.1 .AND. iand(FLAG(INDTOP),TRANSP).EQ.0) GOTO 299
 	  IF (ITPASS.EQ.1) THEN
-	      RGBLND(1)  = (1.-SBLEND)*BKGND(1) + TILE(1,I,J)
-	      RGBLND(2)  = (1.-SBLEND)*BKGND(2) + TILE(2,I,J)
-	      RGBLND(3)  = (1.-SBLEND)*BKGND(3) + TILE(3,I,J)
 	      ACHAN(I,J) = SBLEND
 	  ELSE
-	      RGBLND(1)  = (1.-SBLEND)*RGBLND(1) + TILE(1,I,J)
-	      RGBLND(2)  = (1.-SBLEND)*RGBLND(2) + TILE(2,I,J)
-	      RGBLND(3)  = (1.-SBLEND)*RGBLND(3) + TILE(3,I,J)
 	      ACHAN(I,J) = 1. - (1.-ACHAN(I,J))*(1.-SBLEND)
 	  ENDIF
+	  RGBLND(1)  = (1.-SBLEND)*RGBLND(1) + TILE(1,I,J)
+	  RGBLND(2)  = (1.-SBLEND)*RGBLND(2) + TILE(2,I,J)
+	  RGBLND(3)  = (1.-SBLEND)*RGBLND(3) + TILE(3,I,J)
 C	  CALL ASSERT(ITPASS.LE.INDEPTH,'Ran off end of INDEPTH')
 	  IF (ITPASS.GE.INDEPTH) THEN
 	      TILE(1,I,J) = RGBLND(1)
@@ -3892,16 +4294,6 @@ C
 299	CONTINUE
 
 C
-C	Fog processing added July 1998
-C	Should have glow lights brighten fog?
-	IF (FOGTYPE .GE. 0) THEN
-     	    FOGDIM = FOGGY( FOGLIM(2) - ZTOP )
-	    TILE(1,I,J) = (1.-FOGDIM)*TILE(1,I,J) + FOGDIM*FOGRGB(1)
-	    TILE(2,I,J) = (1.-FOGDIM)*TILE(2,I,J) + FOGDIM*FOGRGB(2)
-	    TILE(3,I,J) = (1.-FOGDIM)*TILE(3,I,J) + FOGDIM*FOGRGB(3)
-	ENDIF
-
-C
 300     CONTINUE
 400     CONTINUE
 *       do tile averaging and save output tile in outbuf
@@ -3911,7 +4303,7 @@ C	For now fold schemes 0 and 1 together; later split for efficiency?
           DO 420 J = 1, NOY
           DO 415 I = 1, NOX
           K = K + 1
-C         CALL ASSERT (K.LE.OUTSIZ,'k>outsiz')
+C         CALL ASSERT (K.LE.SIZE(OUTBUF,1),'k>outsiz')
 C
           DO 410 IC = 1, 3
             ICK = 256. * SQRT(TILE(IC,I,J))
@@ -4004,10 +4396,10 @@ C
       DO 550 J=1,NOY
 	LINOUT = LINOUT + 1
 	IF (LINOUT.GT.NAY) GOTO 600
-	IERR = LOCAL ( 2, OUTBUF(K+1,1), OUTBUF(K+1,2), OUTBUF(K+1,3),
+	IERR = LOCAL(2, OUTBUF(K+1,1), OUTBUF(K+1,2), OUTBUF(K+1,3),
      &                    OUTBUF(K+1,4) )
         K = K + NX
-C       CALL ASSERT (K.LE.OUTSIZ,'k>outsiz')
+C       CALL ASSERT (K.LE.SIZE(OUTBUF,1),'k>outsiz')
 550   CONTINUE
 600   CONTINUE
 *
@@ -4074,7 +4466,7 @@ C       CALL ASSERT (K.LE.OUTSIZ,'k>outsiz')
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG, XBG
-      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      INTEGER*4        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
       COMMON /MATRICES/ XCENT, YCENT, SCALE, EYEPOS, SXCENT, SYCENT,
      &                  TMAT, TINV, TINVT, SROT, SRTINV, SRTINVT
@@ -4659,3 +5051,43 @@ c
 	CALL ASSERT(DZ.GT.0,'ORTEP bounds incorrectly initialized')
 	RETURN
 	END
+
+        SUBROUTINE GET_TRY(NOLD, NNEW, TRY, DIMENS)
+*
+*       NOLD = old memory allocation
+*       NNEW = new memory allocation needed
+*       TRY = new memory allocations beyond that needed to be attempted,
+*             so that we don't have to expand the array too often.
+*       DIMENS = number of dimensions to be expanded (1 to 3)
+*
+*       For DIMENS=1: if the new allocation is less than twice the old 
+*       try to double the old allocation; otherwise add 50% to the new.
+*       If that fails, add 50% to the old or 25% of the new;
+*       If that fails, just try the new, then give up.
+*
+*       For DIMENS = 2, expand by the square root of 2, 1.5 or 1.25
+*       for the same effect on total memory in 2-D arrays where bot
+*       dimensions are expanded. 
+*       For DIMENS = 3 (not currently used) use the cube root.
+*
+        INTEGER NOLD, NNEW, TRY(3), N, DIMENS
+        REAL RATIO(3, 3)
+        DATA RATIO / 2.0,  1.5,  1.25,
+     &               1.41, 1.22, 1.12,
+     &               1.26, 1.14, 1.07 /
+        N = INT( FLOAT(NOLD) * RATIO(1, DIMENS) )
+        if (NNEW.LT.N) THEN
+            TRY(1) = N
+            N = INT( FLOAT(NOLD) * RATIO(2, DIMENS) )
+            if (NNEW.LT.N) THEN
+                  TRY(2) = N
+              else
+                  TRY(2) = INT( FLOAT(NNEW) * RATIO(3, DIMENS) )
+              ENDIF
+          else
+              TRY(1) = INT( FLOAT(NNEW) * RATIO(2, DIMENS) )
+              TRY(2) = INT( FLOAT(NNEW) * RATIO(3, DIMENS) )
+          endif
+          TRY(3) = NNEW
+          RETURN
+          END 

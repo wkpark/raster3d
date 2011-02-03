@@ -1,7 +1,7 @@
 *******************************************************************************
 *               Support routines for PostScript labels                        *
 *******************************************************************************
-*     Version 2.7d
+*     Version 3.0
 *
 * EAM Dec 1996	- Initial version (called labels3d, later changed)
 * EAM May 1999	- Updated to match V 2.4j as stand-alone program
@@ -13,6 +13,7 @@
 * EAM Jun 2001	- Tru64 f90 compiler barfs on '\\' as meaning a single \
 *		  re-work pathway through ghostscript + ImageMagick 5.3.2
 * EAM Apr 2006	- Tweak for gfortran compatibility
+* EAM Dec 2010	- Label support is moving to libgd, with default lflag = TRUE
 *******************************************************************************
 *
 * These routines are called from render.f to handle object types 10, 11 and 12.
@@ -34,7 +35,7 @@
       IMPLICIT NONE
       REAL     PSCALE
       REAL     BKGND(3)
-      CHARACTER*80 FILENAME
+      CHARACTER*132 FILENAME
       CHARACTER*80 TITLE
 *
       INCLUDE 'VERSION.incl'
@@ -69,7 +70,7 @@
      &                 NAX, NAY, OTMODE, QUALITY, INVERT, LFLAG
       REAL             FONTSCALE, GAMMA, ZOOM
       INTEGER          NSCHEME, SHADOWFLAG, XBG
-      INTEGER*2        NAX, NAY, OTMODE, QUALITY
+      INTEGER*4        NAX, NAY, OTMODE, QUALITY
       LOGICAL*2        INVERT, LFLAG
 *
 *     Stuff for labels
@@ -102,16 +103,13 @@
 *     Initial entry
 *     Open file for PostScript output
 *
-      LEN = 80
-      DO I = 80,2,-1
-         IF (FILENAME(I:I).EQ.' ') LEN = I - 1
-      END DO
+      LEN = LEN_TRIM(FILENAME)
       OPEN( UNIT=LB, FILE=FILENAME(1:LEN), STATUS='UNKNOWN', ERR=99)
       WRITE (NOISE,*) 'Writing PostScript labels to file ',
      &                FILENAME(1:LEN),' with scale',FONTSCALE
       RETURN
    99 CONTINUE
-      WRITE (NOISE,100) FILENAME
+      WRITE (NOISE,100) FILENAME(1:LEN)
   100 FORMAT('>>> Cannot open ',A,' for writing labels')
       CALL EXIT(-1)
 *
@@ -119,6 +117,8 @@
 *
       ENTRY LSETUP( PSCALE, BKGND, TITLE )
 	PSSCALE = PSCALE
+*     The libgd-based label code calls lsetup() regardless of LFLAG
+	if (.NOT.LFLAG) RETURN
 *     For some reason ImageMagick messes up image composition if the
 *     background is pure white or pure black. 
 *     Work-around is to tweak the background. (Abandoned this idea for 2.6)
@@ -290,10 +290,7 @@ c     Read in next object
 c
 c	Here is where Perl would shine
 c
-	len = 0
-	DO i=1,80
-	    if (fontname(i:i).ne.' ') len = i
-	enddo
+	len = len_trim(fontname)
 	WRITE (LB,606) FONTNAME(1:len), FONTSIZE, 'RestoreFont'
 
       ELSE IF (INTYPE .EQ. LABEL ) THEN

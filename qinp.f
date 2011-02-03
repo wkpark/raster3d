@@ -48,6 +48,8 @@ CCC     Process single object descriptor during input phase
 CC
 C
 	function qinp( buf, detail, shadow, sdtail )
+*       Use MODULE LISTS not COMMON /LISTS/ for dynamic allocation
+        USE LISTS
 *
 	IMPLICIT NONE
 	logical  qinp
@@ -56,10 +58,10 @@ C
 	logical shadow
 *
 	real    QQ(4,4), QP(4,4), QT(4,4)
-	real    xq, yq, zq, radlim, red, grn, blu
+	real  	xq, yq, zq, radlim, red, grn, blu
 	real    xc, yc, zc, rc
 	real    xr, yr, zr, xs, ys, zs, rs
-	real    pfac
+	real	pfac
 *
 	integer  ix,iy,ixlo,ixhi,iylo,iyhi
 c	VOLATILE ix,iy,ixlo,ixhi,iylo,iyhi
@@ -81,9 +83,10 @@ c	VOLATILE ix,iy,ixlo,ixhi,iylo,iyhi
       REAL   SROT(4,4), SRTINV(4,4), SRTINVT(4,4)
       REAL   RAFTER(4,4), TAFTER(3)
 *
-      COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
-      INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
-      INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
+C     Replace COMMON with MODULE 
+C     COMMON /LISTS/ KOUNT, MOUNT, TTRANS, ISTRANS
+C     INTEGER KOUNT(MAXNTX,MAXNTY), MOUNT(NSX,NSY)
+C     INTEGER TTRANS(MAXNTX,MAXNTY), ISTRANS
 *
       COMMON /NICETIES/ TRULIM,      ZLIM,    FRONTCLIP, BACKCLIP
      &                , ISOLATION
@@ -158,7 +161,7 @@ c	    pfac = 1./(1.-zq/eyepos)
 *
 * This is a terrible kludge, but necessary if called from normal3d -size BIGxBIG
 * Thes test should really be if we are called from normal3d but no flag for that
-	if (ntx.gt.MAXNTX .or. nty.gt.MAXNTY) goto 101
+	if (ntx.gt.size(kount,1) .or. nty.gt.size(kount,2)) goto 101
 *
 * Tally for tiles the object might impinge on
 * Again we are relying on the correctness of the center coordinates

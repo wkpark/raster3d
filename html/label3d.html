@@ -10,71 +10,11 @@ LABEL3D
 </h1>
 <h4>
 SYNOPSIS</h4>
-<b>label3d</b> is a shell script that processes a
-<a href="raster3d.html"> Raster3D </a> 
-input file containing label descriptors (object types 10, 11, 12)
-into a TIFF or PNG image containing both the
-molecular graphics image and the associated labels.
-<p>
-
-<pre>
-label3d [-png  [outfile.png]] < infile.r3d   [ > outfile.png  ]
-label3d  -tiff [outfile.tiff  < infile.r3d   [ > outfile.tiff ]
-</pre>
-
-<p>
-The syntax of the label3d command in version 2.6d has been changed
-to match that of the render command.  Input is from <i>stdin</i>, output
-is to <i>stdout</i> unless given explicitly as a parameter to the -tiff
-or -png switches.
-
-
-<p>
-Unfortunately, the Raster3D render program cannot process labels.
-To overcome this lack, earlier Raster3D distributions included an 
-auxilliary program <a href="r3dtops.html">r3dtops</a> that
-complements render in that it can process the labels but not the
-graphics objects. The r3dtops code is now part of the render 
-program itself, and is invoked if the <i>-labels</i> command line
-switch is present. In this case the labels are converted to PostScript
-commands and placed in a file <i>label3d.ps</i>. 
-The <b>label3d</b> script automates the process of rendering the image,
-running the resulting PostScript file through ghostscript, and then 
-recombining the two component images into a single TIFF or PNG image containing 
-both the molecular graphics objects and the associated labels.
-<p>
-
-
-<img src="r3d_example7.jpeg" align=right alt="">
-<h4>EXAMPLE</h4>
-Example 7 (figure at right) in the Raster3D distribution illustrates the use of the
-<b>label3d</b> script.
-The example script actually produces a 
-<a href="r3d_stereo7.jpeg">stereo pair</a> that shows labels
-positioned in three dimensions.
-<p>
-
-<h4>ENVIRONMENT</h4>
-The script creates scratch files in directory $TMPDIR, if defined,
-otherwise in /usr/tmp.  PostScript fonts are scaled by the environmental
-variable FONTSCALE.  FONTSCALE = 3.0 yields rendered fonts that
-approximately match their nominal point size when printed on a 300 dpi
-printer.  For images to be viewed on a video monitor, FONTSCALE should
-be set to something close to 1.
-<p>
-The label3d script requires the
-<a href="http://ImageMagick.org">
-ImageMagick</a> image processing package, and ghostscript. 
-
-<h4>BUGS</h4>
+The <b>label3d</b> script is obsolete as of 
+<a href="raster3d.html"> Raster3D </a> version 3.0.
 <ul>
 <li>
-The whole nature of label handling in Raster3D is not yet settled.
-It would be much nicer if all the label processing were taken
-care of by the render program itself.<p>
-<li>
-Labels always appear on top of the molecular graphics image,
-even labels which should be occluded by a foreground object.<p>
+Use the <i>-labels</i> option of <a href="render.html">render</a> instead.
 </ul>
 
 </p>

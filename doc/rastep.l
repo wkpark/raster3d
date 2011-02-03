@@ -1,6 +1,6 @@
 .ad l
 .nh
-.TH RASTEP 1 " 1 Dec 1999" "Raster3D"
+.TH RASTEP 1 " 14 Dec 2010" "Raster3D"
 
 .SH NAME
 
@@ -29,19 +29,20 @@ in which the primary output to stdout is a list of the Eigenvalues of the Uij
 matrix, followed by the corresponding atomic anisotropy and isotropic Ueq, 
 for each atom in the input file with both an ATOM record and a
 matching ANISOU record.
+This mode is used by the validation tools Parvati and Skittls.
 .PP
 .SH EXAMPLES
 .PP
 To describe thermal ellipsoids at the 50% probability level, with default CPK
-colors, and send it for immediate rendering into a TIFF file
+colors, and send it for immediate rendering into a PNG file
 .PP
-     rastep < infile.pdb | render -tiff picture.tiff
+     rastep < infile.pdb | render -png picture.png
 .PP
 To describe the same ellipsoids colored by Biso, omiting header records so that
 the resulting input file can be merged with other scene components
 .PP
      rastep -h -Bcolor 10. 30. < infile.pdb > ellipsoids.r3d
-     cat header.r3d ellipsoids.r3d otherstuff.r3d | render -tiff picture.tiff
+     cat header.r3d ellipsoids.r3d otherstuff.r3d | render > picture.png
 .SH OPTIONS
 
 .B "-auto"
@@ -146,8 +147,6 @@ from a shelx coordinate file.
 
 
 .SH SOURCE
-.B anonymous ftp site:	
- 	ftp.bmsc.washington.edu
 .B web URL:
   	http://www.bmsc.washington.edu/raster3d/raster3d.html
 .B contact:		

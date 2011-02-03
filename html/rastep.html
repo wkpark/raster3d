@@ -31,6 +31,7 @@ The program can be run in an alternate mode, controlled by the -tabulate option,
 in which the primary output to stdout is a list of the Eigenvalues of the U<sub>ij</sub> 
 matrix, followed by the corresponding atomic anisotropy and isotropic U<sub>eq</sub>, 
 for each atom in the input file with both an ATOM record and a matching ANISOU record.
+This mode is used by the validation tools <a href="http://www.bmsc.washington.edu/parvati">Parvati</a> and Skittls.
 </p>
 
 
@@ -41,14 +42,14 @@ CPK colors, and send it for immediate rendering into a TIFF image file.
 The angle of view is automatically adjusted to spread atoms out as much as
 possible in the XY plane of the image:</P>
 
-<PRE>rastep -auto &lt; infile.pdb | render -tiff picture.tiff
+<PRE>rastep -auto &lt; infile.pdb | render > picture.png
 </PRE>
 
 <P>Describe the same ellipsoids colored by Biso, and create an input
 module with no header records for inclusion in a composite image:</P>
 
 <PRE>rastep -h -Bcolor 10. 30. &lt; infile.pdb &gt; ellipsoids.r3d
-cat header.r3d ellipsoids.r3d otherstuff.r3d | render -tiff picture.tiff
+cat header.r3d ellipsoids.r3d otherstuff.r3d | render -jpeg > picture.jpeg
 </PRE>
 
 <p>List anisotropy of individual atoms to stdout and summarize the distribution 

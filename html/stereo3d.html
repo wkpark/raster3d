@@ -20,7 +20,6 @@ stereo3d [options]  -tiff [outfile.tiff]  < infile.r3d > outfile.tiff
 </pre>
 
 stereo3d uses the Raster3D utilities
-<a href="label3d.html">label3d</a>,
 <a href="normal3d.html">normal3d</a> and
 <a href="render.html">render</a>,
 and the ImageMagick image processing package.
@@ -81,11 +80,8 @@ overriding whatever values are given in the input file.
 This script requires the
 <a href="http://imagemagick.org"> ImageMagick</a> image processing package. 
 
-The default version of stereo3d invokes the <a href="label3d.html">label3d</a>
-script so that labels are processed in stereo also.  If label3d processing
-is not configured on your machine you may want to replace the stereo3d
-script with an alternate version named stereo3d_nolabels in the Raster3D
-distribution package.
+By default stereo3d invokes render with the option <i>-labels</i>
+so that labels are processed in stereo also.
 
 <h4>AUTHORS</h4>
 Ethan A Merritt.

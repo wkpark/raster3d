@@ -6,7 +6,7 @@
 <body>
 <img src="r3d_icon.gif" alt="" align=left vspace=10>
 <br>
-<h1 align=center>Raster3D V2.7</h1>
+<h1 align=center>Raster3D V3.0</h1>
 <br clear=all>
 
 The Raster3D molecular graphics package consists of a core program 
@@ -14,8 +14,7 @@ The Raster3D molecular graphics package consists of a core program
 and a number of ancillary programs that read atomic coordinates from 
 PDB (Protein Data Bank) files to produce scene descriptions for input to render. 
 Raster3D can also render images composed using other programs such as 
-<a href="#refs">Molscript</a> and 
-<a href="http://www.sdsc.edu/CCMS/Packages/XTALVIEW/">XtalView</a>.
+Molscript, Xfit, and coot.
 
 
 <div class="box">
@@ -144,7 +143,13 @@ and quadric surfaces.  It also supports the definition of material
 properties (transparency, bounding planes, color, reflectivity)
 that apply to groups of objects within the rendered scene.
 </p>
+<p>
+New in version 3.0: Dynamic array allocation, direct rendering of
+labels.
+</p>
 
+<!---
+<h4><a name="history">HISTORY</a></h4>
 <p>
 Version 2.1 added support for additional "object types" which are
 really modifiers for characteristic properties of existing objects.
@@ -195,6 +200,7 @@ the files <i>parameters.incl</i> and <i>Makefile.template</i>.
 <p>
 <b>Version 2.7</b> changes the default output format to PNG for all programs.
 </p>
+ --->
 
 <h4>
 <a name="examples">EXAMPLES</a></h4>
@@ -268,35 +274,21 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
 
 <h5>Required for full installation:</h5>
 <dl>
-    <dt>PNG
-    <dd>Support for direct output of PNG images requires prior installation of the
-    	<i>libpng</i> and <i>libz</i> libraries. If these are not distributed with
-	your operating system you can get the source from 
-	<a href="http://www.libpng.org/pub/png/">http://www.libpng.org/pub/png/</a>.
-	PNG files allow transparent backgrounds and alpha blending, and can be
-	viewed using a web browser.
+    <dt>libgd
+    <dd>Generation of PNG and JPEG images, as well as label processing, 
+	requires prior installation of the 
+	<a href="http://libgd.org"><i>gd</i></a> graphics library.
+	libgd itself requires other libraries, but if you have libd itself
+	installed then you should be all set.
     <dt>TIFF
     <dd>In order to build in support for the direct output of TIFF image files,
 	you must separately obtain and install a copy of the TIFF library 
-	(libtiff.a).  Several implementations are available, including one by 
-	Sam Leffler which may be obtained via anonymous ftp from 
-	<a href="ftp://ftp.sgi.com/graphics/"> sgi.com</a>. Some recent TIFF libraries
-	no longer support LZW compression due to concerns about patent enforcement by
-	Unisys. This makes TIFF much less useful than it used to be. Consider using PNG
-	format instead, as it has most of the good features of TIFF and also can be
-	viewed by web browsers.
-    <dt>JPEG
-    <dd>In order to build in support for output of JPEG images you must have a
-	copy of the JPEG library. If your system does not already have this
-	library installed, you can obtain it directly from the Independent JPEG Group 
-	development project via anonymous ftp from 
-	<a href="ftp://ftp.uu.net/graphics/jpeg/">ftp.uu.net/graphics/jpeg/</a>.
+	(libtiff).  However, you can only render text labels for PNG or JPEG
+	output, so you may be better off generating PNG images and then converting
+	them to TIFF afterward.
     <dt>ImageMagick
-    <dd>For full functionality you must also obtain and install a copy of
+    <dd>For full functionality you should also obtain and install a copy of
 	<a href="http://ImageMagick.org"> ImageMagick</a> 
-    <dt>Ghostscript
-    <dd>Used only by the label-processing tools 
-	<a href="r3dtops.html">r3dtops</a> and <a href="label3d">label3d</a>.
 </dl>
 
 <h5>Some other programs with direct Raster3D output modes:</h5>
@@ -305,8 +297,8 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
     <dd>The contents of the current view window in a Coot session may be rendered in 
 	Raster3D using the &lt;F8&gt; hotkey. More complicated scripting from Coot
 	is also possible. Coot web page:
-	<a href="http://www.ysbl.york.ac.uk/~emsley/coot/">
-	http://www.ysbl.york.ac.uk/~emsley/coot/</a>.
+	<a href="http://www.biop.ox.ac.uk/coot/">
+	http://www.biop.ox.ac.uk/coot/</a>
     <dt>Molscript
     <dd>Figures composed in Molscript can be rendered in Raster3D rather than
 	being printed as PostScript images.  The Molscript web page is
@@ -316,11 +308,11 @@ render -avs &lt; description.r3d | avs2ps &gt; picture.ps
     <dd>ORTEX V7 (an interactive descendent of Carroll Johnson's ORTEP program) 
 	now supports Raster3D as an output mode. ORTEX runs under DOS/Windows,
 	and is available from
-	<a href="http://www.ucg.ie/cryst/software.htm">
-	http://www.ucg.ie/cryst/software.htm</a>.
+	<a href="http://www.nuigalway.ie/cryst/ortex.html">
+	http://www.nuigalway.ie/cryst/ortex.html</a>.
 	Another small molecule package running under Windows and incorporating 
 	Raster3D rendering options is WinGX, available from 
-	<a hred="http://www.chem.gla.ac.uk/~louis/software">
+	<a href="http://www.chem.gla.ac.uk/~louis/software">
 	http://www.chem.gla.ac.uk/~louis/software</a>.
     <dt>VMD
     <dd>Biomolecular visualization tool from the Theoretical Biophysics group 

@@ -40,7 +40,7 @@ FFLAGS   = -O1
 #
 
 LIBS    =	-LG:/cygwin/mingw32/lib -ltiff -ljpeg -lz
-DEFINES	=	-DTIFF_SUPPORT -DJPEG_SUPPORT -DIMAGEPIPE -DLINUX -DWIN32 -D__MSVCRT__
+DEFINES	=	-DTIFF_SUPPORT -DJPEG_SUPPORT -DLINUX -DWIN32 -D__MSVCRT__
 INCLUDES =	-Ic:/gnu/mingw32/include
 
 RIBOBJS  =	ribbon.o ribbon1.o modsubs.o
@@ -55,7 +55,7 @@ clean:
 install: $(PROGS)
 	$(INSTALL) -m 755 $(PROGS) $(bindir)
 	$(INSTALL) -m 755 stereo3d $(bindir)
-	$(INSTALL) -m 755 label3d $(bindir)
+	$(INSTALL) -m 755 worms $(bindir)
 	$(INSTALL) -m 644 doc/*.l $(mandir)
 	@echo "	*******************************************"
 	@echo "	* The examples/ subdirectory contains     *"

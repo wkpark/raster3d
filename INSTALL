@@ -2,33 +2,36 @@
 %     To install Raster3D       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-The installation process for Raster3D has changed in version 2.6 so
-that a single set of Makefiles is shared by all platforms.
+The installation process for Raster3D uses a single set of Makefiles 
+shared by all platforms.
 User configurable options are contained in two files:
-   	Makefile.template	select or deselect TIFF, JPEG, etc support
-	parameters.incl		array bounds
+   	Makefile.template	select or deselect TIFF support, etc
 
-1) inspect Makefile.template to make sure that it is appropriate for your site,
+1) Make sure the development version of any necessaary support libraries are
+   installed.  This primarily means libgd, which is used to produce png and jpeg
+   files. If you want to build in support for direct tiff output then you also
+   need libtiff.
+
+2) inspect Makefile.template to make sure that it is appropriate for your site,
    and possibly edit the file to enable or disable the following options:
 
-   	-tiff	enabled by default (TIFF output)
 	-jpeg	enabled by default (JPEG output)
 	-png	enabled by default (PNG output)
-	-sgi	disbled by default (SGI libimage output)
-	-out    enabled by default (output piped through ImageMagick)
+   	-tiff	enabled by default (TIFF output)
+	-sgi	disabled by default (SGI libimage output)
 	GUNZIP	enabled by default (auto-decompression of input files)
 
-2) Configure the Makefiles for your operating system.
+3) Configure the Makefiles for your operating system.
 	make help	gives a list of supported OS options
 	make OS		(OS is your operating system name) configures things
 
-3) Build the programs
+4) Build the programs
 	make all
 
-4) Install the package
+5) Install the package
 	make install
 
-5) Add R3D_LIB to your system-wide initialization of environmental
+6) Add R3D_LIB to your system-wide initialization of environmental
    variables, or instruct users to insert one of the following into their
    login shell initialization. If you change the installation location
    to something other than /usr/local/share/Raster3D then you need to
@@ -43,7 +46,7 @@ User configurable options are contained in two files:
    Depending on your system configuration, it may be sufficient to simply
    copy these two files into directory /etc/profile.d
 
-6) [Optional] You may want to teach ImageMagick how to use the Raster3D
+7) [Optional] You may want to teach ImageMagick how to use the Raster3D
    rendering program as a delegate.  You can do this by adding lines at
    the end of the ImageMagick configuration file.  It probably has a
    name similar to this:
@@ -54,12 +57,12 @@ User configurable options are contained in two files:
    <delegate decode="r3d" command='"render" < "%i" > "%o"' />
 
 
-7) Go to the examples subdirectory and try running the example scripts
+8) Go to the examples subdirectory and try running the example scripts
    to verify installation.
 
 A sample installation on a DEC Alpha might go:
 	vi Makefile.template           # check options and installation directories
-	make dec                       # configure
+	make linux                     # configure
 	make all                       # build the programs
 	make install                   # install them
 	cd examples                    # run the demo/verification scripts
@@ -76,16 +79,6 @@ A sample installation on a DEC Alpha might go:
 === OSX ===
 
 None known, but that will probably change.
-
-The gfortran compiler has changed in major ways.  We have tried to modify
-version 2.9 of raster3d to match, but it has not yet been extensively 
-tested.  Earlier versions of gfortran produced incorrect code if 
-optimization was enabled, so by default we have disabled it in the Makefile
-for the critical routines in qinp.f
-
-The Intel compiler works also, but probably has its own quirks.
-Please report problems.
-
 
 === OS/2 (old advice, but maybe still relevant) ===
 

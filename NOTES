@@ -1,10 +1,26 @@
-15-Aug-2008
-===========
+December 2010
+=============
 
-rings3d
--------
-fix - initialize [some] arrays in rings3d.f
-add - residue type PDC (test case; requested by user).
-fix - name match is column sensitive but PDB is flaky.
-      recode to ignore leading whitespace
-      Not tested very heavily!
+Only light testing cross-platform
+I plan to strip down the Makefile to the bare minimum
+Still some compiler warnings to deal with
+
+Labels
+- render doesn't load IDET(LABEL);  why not?  
+  Is it keeping label details in the sorted lists?
+- If we were to store the label Z coord in the alpha slot of the pixels
+  array (not enough precision, probably needs a separate array) then
+  graph pixels could be drawn directly into the label image but only
+  if the Z coord of the graph pixel is greater than that of the label.
+- I think that would work except that you couldn't see labels through
+  a transparent object
+
+V3.0 seems to be 20% slower than V2.9
+
+Static build automation is a mess.
+  I've hardwired LDFLAGS that allow it to work on Mandriva 10.1
+  Current procedure to build the static version is:
+    copy raster3d-shared-3.0-0.spec to raster3d-3.0-0.spec
+    edit Makefile.package to have the correct target architecture
+    make rpm
+    rename the resulting rpms to contain "-static-" 

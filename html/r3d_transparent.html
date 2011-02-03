@@ -72,8 +72,8 @@ material.
 
 <dt>OPTS   
 	<dd> These four parameters are reserved for future expansion of the
-             MATERIAL specification.  The first one (OPTS[1]) affects the
-	     handling of transparency:
+             MATERIAL specification.  OPTS[1] controls how overlapping transparent
+	     objects are treated.  
 	     <dl>
 	     <dt>OPTS[1] = 0
 		 <dd> All transparent objects will be rendered, subject to the 
@@ -90,22 +90,24 @@ material.
 		 and tesselated surfaces will be rendered (normally only the
 		 front surfaces are rendered).
 	     </dl>
+	     OPTS[2] controls which algorithm is used to vary transparency as a 
+	     function of alpha (=CLRITY) and the Z component of the surface normal.
+	     OPTS[2] = 2 is theoretically more correct, but in
+	     my opinion comes out looking less transparent than it should.
+	     OPTS[2] = 0 is an empirical function that looks better to me.
+	     <dl>
+	     <dt>OPTS[2] = 0
+	 	<dd> T(ZN) = 0.25 * (1 + cos(pi*alpha*ZN))^2
+	     <dt>OPTS[2] = 1
+	 	<dd> T(ZN) = (1 - abs(alpha*ZN))^2
+	     <dt>OPTS[2] = 2
+	 	<dd> T(ZN) = 1 - alpha ^ (sqrt(pi/4) / abs(ZN))
+	     <dt>OPTS[2] = 3
+	 	<dd> T(ZN) = 1 - alpha
+	     </dl>
 
 </dl>
 
-<h4>
-What to do if transparent objects seem to turn your machine to molasses.
-</h4>
-The extra time involved in rendering transparent objects is mostly due to 
-bookkeeping overhead rather than to the actual calculation of surface 
-properties, at least on the machines I have clocked it on.  The algorithm
-used, however, does include at least one cosine calculation for each pixel
-and I can easily imagine that some machines (or FORTRAN libraries) would
-execute this calculation very slowly indeed. Therefore I have put a 
-commented-out alternative algorithm in the render source code, along with
-instructions for re-compiling. The alternative algorithm produces a slightly
-less realistic result (in my purely empirical opinion) but avoids any cosine
-functions.<p>
 
 </body>
 

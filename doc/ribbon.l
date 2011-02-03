@@ -23,7 +23,7 @@ files produced by other Raster3D utilities.
 To describe a the entire protein chain as a single ribbon colored
 smoothly from blue at the N-terminus to red at the C-terminus:
 .PP
-     ribbon -d2 protein.pdb | render > chain_picture.avs
+     ribbon -d2 protein.pdb | render > chain_picture.png
 .PP
 To color a multi-chain protein with specified colors for each chain:
 .PP

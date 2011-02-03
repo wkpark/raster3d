@@ -103,7 +103,7 @@
       logical		hflag, ellipses, bcflag, tflag, atflag, comflag
       logical		acflag, nohydro, mini, auto, aniflag
       integer           fancy
-      character*80	flags
+      character*132	flags
 c
 c     Data structures used for auto-orientation
       real	Rr(3,3), U(4,4), Xmom(5)

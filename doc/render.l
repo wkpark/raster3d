@@ -1,6 +1,6 @@
 .l
 .nh
-.TH RENDER 1 "19 May 2003" "Raster3D"
+.TH RENDER 1 "14 December 2010" "Raster3D V3.0"
 .SH NAME
 render - Raster3D molecular graphics package rendering program
 .SH SYNOPSIS
@@ -12,21 +12,20 @@ render - Raster3D molecular graphics package rendering program
 
 .B "render"  [\fI-quality NN\fP] -jpeg < infile.r3d > outfile.jpeg
 
-.B "render"   -tiff outfile.tiff < infile.r3d 
+.B "render"   -tiff outfile.tiff < infile.r3d
 
 .B "render"   -sgi "[outfile.rgb]" < infile.r3d
 
-.B "render"   -out outfile.xxx   < infile.r3d
 .PP
 \fIRender\fP reads an ascii file consisting of several header lines
-followed by individual object descriptors. 
+followed by individual object descriptors.
 The objects are rendered using a fast Z-buffer algorithm to produce
-a high quality pixel image which contains one light source, 
+a high quality pixel image which contains one light source,
 additional non-shadowing light sources,
 specular highlighting, transparency, and Phong shaded surfaces.
 Output is to stdout [or optional file] in the form of a pixel image
 with 24 bits of color information per pixel.
-As of version 2.7, the default output format is PNG.
+The default output format is PNG.
 
 .SH OPTIONS
 .TP 5
@@ -64,9 +63,10 @@ Turn off anti-aliasing (SCHEME 1) to increase rendering speed.
 
 Only meaningful in conjunction with the -labels option.
 Modifies the interpretation of font sizes during label processing.
-Defaults to -fontscale 3.0, which will generate PostScript
-labels that are at the correct nominal fint size when printed
-at 300 dpi.
+Defaults to -fontscale 3.0, which will generate images whose
+labels are at the correct nominal font size when printed at 300 dpi.
+For images to be viewed on the screen, you probably want to set
+-fontscale 1.
 
 .TP 5
 .B "-gamma GG"
@@ -87,37 +87,26 @@ some odd viewing program.
 .TP 5
 .B "-jpeg [outfile.jpeg]"
 
-Only if compiled with -DJPEG_SUPPORT.
 By default \fIrender\fP will produce an PNG image on stdout.
 The -jpeg flag will cause it to output a JPEG image file instead, or
 stream the output to stdout if no file is specified.
 
 .TP 5
-.B "-labels [outfile.ps]"
+.B "-labels"
 
-Process labels (object types 10, 11, 12) and create a PostScript
-output file label3d.ps in addition to the rendered image file.
-Output filename defaults to \fIlabel3d.ps\fP.
-This option is used by the \fIlabel3d\fP script.
-
-.TP 5
-.B "-out filename.xxx"
-
-Only if compiled with -DIMAGE_PIPE.
-The -out flag causes \fIrender\fP to pipe output to the ImageMagick
-command convert, with instructions to convert it to an image file
-whose type is determined by the filename extension xxx.
+Process labels (object types 10, 11, 12) and include them in the
+rendered image.
 
 .TP 5
 .B "-png [outfile.png]"
 
-Only if compiled with -DPNG_SUPPORT.  This is now the default output format.
+This is now the default output format.
 The -png flag will stream the output to stdout if no file is specified.
 
 .TP 5
 .B "-quality"
 
-Only meaningful in conjunction with -jpeg option; sets the 
+Only meaningful in conjunction with -jpeg option; sets the
 quality (compression level) of the output image.
 Allowable values 1 - 100 (default 90).
 
@@ -163,31 +152,35 @@ not JPEG). Note that this turns off anti-aliasing.
 Rescale image by factor ZZ (ZZ% if the % sign is present).
 
 .SH HEADER RECORDS
-.TP 5 
-.B     TITLE    
+.TP 5
+.B     TITLE
 Anything you like, up to 80 characters.
-.TP 5 
-.B     NTX,NTY  
-Number of "tiles" in each direction.  (The output
-display is considered to be divided up into an
-array of identical rectangular tiles.)
-Maximum = 192 (controlled by MAXNTX, MAXNTY in render.f)
-.TP 5 
-.B     NPX,NPY  
+.TP 5
+.B     NTX,NTY
+Number of "tiles" in each direction. (The image is rendered piecemeal by
+dividing it into an array of equal size rectangular tiles.) The width of
+the output image in pixels is NTX*NPX by NTY*NPY. The speed of the program
+is sensitive to the number of tiles. However, as a convenience you can set
+NPX and NPY to zero and use NTX, NTY to provide the net size of the output
+image in pixels.  In this case the program will choose the number of tiles
+itself so that you don't have to worry about it.
+.TP 5
+.B     NPX,NPY
 Number of computing pixels per tile in each direction.
-Maximum = 36 (controlled by MAXNPX, MAXNPY in render.f)
-.TP 5 
-.B     SCHEME   
+Maximum = 36 (MAXNPX, MAXNPY in render.f). If you set NPX and NPY to zero,
+the program will use NTX and NTY as the net size of the image in pixels.
+.TP 5
+.B     SCHEME
 Pixel averaging (anti-aliasing) scheme. Anti-aliasing
 reduces the jaggedness of edges at the cost of additional
 computation.
- 0 no anti-aliasing, include alpha blend (matte) channel 
+ 0 no anti-aliasing, include alpha blend (matte) channel
  1 no anti-alaising, no matte channel
- 2 anti-alias by averaging 2x2 block of computed pixels for 
+ 2 anti-alias by averaging 2x2 block of computed pixels for
    each output pixel. Resulting image dimensions are 1/2 of
    the nominal requested size.
- 3 anti-alias by averaging 3x3 block of computed pixels for 
-   each 2x2 block of output pixels. Resulting image 
+ 3 anti-alias by averaging 3x3 block of computed pixels for
+   each 2x2 block of output pixels. Resulting image
    dimensions are 2/3 of the nominal requested size.
    (obsolete - use scheme 4 instead)
  4 anti-alias as in scheme 3, but output image dimensions
@@ -197,51 +190,51 @@ I.e. schemes 0, 1, and 4 produce a NTX*NPX by NTY*NPY pixel image;
 scheme 3 produces a (2/3)NTX*NPX by (2/3)NTY*NPY image.
 Scheme 3 requires NPX and NPY to be divisible by 3.
 Schemes 2 and 4 require NPX and NPY to be divisible by 2.
-.TP 5 
-.B     BKGND    
+.TP 5
+.B     BKGND
 Background colour (red, green, and blue components,
 each in the range 0 to 1).
-.TP 5 
-.B     SHADOW   
+.TP 5
+.B     SHADOW
 T to calculate shadowing within the scene, F to omit shadows
-.TP 5 
-.B     IPHONG   
+.TP 5
+.B     IPHONG
 Phong power (e.g., 25) for specular reflections.
 A smaller value results in a larger spot.
-.TP 5 
-.B     STRAIT   
+.TP 5
+.B     STRAIT
 Straight-on (secondary) light source contribution
 (e.g., 0.15).  The primary light source contribution
 (see also SOURCE below) is given by PRIMAR = 1 - STRAIT.
-.TP 5 
-.B     AMBIEN   
+.TP 5
+.B     AMBIEN
 Ambient reflection quantity (e.g., 0.05).
-.TP 5 
-.B     SPECLR   
+.TP 5
+.B     SPECLR
 Specular reflection quantity (e.g., 0.25).
 The diffuse reflection quantity is given by
 DIFFUS = 1 - (AMBIEN+SPECLR).  Ambient and diffuse
 reflections are chromatic, taking on the specified
 colour of each object, whereas specular reflections
 are white.
-.TP 5 
-.B     EYEPOS   
-You can think of the image produced by Raster3D as corresponding 
+.TP 5
+.B     EYEPOS
+You can think of the image produced by Raster3D as corresponding
 to a photograph taken by a camera placed a certain distance away
 from the objects making up the scene. This distance is controlled
 by the EYEPOS parameter.  EYEPOS = 4 describes a perspective corresponding
 to a viewing distance 4 times the narrow dimension of the described scene.
 EYEPOS = 0 disables perspective.
-.TP 5 
-.B     SOURCE   
-Primary light source position (e.g., 1 1 1).  
+.TP 5
+.B     SOURCE
+Primary light source position (e.g., 1 1 1).
 This is a white light point
 source at infinite distance in the direction of this vector
-(see note on co-ordinate convention below).  
-The secondary light source is always haed-on. 
+(see note on co-ordinate convention below).
+The secondary light source is always haed-on.
 Only the primary light source casts shadows.
-.TP 5 
-.B     TMAT     
+.TP 5
+.B     TMAT
 Homogeneous global transformation for input objects,
 given as a 4x4 matrix on 4 lines just as you would
 write it if you intended it to be a postfix (suffix)
@@ -253,13 +246,13 @@ introduced), and the lower right scalar produces
 global scaling.
 Coordinate vectors [x y z] are extended with a 1
 to make them homogeneous, and then postmultiplied
-by the entire matrix; 
- i.e., if 
+by the entire matrix;
+ i.e., if
       [x' y' z' h'] = [x y z 1][TMAT],
  then the ultimate co-ordinates are
       [x" y" z"] = (1/h')[x' y' z'].
-.TP 5 
-.B     INMODE   
+.TP 5
+.B     INMODE
 Object input mode (1, 2, or 3), where
 mode 1 means that all objects are triangles,
 mode 2 means that all objects are spheres,
@@ -282,10 +275,10 @@ The Raster3D programs always use mode INMODE 3.
  type 16 = global rendering properties
  type 17 = colors for vertices of preceding triangle or cylinder
  type 0 = end of input file
-.TP 5 
+.TP 5
 
 .B INFMT or INFMTS
-Object input format specifier(s). 
+Object input format specifier(s).
 Normally * for free-format input.
 
 .TP 1
@@ -342,29 +335,17 @@ Some error messages may be safely ignored.
 	Possible shadowing error NSXMAX= xxx
 .PP
 This is most usually caused by an object which projects far out of the field
-of view, for example a plane surface. In most cases the shadowing "error" 
+of view, for example a plane surface. In most cases the shadowing "error"
 refers to a shadow which lies outside of the image entirely.  However, if
 your image does in fact contain missing or truncated shadows you can overcome
 this problem by re-compiling the render program with larger values of
 NSX and NSY as indicated by the error message.
 
-.PP
-If you are creating images of very large proteins, or if you are rendering
-surfaces with many facets, then you may fill the storage arrays in render.
-If so you will get an error message something like
-.PP
-	STOP 1234 **** too many objects - increase MAXOBJ and recompile
-.PP
-See the HTML or PostScript documentation for instructions on
-increasing array sizes.
-
 .SH SOURCE
-.B anonymous ftp site:	
- 	ftp.bmsc.washington.edu
- 
+
 .B web URL:
  	http://www.bmsc.washington.edu/raster3d/raster3d.html
- 
+
 .B contact:		
  	Ethan A Merritt
  	University of Washington, Seattle WA 98195
@@ -372,10 +353,10 @@ increasing array sizes.
 
 .SH SEE ALSO
 HTML and PostScript documentation
- r3d_objects(l), avs2ps(l), rastep(l), rods(l), ribbon(l), 
-balls(l), label3d(l), stereo3d(l)
+ r3d_objects(l), avs2ps(l), rastep(l), rods(l), ribbon(l),
+balls(l), stereo3d(l)
 .PP
 .SH AUTHORS
-Originally written by David J. Bacon. 
+Originally written by David J. Bacon.
  Extensions, revisions, and modifications by Ethan A Merritt.
 
