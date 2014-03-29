@@ -93,6 +93,7 @@
 * JMK Dec 2010	- Bugfix for JUSTCLIPPED reported by Joe Krahn
 * JMK Dec 2010	- More transparency algorithms; use OPT[2] to pass choice
 * EAM Dec 2010	- Read in all header info before initializing output file
+* EAM Apr 2011	- Ignore blank lines when looking for next object
 *		  
 *     General organization:
 *
@@ -1366,7 +1367,8 @@ c	    since it doesn't support dispose='DELETE'.
    73	WRITE (NOISE,'(A,A)') ' >> Cannot open file ',LINE(J:K)
 	GOTO 7
       ELSE
-	READ (LINE,*,END=50,ERR=74) INTYPE
+c	April 2011 - ignore blank line
+	READ (LINE,*,END=7,ERR=74) INTYPE
 	GOTO 76
    74	WRITE (NOISE,'(A,A)') ' >> Unrecognized line: ',LINE
 	GOTO 7
@@ -2221,6 +2223,7 @@ C	V2.6:     default appropriate cases (e.g. opaque triangles with no
 C		  associated bounding planes) to hidden by assumption and 
 C		  thus not needing to be rendered. Mark as HIDDEN.
 C		  Default treatment is overridden by CLROPT in material spec
+C	V3.0.3:   Render both sides of opaque triangles
 C
 	IF (Z1C.GE.0 .AND. Z2C.GE.0 .AND. Z3C.GE.0) GOTO 718
  	IF (Z1C.LT.-.01 .AND. Z2C.LT.-.01 .AND. Z3C.LT.-.01) THEN
@@ -2228,7 +2231,7 @@ C
 		NINSIDE = NINSIDE + 1
 		FLAG(IPREV) = ior( FLAG(IPREV), INSIDE )
 	    ELSE IF ((iand(FLAG(IPREV),BOUNDED).EQ.0) 
-     &          .AND.(CLRITY.EQ.0 .OR. CLROPT.EQ.1)) THEN
+     &          .AND.(CLRITY.NE.0 .AND. CLROPT.EQ.1)) THEN
 		NHIDDEN = NHIDDEN + 1
 		FLAG(IPREV) = ior( FLAG(IPREV), HIDDEN )
 	    ELSE

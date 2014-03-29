@@ -43,7 +43,9 @@
 #include	<ctype.h>
 #include	<time.h>
 #include	<stdlib.h>
+#ifdef NETWORKBYTEORDER
 #include	<netinet/in.h>
+#endif
 
 #ifdef LIBIMAGE_SUPPORT
 #include	<gl/image.h>
@@ -228,7 +230,7 @@ if (*option == 0)
 	fprintf(stderr,
 		"\n     render [-png [outfile]]       PNG image to stdout (default) or file");
 	fprintf(stderr,
-		"\n     render -jpeg [outfile]        JPEG image to stdour (default) or file");
+		"\n     render -jpeg [outfile]        JPEG image to stdout (default) or file");
 	fprintf(stderr,
 		"\n     render -avs                   AVS image to stdout");
 #ifdef LIBIMAGE_SUPPORT
@@ -334,36 +336,37 @@ else if (*option == 1)
 #endif
 	  
 #ifdef TIFF_SUPPORT
+#define TIFFSET(A,B,C) if (!(TIFFSetField(A,B,C))) fprintf(stderr,"TIFF library error\n");
     if (mode == 3)   /* tiff */
 	{
 	if (*ofile != ' ')
 	    ofile = strtok( ofile, " " );
 	else
-	    ofile = "render.tif";
+	    ofile = "render.tiff";
 	tfile=TIFFOpen(ofile,"w");
 	if (!tfile) exit(-1);
-	TIFFSetField(tfile,TIFFTAG_DOCUMENTNAME,ofile);
-	TIFFSetField(tfile,TIFFTAG_SOFTWARE,program_name);
-	TIFFSetField(tfile,TIFFTAG_BITSPERSAMPLE,8);
-	TIFFSetField(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
-	TIFFSetField(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
-	TIFFSetField(tfile,TIFFTAG_IMAGEWIDTH,xsize);
-	TIFFSetField(tfile,TIFFTAG_IMAGELENGTH,ysize);
-	TIFFSetField(tfile,TIFFTAG_RESOLUTIONUNIT,2);
-	TIFFSetField(tfile,TIFFTAG_XRESOLUTION,300.);
-	TIFFSetField(tfile,TIFFTAG_YRESOLUTION,300.);
+	TIFFSET(tfile,TIFFTAG_DOCUMENTNAME,ofile);
+	TIFFSET(tfile,TIFFTAG_SOFTWARE,program_name);
+	TIFFSET(tfile,TIFFTAG_BITSPERSAMPLE,8);
+	TIFFSET(tfile,TIFFTAG_SAMPLESPERPIXEL,(alpha_channel ? 4 : 3));
+	TIFFSET(tfile,TIFFTAG_PHOTOMETRIC,PHOTOMETRIC_RGB);
+	TIFFSET(tfile,TIFFTAG_IMAGEWIDTH,xsize);
+	TIFFSET(tfile,TIFFTAG_IMAGELENGTH,ysize);
+	TIFFSET(tfile,TIFFTAG_RESOLUTIONUNIT,2);
+	TIFFSET(tfile,TIFFTAG_XRESOLUTION,300.);
+	TIFFSET(tfile,TIFFTAG_YRESOLUTION,300.);
 #ifdef __alpha
-	TIFFSetField(tfile,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB);
+	TIFFSET(tfile,TIFFTAG_FILLORDER,FILLORDER_MSB2LSB);
 #endif
 #ifdef	TIFF_INVERT
-	TIFFSetField(tfile,TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
+	TIFFSET(tfile,TIFFTAG_ORIENTATION,ORIENTATION_TOPLEFT);
 #else
-	TIFFSetField(tfile,TIFFTAG_ORIENTATION,ORIENTATION_BOTLEFT);
+	TIFFSET(tfile,TIFFTAG_ORIENTATION,ORIENTATION_BOTLEFT);
 #endif
-	TIFFSetField(tfile,TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
-	TIFFSetField(tfile,TIFFTAG_COMPRESSION,COMPRESSION_LZW);
+	TIFFSET(tfile,TIFFTAG_PLANARCONFIG,PLANARCONFIG_CONTIG);
+	TIFFSET(tfile,TIFFTAG_COMPRESSION,COMPRESSION_LZW);
 	rows_per_strip = ysize;
-	TIFFSetField(tfile,TIFFTAG_ROWSPERSTRIP,rows_per_strip);
+	TIFFSET(tfile,TIFFTAG_ROWSPERSTRIP,rows_per_strip);
 	if (alpha_channel)
 	    {
 	    uint16 extra_samples, sample_info[1];

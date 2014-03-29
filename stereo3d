@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-#	Raster3D utility script "stereo3d" V3.0
-#       =======================================
+#	Raster3D utility script "stereo3d" V3.0.3
+#       =========================================
 #
-# Ethan A Merritt - December 2010
+# Ethan A Merritt - May 2011
 #
 # Renders a single Raster3D scene description as a side-by-side stereo pair.
 # By default this version of the stereo3d script uses a shear operation to 
@@ -112,11 +112,9 @@ echo "@${tmp}_stereo3d.tmp" >> ${tmp}_right.r3d
 # echo " normal3d options $normal_options" 1>&2
 # echo " render options $render_options" 1>&2
 echo "stereo3d: rendering left eye view" 1>&2
-render ${render_options} -${img} < ${tmp}_left.r3d  > ${tmp}_left.${img} 2> /dev/null  \
-         || mv ${tmp}_render.${img}  ${tmp}_left.${img}  
+render ${render_options} -${img}  ${tmp}_left.${img} < ${tmp}_left.r3d  2> /dev/null
 echo "stereo3d: rendering right eye view" 1>&2
-render ${render_options} -${img} < ${tmp}_right.r3d > ${tmp}_right.${img} 2> /dev/null \
-         || mv ${tmp}_render.${img}  ${tmp}_right.${img}
+render ${render_options} -${img} ${tmp}_right.${img} < ${tmp}_right.r3d  2> /dev/null
 #
 # Find image size
 IMAGESIZE=`identify ${tmp}_left.${img} | sed -e 's/.* \([0-9]*x[0-9]*\).*/\1/'`

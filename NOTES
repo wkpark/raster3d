@@ -1,3 +1,13 @@
+TODO
+====
+
+- Build stereo directly into render (removes dependence on ImageMagick)
+  As an interim measure, switch stereo3d processing to always use png
+- Depth occlusion of labels
+- Peanuts
+- perl script to take *.obj file format -> *.r3d 
+
+
 December 2010
 =============
 

@@ -75,10 +75,19 @@ A sample installation on a DEC Alpha might go:
 %       Known Problems          %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-=== linux ===
 === OSX ===
 
-None known, but that will probably change.
+I don't know how to make a self-installing package, so I provide a
+tarball that contains the source and executables.  It also contains
+a shared library for libgd, which seems not easily found for OSX.
+
+Basically you need to
+ - copy the executables from ./bin to somewhere in your normal $PATH 
+ - copy ./lib/libgd.2.dylib to somewhere in your normal $DYLD_LIBRARY_PATH
+ - similarly copy or link in place to the html documentation 
+ - set the environmental variable $R3D_LIB to point to the 
+   ./materials directory
+
 
 === OS/2 (old advice, but maybe still relevant) ===
 

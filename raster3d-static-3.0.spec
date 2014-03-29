@@ -3,7 +3,7 @@ Name: Raster3D
 Version: 3.0
 Release: 2
 %define  r3dver %{name}_%{version}-%{release}
-License: Source freely available, redistribution restricted
+License: Artistic License Version 2.0
 Source: http://www.bmsc.washington.edu/raster3d/%{name}_%{version}-%{release}.tar.gz
 URL: http://www.bmsc.washington.edu/raster3d
 Packager: Ethan A Merritt

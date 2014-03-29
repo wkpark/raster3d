@@ -469,11 +469,11 @@ F 	  no shadows cast
 	side:
 
 <pre>
-# Here is an example of specifying a double sided material
+# Here is an example of specifying a double sided material.
 # The MATERIAL record itself specifies an opaque material with PHONG
-# value to 25 and specular parameters taken from the header records,
-# and says that there are two following modifer lines.
-# The SOLID modifier gives an RGB color triple that over-rides colors on
+# value 20 and relative lighting contributions taken from the header records
+# (MSPEC < 0). The trailing "2" indicates there are two following modifer lines.
+# The SOLID modifier gives an RGB color triple that overrides colors on
 # subsequent objects.
 # The BACKFACE modifier specifies a separate RGB color for the other side 
 # of this material, and sets the Phong control parameter and specular

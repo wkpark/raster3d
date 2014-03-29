@@ -166,10 +166,10 @@ c	    pfac = 1./(1.-zq/eyepos)
 * Tally for tiles the object might impinge on
 * Again we are relying on the correctness of the center coordinates
 *
-	ixlo = (xc-rc) / npx + 1
-	ixhi = (xc+rc) / npx + 1
-	iylo = (yc-rc) / npy + 1
-	iyhi = (yc+rc) / npy + 1
+	ixlo = INT(xc-rc) / npx + 1
+	ixhi = INT(xc+rc) / npx + 1
+	iylo = INT(yc-rc) / npy + 1
+	iyhi = INT(yc+rc) / npy + 1
 	if (ixlo.lt.1)   ixlo = 1
 	if (ixlo.gt.NTX) goto 101
 	if (ixhi.lt.1)   goto 101
@@ -247,10 +247,10 @@ CD	write (noise,191) 'QP  ',((QP(i,j),j=1,4),i=1,4)
 	sdtail(3) = zs
 	sdtail(4) = rs
 *	tally shadow tiles the object might impinge on
-	ixlo = (xs-rs) / npx + 1
-	ixhi = (xs+rs) / npx + 1
-	iylo = (ys-rs) / npy + 1
-	iyhi = (ys+rs) / npy + 1
+	ixlo = INT(xs-rs) / npx + 1
+	ixhi = INT(xs+rs) / npx + 1
+	iylo = INT(ys-rs) / npy + 1
+	iyhi = INT(ys+rs) / npy + 1
 	if (ixlo.lt.1)   ixlo = 1
 	if (ixlo.gt.NSX) goto 209
 	if (ixhi.lt.1)   goto 209

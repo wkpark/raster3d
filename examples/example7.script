@@ -13,9 +13,9 @@ echo "This is what you should get in a minute or so."
 echo "I used some fancy fonts just for fun; if you don't have"
 echo "these fonts installed, your labels may look a bit different."
 #
-sleep 8
+sleep 4
 #
-stereo3d -png < example7.r3d | display -resize 50% png:- &
+stereo3d -labels -fontscale 2.0 -png < example7.r3d | display -resize 50% png:- &
 #
 echo "Using the stereo3d script to process labels into a stereo pair"
 echo "This may take a minute, because ghostscript is slow,"

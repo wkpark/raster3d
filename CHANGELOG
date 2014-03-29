@@ -1,3 +1,12 @@
+29-Mar-2014	Package (somewhat belatedly) 3.0-3
+01-May-2012	local.c: only #include <in.h> if NETWORK_BYTEORDER
+		Makefile: but don't define NETWORK_BYTEORDER for linux
+12-Apr-2011	Default to rendering both sides of an opaque triangle with normals
+		Ignore blank lines while looking for next object
+27-Mar-2011	Remove obsolete directory of patch files for molscript v1.4
+		Add notices to the man page, the html page, the spec files,
+		and README that the program is distributed under the 
+		Artistic License, Version 2.0
 03-Feb-2011	Package 3.0-2 (SBGRID builds)
 26-Jan-2011	Joe Krahn: use AlphaBlending mode 0 when rendering labels
 19-Dec-2011	Package 3.0-1 (SBGRID builds)

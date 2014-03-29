@@ -90,6 +90,10 @@ figures:
 render(l), rastep(l), rods(l), ribbon(l), balls(l), avs2ps(l), 
 stereo3d(l)
 .PP
+.SH LICENSE
+ Raster3D version 3.0 is distributed under the terms of the
+ Artistic License, Version 2.0.
+.PP
 .SH AUTHORS
  Originally written by David J Bacon and Wayne F Anderson.
  Ancillary programs by Mark Israel, Stephen Samuel, 

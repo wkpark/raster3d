@@ -1,6 +1,6 @@
-Most recent change:	  19-Dec-2010
+Most recent change:	  26-Mar-2011
 
-The file Raster3D_3.0.tar.gz contains the full source distribution for
+The file Raster3D_3.0-2.tar.gz contains the full source distribution for
 version 3.0 of Raster3D.
 
   See CHANGELOG for a history of changes to the package.
@@ -39,6 +39,10 @@ For optimal use of Raster3D you should also obtain
 To build support for direct output of TIFF files
 - Some version of a TIFF library
 
+License
+-------
+Raster3D Version 3 is distributed under the terms of the Artistic License,
+Version 2.0.  A copy of the license is included with the source code.
 
 				Ethan A Merritt
 				merritt@u.washington.edu
