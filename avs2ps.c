@@ -51,6 +51,8 @@ int	ny, nx, nb;
 float	x_origin, y_origin, x_scale, y_scale;
 time_t	date;
 
+(void)alpha;
+
 /* Command line options */
     for (i=1; i<argc; i++)
 	{

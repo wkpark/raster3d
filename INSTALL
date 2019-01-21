@@ -7,7 +7,7 @@ shared by all platforms.
 User configurable options are contained in two files:
    	Makefile.template	select or deselect TIFF support, etc
 
-1) Make sure the development version of any necessaary support libraries are
+1) Make sure the development version of any necessary support libraries are
    installed.  This primarily means libgd, which is used to produce png and jpeg
    files. If you want to build in support for direct tiff output then you also
    need libtiff.

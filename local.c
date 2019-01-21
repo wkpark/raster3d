@@ -697,6 +697,10 @@ int addlabel_(fontname, fontsize, fontscale, fontalign, xp, yp, zp, red, grn, bl
 	out_size = trimwhitespace(instring, 128, labelstring);
 	string = instring;
 
+	(void)out_size;		/* prevents compiler complaints */
+	(void)last_z;		/* about unused variables */
+	(void)justify;
+
 	/* Allocate colours */
 	/* FIXME: how to pass non-zero alpha value? */
 	font_color = gdImageColorAllocateAlpha(label_img, 

@@ -1,9 +1,15 @@
-Most recent change:	  26-Mar-2011
+Most recent change:	  21-Jan-2019
 
-The file Raster3D_3.0-2.tar.gz contains the full source distribution for
+The file Raster3D_3.0-4.tar.gz contains the full source distribution for
 version 3.0 of Raster3D.
 
   See CHANGELOG for a history of changes to the package.
+  Basically nothing has changed since verison 3.0-3 (2014) except that I 
+  tried to suppress some harmless compiler warnings.
+
+  Note: The programs from Raster3D version 3.0-3 are included in the
+  CCP4 crystallography suite.  You might find it easier to use that
+  pre-built version.
 
 - In a nutshell, the installation procedure is:
 

@@ -1,3 +1,5 @@
+21-Jan-2019	Package 3.0-4
+21-Jan-2019	suppress compiler warnings for unused variables
 29-Mar-2014	Package (somewhat belatedly) 3.0-3
 01-May-2012	local.c: only #include <in.h> if NETWORK_BYTEORDER
 		Makefile: but don't define NETWORK_BYTEORDER for linux
