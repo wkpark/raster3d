@@ -1,3 +1,9 @@
+08-May-2020     Package 3.0-6
+08-May-2020     Change flag for hexadecimal constant from X'000 to Z'000
+08-May-2020     recent gfortran has inverted the meaning of compiler flag -Wtabs (?!)
+12-Nov-2019     Package 3.0-5
+12-Nov-2019	rods.f:  gfortran 8.3 requires decimal point after floating 0
+12-Nov-2019	import into git
 21-Jan-2019	Package 3.0-4
 21-Jan-2019	suppress compiler warnings for unused variables
 29-Mar-2014	Package (somewhat belatedly) 3.0-3

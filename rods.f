@@ -17,6 +17,8 @@
 *	-brad XX to set ball radius as fraction of Van der Waals radius
 * EAM Jul 1999
 *	don't draw bonds across alternate chain locations
+* EAM Nov 2019
+*	new gfortran requires a decimal point in floating constants
 *
 *------------------------------------------------------------------------------
       INCLUDE 'VERSION.incl'
@@ -343,7 +345,7 @@ c
      	    write(output,141)
      1	       RGB(1,ICOL),RGB(2,ICOL),RGB(3,ICOL),
      2	       RGB(1,JCOL),RGB(2,JCOL),RGB(3,JCOL),
-     3         0, 0, 0
+     3         0.0, 0.0, 0.0
 	  ELSE
 	    DO 136 K=1,3
 136	    CEN(K) = (SPAM(K,IATM)+SPAM(K,JATM))/2

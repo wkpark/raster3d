@@ -28,7 +28,7 @@ tar:	../$(TARFILE)
 	touch Makefile.incl
 	@echo making ../$(TARFILE)
 	cd `pwd`
-	(cd ..; gtar -czvf $(TARFILE) Raster3D_$(VERSION)/.)
+	(cd ..; gtar --exclude-vcs --exclude-vcs-ignores -czvf $(TARFILE) Raster3D_$(VERSION)/.)
 
 #
 # Build an RPM package

@@ -1,15 +1,14 @@
-Most recent change:	  21-Jan-2019
+Most recent change:	  06-May-2020
 
-The file Raster3D_3.0-4.tar.gz contains the full source distribution for
+The file Raster3D_3.0-6.tar.gz contains the full source distribution for
 version 3.0 of Raster3D.
 
   See CHANGELOG for a history of changes to the package.
-  Basically nothing has changed since verison 3.0-3 (2014) except that I 
-  tried to suppress some harmless compiler warnings.
+  Basically nothing has changed since verison 3.0-3 (2014) except for
+  minor tweaks to accommodate newer Fortran versions.
 
-  Note: The programs from Raster3D version 3.0-3 are included in the
-  CCP4 crystallography suite.  You might find it easier to use that
-  pre-built version.
+  Note: The programs from Raster3D are included in the CCP4 crystallography
+  suite.  You might find it easier to use that pre-built version.
 
 - In a nutshell, the installation procedure is:
 
@@ -24,9 +23,10 @@ version 3.0 of Raster3D.
 	7)  (optional)
 	    modify ImageMagick delegates file so that ImageMagick recognizes
 	    *.r3d files by default.  On my systems this file is in
-	    	/usr/lib/ImageMagick-6.3.2/config/delegates.xml
+	      /etc/ImageMagick-6/config/delegates.xml
 	    Add the following line
-	    	<delegate decode="r3d" command='"render" < "%i" > "%o"' />
+	      <delegate decode="r3d" command="&quot;render&quot; &lt; &quot;%i&quot; &gt; &quot;%o&quot;"/>
+
 
 - Changes in Version 3.0
 	+ new code in rastep to support Skittles validation (introduced in 2.9)

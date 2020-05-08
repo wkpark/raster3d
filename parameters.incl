@@ -60,7 +60,7 @@
 *     $$$$$$$$$$$$$$$$$  END OF LIMITS  $$$$$$$$$$$$$$$$$$$$$$$
 *
 *     Other possibly platform-dependent stuff
-      REAL  	HUGE
+      REAL       HUGE
       PARAMETER (HUGE = 1.0e37)
 *     Slop is related to the accuracy (in pixels) to which we must predict
 *     shadow edges. Too low a value causes whole triangles to be spuriously
@@ -74,5 +74,5 @@
       PARAMETER (EDGESLOP = 0.25)
 *     Ribbonslop is a kludge so that distortion due to perspective doesn't 
 *     prevent us from identifying ribbon triangles
-      REAL	 RIBBONSLOP
+      REAL       RIBBONSLOP
       PARAMETER (RIBBONSLOP = 0.001)

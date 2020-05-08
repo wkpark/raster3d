@@ -53,13 +53,13 @@ linux:
 	@echo CC = gcc                        >> Makefile.incl
 	@echo CFLAGS = -g -Wall -Dgfortran    >> Makefile.incl
 	@echo FC = gfortran                   >> Makefile.incl
-	@echo FFLAGS = -g -w -O3 -Wtabs -ffixed-line-length-132 >> Makefile.incl
+	@echo FFLAGS = -g -w -O3 -Wno-tabs -ffixed-line-length-132 >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
 	@echo include Makefile.package        >> Makefile.incl
 	@echo                                 >> Makefile.incl
 	@echo qinp.o: qinp.f                  >> Makefile.incl
-	@echo "	\$$(FC) -g -O0 -Wall -Wtabs -c -o qinp.o qinp.f" >> Makefile.incl
+	@echo "	\$$(FC) -g -O0 -Wall -Wno-tabs -c -o qinp.o qinp.f" >> Makefile.incl
 	@echo                                 >> Makefile.incl
 
 linux-ifort:

@@ -968,9 +968,9 @@ C	Header records and picture title
 *     Get background colour
       READ (INPUT,*,ERR=104) BKGND
       if (XBG.NE.0) then
-	BKGND(3) = iand(XBG,X'00FF')
-	BKGND(2) = iand(XBG,X'FF00')/256
-	BKGND(1) = iand(XBG,X'FF0000')/65536
+	BKGND(3) = iand(XBG,Z'00FF')
+	BKGND(2) = iand(XBG,Z'FF00')/256
+	BKGND(1) = iand(XBG,Z'FF0000')/65536
 	BKGND(3) = BKGND(3) / 255.
 	BKGND(2) = BKGND(2) / 255.
 	BKGND(1) = BKGND(1) / 255.

@@ -49,7 +49,7 @@ CC
 C
 	function qinp( buf, detail, shadow, sdtail )
 *       Use MODULE LISTS not COMMON /LISTS/ for dynamic allocation
-        USE LISTS
+	USE LISTS
 *
 	IMPLICIT NONE
 	logical  qinp
@@ -58,10 +58,10 @@ C
 	logical shadow
 *
 	real    QQ(4,4), QP(4,4), QT(4,4)
-	real  	xq, yq, zq, radlim, red, grn, blu
+	real    xq, yq, zq, radlim, red, grn, blu
 	real    xc, yc, zc, rc
 	real    xr, yr, zr, xs, ys, zs, rs
-	real	pfac
+	real    pfac
 *
 	integer  ix,iy,ixlo,ixhi,iylo,iyhi
 c	VOLATILE ix,iy,ixlo,ixhi,iylo,iyhi
@@ -284,4 +284,3 @@ CD	write (noise,191) 'QP  ',((QP(i,j),j=1,4),i=1,4)
 *
 	return
 	end
-
