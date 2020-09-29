@@ -115,8 +115,8 @@ c
 	    else if (option(1:3).eq.'-bg') then
 	    	iarg = iarg + 1
 		call getarg( iarg, option )
-		if (option(1:5).eq.'white') xbg = Z'FFFFFF'
-		if (option(1:5).eq.'black') xbg = Z'000000'
+		if (option(1:5).eq.'white') xbg = INT(Z'FFFFFF')
+		if (option(1:5).eq.'black') xbg = INT(Z'000000')
 		if (option(1:1).eq.'#') then
 		    read  (option(2:7),'(1Z6)') xbg
 		    if (verbose) then

@@ -1,3 +1,6 @@
+29-Sep-2020     Package 3.0-7
+13-May-2020     -std=legacy seems to reduce pedantry from gfortran 10.1
+10-May-2020     gfortran 10.1 is insanely picky - must wrap hex constants in INT(...)
 08-May-2020     Package 3.0-6
 08-May-2020     Change flag for hexadecimal constant from X'000 to Z'000
 08-May-2020     recent gfortran has inverted the meaning of compiler flag -Wtabs (?!)

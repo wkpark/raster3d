@@ -52,7 +52,7 @@ linux:
 	@echo OS = linux                      >> Makefile.incl
 	@echo CC = gcc                        >> Makefile.incl
 	@echo CFLAGS = -g -Wall -Dgfortran    >> Makefile.incl
-	@echo FC = gfortran                   >> Makefile.incl
+	@echo FC = gfortran -std=legacy       >> Makefile.incl
 	@echo FFLAGS = -g -w -O3 -Wno-tabs -ffixed-line-length-132 >> Makefile.incl
 	@echo RM = /bin/rm -f                 >> Makefile.incl
 	@echo OSDEFS =  -DLINUX -DNETWORKBYTEORDER       >> Makefile.incl
